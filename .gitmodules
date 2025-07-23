@@ -1,0 +1,6 @@
+[submodule "verl"]
+	path = verl
+	url = https://github.com/volcengine/verl
+[submodule "apex"]
+	path = apex
+	url = https://github.com/NVIDIA/apex.git

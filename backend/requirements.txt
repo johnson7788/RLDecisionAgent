@@ -1,0 +1,11 @@
+pandas
+pyarrow
+fastparquet
+omegaconf
+hydra-core
+peft
+datasets
+codetiming
+packaging
+ninja
+flash_attn
