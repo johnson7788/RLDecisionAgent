@@ -28,3 +28,29 @@ pip install flash_attn==2.6.3
 python -c "from transformers import PreTrainedModel; print('Imported successfully')"
 
 ```
+
+## Debug模式
+```
+# Script模式
+/home/wac/johnson/anaconda3/envs/gpt/bin/torchrun
+# 参数
+--standalone
+--nnodes=1
+--nproc_per_node=1
+-m
+verl.trainer.fsdp_sft_trainer
+data.train_files=/home/wac/johnson/data/char_count/sft/train.parquet
+data.val_files=/home/wac/johnson/data/char_count/sft/test.parquet
+data.prompt_key=prompt
+data.response_key=response
+data.micro_batch_size_per_gpu=8
+data.max_length=256
+data.train_batch_size=256
+use_remove_padding=True
+model.partial_pretrain=HuggingFaceTB/SmolLM2-135M-Instruct
+trainer.default_local_dir=./models/sft
+trainer.project_name=char_count-sft
+trainer.experiment_name=char_count-sft-SmolLM2-135M-Instruct
+trainer.total_epochs=3
+trainer.logger=console
+```
