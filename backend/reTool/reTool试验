@@ -91,6 +91,30 @@ python3 recipe/retool/retool_sft_preprocess.py
 
 目标是把这些内容拆分成标准的 message 格式，便于训练支持工具调用的语言模型。
 
+需要配置Code Sandbox Agent，
+https://bytedance.github.io/SandboxFusion/docs/docs/get-started#local-deployment
+Code Sandbox Agent 是火山引擎函数服务（veFaaS） 基于开源 SandboxFusion 项目，面向终端用户和 AI 套件开发者推出的 Sandbox 代码沙箱服务。用户输入编程任务，即可由豆包大模型分析编程任务，生成对应语言的程序代码，最后用户提交运行请求，Sandbox 运行代码并输出执行结果。整个使用过程可以看作为：大模型帮助解决编程问题并输出程序，Sandbox 帮助执行程序、验证代码正确性。
+部署：
+docker run -it -p 8080:8080 vemlp-cn-beijing.cr.volces.com/preset-images/code-sandbox:server-20250609
+测试：
+curl 'http://localhost:8080/run_code' \
+  -H 'Content-Type: application/json' \
+  --data-raw '{"code": "print(\"Hello, world!\")", "language": "python"}'
+输出：
+{
+  "status": "Success",
+  "message": "",
+  "compile_result": null,
+  "run_result": {
+    "status": "Finished",
+    "execution_time": 0.016735315322875977,
+    "return_code": 0,
+    "stdout": "Hello, world!\n",
+    "stderr": ""
+  },
+  "executor_pod_name": null,
+  "files": {}
+}
 
 
 ### 2. 启动训练脚本
