@@ -1,0 +1,22 @@
+# 文档
+https://www.notion.so/verl-reTool-recipe-2398b5b7feba80a58156fa936f9f8de6
+
+# 数据
+
+下载和处理数据BytedTsinghua-SIA/DAPO-Math-17k
+python3 examples/data_preprocess/dapo_multiturn_w_tool.py
+
+数据条数: 1791700
+列名： {'train': ['data_source', 'prompt', 'ability', 'reward_model', 'extra_info']}
+
+具体数据
+```
+Sample 0:
+{'data_source': 'math_dapo', 'prompt': [{'content': 'Solve the following math problem step by step. The last line of your response should be of the form Answer: $Answer (without quotes) where $Answer is the answer to the problem.\n\nIn triangle $ABC$, $\\sin \\angle A = \\frac{4}{5}$ and $\\angle A < 90^\\circ$. Let $D$ be a point outside triangle $ABC$ such that $\\angle BAD = \\angle DAC$ and $\\angle BDC = 90^\\circ$. Suppose that $AD = 1$ and that $\\frac{BD}{CD} = \\frac{3}{2}$. If $AB + AC$ can be expressed in the form $\\frac{a\\sqrt{b}}{c}$ where $a, b, c$ are pairwise relatively prime integers, find $a + b + c$.\n\nRemember to put your answer on its own line after "Answer:".', 'role': 'user'}], 'ability': 'MATH', 'reward_model': {'ground_truth': '34', 'style': 'rule-lighteval/MATH_v2'}, 'extra_info': {'index': '9a9b6eb4-a1cb-49d1-8c1e-62eaf2f74079', 'need_tools_kwargs': True, 'tools_kwargs': {'code_interpreter': {'create_kwargs': {'ground_truth': '34'}}}}}
+
+Sample 1:
+{'data_source': 'math_dapo', 'prompt': [{'content': 'Solve the following math problem step by step. The last line of your response should be of the form Answer: $Answer (without quotes) where $Answer is the answer to the problem.\n\nLet $ABCD$ be a unit square in the plane. Points $X$ and $Y$ are chosen independently and uniformly at random on the perimeter of $ABCD$. If the expected value of the area of triangle $\\triangle AXY$ can be expressed as $\\frac{m}{n}$ for relatively prime positive integers $m$ and $n$, compute $m+n$.\n\nRemember to put your answer on its own line after "Answer:".', 'role': 'user'}], 'ability': 'MATH', 'reward_model': {'ground_truth': '113', 'style': 'rule-lighteval/MATH_v2'}, 'extra_info': {'index': 'b426d104-244d-4831-a2c4-cd756b61700a', 'need_tools_kwargs': True, 'tools_kwargs': {'code_interpreter': {'create_kwargs': {'ground_truth': '113'}}}}}
+
+Sample 2:
+{'data_source': 'math_dapo', 'prompt': [{'content': 'Solve the following math problem step by step. The last line of your response should be of the form Answer: $Answer (without quotes) where $Answer is the answer to the problem.\n\nLet $a, b, c$ be distinct numbers such that the equations $x^2 + ax + 1 = 0$ and $x^2 + bx + c = 0$ have a common real root, and the equations $x^2 + x + a = 0$ and $x^2 + cx + b = 0$ also have a common real root. Compute the sum $a + b + c$.\n\nRemember to put your answer on its own line after "Answer:".', 'role': 'user'}], 'ability': 'MATH', 'reward_model': {'ground_truth': '-3', 'style': 'rule-lighteval/MATH_v2'}, 'extra_info': {'index': '6ff0b17f-7e5c-4ae9-b5e9-63ebecd2b9f7', 'need_tools_kwargs': True, 'tools_kwargs': {'code_interpreter': {'create_kwargs': {'ground_truth': '-3'}}}}}
+```
