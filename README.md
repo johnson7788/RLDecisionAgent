@@ -29,6 +29,12 @@ python -c "from transformers import PreTrainedModel; print('Imported successfull
 
 ```
 
+## Issue
+Tesla V100-SXM2-32GB 不支持
+flash_attn_gpu.varlen_fwd(
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: FlashAttention only supports Ampere GPUs or newer.
+
 ## Debug模式
 ```
 # Script模式
@@ -54,3 +60,9 @@ trainer.experiment_name=char_count-sft-SmolLM2-135M-Instruct
 trainer.total_epochs=3
 trainer.logger=console
 ```
+
+
+# Document
+nproc_per_node=8  # 单个机器的卡数量
+trainer:
+  default_local_dir: verl_sft/Qwen25_7b_sft  # 训练后的模型的保存路径
