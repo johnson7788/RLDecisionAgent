@@ -37,6 +37,10 @@ RuntimeError: FlashAttention only supports Ampere GPUs or newer.
 
 ## Debug模式
 ```
+配置Pycharm的环境
+export CUDA_VISIBLE_DEVICES=1,2
+
+配置运行命令和参数
 # Script模式
 /home/wac/johnson/anaconda3/envs/gpt/bin/torchrun
 # 参数
