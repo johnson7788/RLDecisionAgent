@@ -33,5 +33,5 @@ torchrun --nnodes=$nnodes \
     trainer.experiment_name=$experiment_name \
     trainer.logger='["console","wandb"]' \
     trainer.total_epochs=6 \
-    ulysses_sequence_parallel_size=4 \
+    ulysses_sequence_parallel_size=2 \
     use_remove_padding=true

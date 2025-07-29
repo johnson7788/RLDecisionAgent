@@ -179,3 +179,12 @@ PPO 相比 GRPO 在该设置中略低，可能与超参或策略更新有关。
 | 强化学习     | GRPO | DAPO-Math-17k | `run_qwen2-32b_dapo.sh` | 0.6          | 10   |
 | 强化学习     | PPO  | DAPO-Math-17k | `run_qwen2-32b_ppo.sh`  | 0.55         | 8.3  |
 
+
+
+## 错误总结
+RuntimeError: cannot reshape tensor of 0 elements into shape [-1, 0] because the unspecified dimension size -1 can be any value and is ambiguous
+ulysses_sequence_parallel_size
+Ulysses 的序列并行维度 ulysses_sequence_parallel_size 超出了实际 GPU 数量，构建 device mesh 会失败。
+CUDA_VISIBLE_DEVICES=1,2  # 实际只有 2 块卡
+torchrun --nproc_per_node=2
+改成 ulysses_sequence_parallel_size=2
