@@ -35,6 +35,7 @@ messages = [
     {"role": "user", "content": prompt}
 ]
 
+
 # ✅ 构造工具 schema（注意 function schema 合法性）, 第一种tools格式模型选择
 tools_first = [
     {
@@ -64,6 +65,24 @@ tools_second_call = [
           "type": "function"
         }
       ]
+
+# tool_forth = [
+#     {
+#         "name": "code_interpreter",
+#         "description": "A tool for executing code.",
+#         "parameters": {
+#             "type": "object",
+#             "properties": {
+#                 "code": {
+#                     "type": "string",
+#                     "description": "The code to execute."
+#                 }
+#             },
+#             "required": ["code"]
+#         }
+#     }
+# ]
+
 
 # 这里的messages和tools_third组合也没啥问题
 # messages = [{'content': "Let $\\mathbf{v}_0$ be a vector. The vector $\\mathbf{v}_0$ is projected onto $\\begin{pmatrix} 3 \\\\ 1 \\end{pmatrix},$ resulting in the vector $\\mathbf{v}_1.$ The vector $\\mathbf{v}_1$ is then projected onto $\\begin{pmatrix} 1 \\\\ 1 \\end{pmatrix},$ resulting in the vector $\\mathbf{v}_2.$ Find the matrix that takes $\\mathbf{v}_0$ to $\\mathbf{v}_2.$ The original answer is in the $format \\begin{pmatrix} \\frac{i_{11}}{5} & \\frac{i_{12}}{5} \\\\ \\frac{i_{21}}{5} & \\frac{i_{22}}{5} \\end{pmatrix}$, please give the value of $i_{11} + i_{12} + i_{21} + i_{22}$.\n\nRemember to place the final answer in the last part using the format: \n\n\\boxed{{'The final answer goes here.'}}", 'role': 'user', 'tool_calls': None},

@@ -118,6 +118,7 @@ def process(row: dict, *, tools: str):
             messages.append(message)
             role = "assistant"
 
+    tools = json.loads(tools)
     print("[process] Final message sequence:")
     for msg in messages:
         print(json.dumps(msg, indent=2))

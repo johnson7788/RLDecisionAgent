@@ -106,7 +106,7 @@ print(df.head())
 
 
 
-## 4. Tools的Json报错
+## 4. Tools的Json报错, 经过Debug，发现backend/reTool/retool_sft_preprocess.py中的tools没有转换成json，还是字符串，所以加载时有问题 
 record[messages_key] 和 record[tools_key] 从 Pandas DataFrame 中读取数据时，如果原始 Parquet 文件中的列存储为结构化数组，Pandas 可能会将其解释为 numpy.ndarray 或 numpy.void 类型。
 isinstance(obj, np.ndarray) 检查对象是否为 NumPy 数组。
 .tolist() 方法可以将 NumPy 数组转换为标准的 Python 列表。
