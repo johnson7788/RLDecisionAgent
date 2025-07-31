@@ -107,6 +107,12 @@ print(df.head())
 
 
 ## 4. Tools的Json报错
+record[messages_key] 和 record[tools_key] 从 Pandas DataFrame 中读取数据时，如果原始 Parquet 文件中的列存储为结构化数组，Pandas 可能会将其解释为 numpy.ndarray 或 numpy.void 类型。
+isinstance(obj, np.ndarray) 检查对象是否为 NumPy 数组。
+.tolist() 方法可以将 NumPy 数组转换为标准的 Python 列表。
+numpy.void.item() 可以将 NumPy 的结构化数据类型（类似于 C 结构体）转换为 Python 字典。
+通过递归或逐层检查和转换，确保传递给 apply_chat_template 的 messages 和 tools 参数完全由 Python 原生类型（列表、字典、字符串、数字）组成。
+
 ```
 {'content': "Counter({'P': 3, 'I': 3, 'E': 2, 'N': 2, 'G': 1, 'O': 1, 'R': 1, 'C': 1, 'L': 1})", 'role': 'tool', 'tool_calls': None}
  {'content': "The output shows the letters with their counts: P (3), I (3), E (2), N (2), and single occurrences for G, O, R, C, L. Now, we need to determine the maximum number of draws required to guarantee at least two pairs.\n\nUsing the pigeonhole principle, the worst-case scenario involves drawing all single-occurrence letters first (5 letters). For the remaining letters (P, I, E, N), we maximize draws without forming two pairs. The optimal strategy is to take 3 letters from one multi-occurrence group (e.g., 3 P's creates 1 pair + 1 single) and 1 each from the others. This gives:\n\nSingle letters: 5\nMulti-occurrence letters: 3 (P) + 1 (I) + 1 (E) + 1 (N) = 6\nTotal: 5 + 6 = 11\n\nThe next draw (12th) must complete a second pair. Thus, the answer is:\n\n\n\\boxed{12}", 'role': 'assistant', 'tool_calls': None}]
