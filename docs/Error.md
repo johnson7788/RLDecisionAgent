@@ -148,7 +148,7 @@ Original Traceback (most recent call last):
     data = [self.dataset[idx] for idx in possibly_batched_index]
   File "/media/wac/backup/john/johnson/RLDecisionAgent/verl/verl/utils/dataset/multiturn_sft_dataset.py", line 234, in __getitem__
     full_tokens = tokenizer.apply_chat_template(
-  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/transformers/tokenization_utils_base.py", line 1665, in apply_chat_template
+  File "/usr/local/lib/python3.10/dist-packages/transformers/tokenization_utils_base.py", line 1665, in apply_chat_template
     raise ValueError(
 ValueError: Tools should either be a JSON schema, or a callable function with type hints and a docstring suitable for auto-conversion to a schema.
 
