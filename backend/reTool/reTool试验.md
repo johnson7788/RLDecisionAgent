@@ -6,7 +6,19 @@ https://www.notion.so/verl-reTool-recipe-2398b5b7feba80a58156fa936f9f8de6
 # 1. 数据下载
 
 下载和处理数据BytedTsinghua-SIA/DAPO-Math-17k
+export HF_ENDPOINT=https://hf-mirror.com
 python3 examples/data_preprocess/dapo_multiturn_w_tool.py
+```
+输出
+README.md: 100%|███████████████████████████████████████████████████████████████████████████████████████| 145/145 [00:00<00:00, 518kB/s]
+dapo-math-17k.parquet: 100%|███████████████████████████████████████████████████████████████████████▉| 299M/299M [03:21<00:00, 1.48MB/s]
+Generating train split: 1791700 examples [00:03, 449608.47 examples/s]
+Map:  19%|██████████████▍                                                            | 345877/1791700 [00:46<03:03, 7857.80 examples/s]
+
+```
+
+数据会下载到~/data/retool_dapo
+
 
 数据条数: 1791700
 列名： {'train': ['data_source', 'prompt', 'ability', 'reward_model', 'extra_info']}
