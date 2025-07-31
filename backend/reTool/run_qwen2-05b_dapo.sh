@@ -10,7 +10,7 @@ DATA_ROOT=${DATA_ROOT:-$PWD}
 dapo_math_17k=$DATA_ROOT/dataset/BytedTsinghua-SIA/DAPO-Math-17k
 aime_2024=$DATA_ROOT/dataset/Maxwell-Jia/AIME_2024
 aime_2025=$DATA_ROOT/dataset/yentinglin/aime_2025
-model_path=$HDFS_ROOT/checkpoint/multiturn-sft-qwen-2.5-32b-instruct/global_step_372
+model_path=$HDFS_ROOT/checkpoint/multiturn-sft-Qwen2.5-0.5B-Instruct/global_step_250
 
 train_files="['$dapo_math_17k']"
 test_files="['$aime_2025']"
