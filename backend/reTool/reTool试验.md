@@ -18,6 +18,10 @@ Map:  19%|██████████████▍                         
 ```
 
 数据会下载到~/data/retool_dapo
+```
+ls ~/data/retool_dapo
+train.parquet
+```
 
 
 数据条数: 1791700
@@ -80,7 +84,7 @@ Sample 2:
 
 ---
 
-# 下载模型
+# 2. 下载模型
 ```
 cd backend/reTool
 python
@@ -90,9 +94,7 @@ snapshot_download('Qwen/Qwen2.5-0.5B-Instruct', local_dir='model/Qwen2.5-0.5B-In
 
 ## 🚀 微调阶段（SFT）
 
-### 1. 数据预处理
-
-
+### 2.1 数据预处理
 
 * 从 `ReTool-SFT` 数据集中提取训练样本，可能包含用户输入、tool-calling 格式、ground truth 等。
 将 JoeYing/ReTool-SFT 数据集中原始的对话数据（包含 <code>、<interpreter>、<answer> 等标签）转换为标准的多轮工具调用格式（tool-calling messages）并存储为 .parquet 格式数据。
@@ -133,7 +135,7 @@ curl 'http://localhost:8080/run_code' \
   "files": {}
 }
 
-
+### 2.2 SFT数据集生成, 注意更改sandbox_fusion_tool_config.yaml的配置中的sandbox_fusion_url
 ```bash
 export HF_ENDPOINT=https://hf-mirror.com
 python retool_sft_preprocess.py
