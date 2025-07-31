@@ -56,26 +56,6 @@ Sample 2:
     }
 }
 ```
-# 数据处理
-export HF_ENDPOINT=https://hf-mirror.com
-python retool_sft_preprocess.py
-原理:
-```
-读取工具配置文件 sandbox_fusion_tool_config.yaml，构造 tool schema。
-加载 HuggingFace 数据集 JoeYing/ReTool-SFT。
-对每个样本 row 执行 process 函数，提取标准格式的 messages 列表：
-用户问题
-助手的解释和代码（带 tool_calls）
-工具执行结果（role=tool）
-助手最后的答案
-保存处理后的数据为 parquet 文件，用于训练或评估 downstream 模型。
-最终的文件保存为：
-wuxibin/ReTool-SFT/data/train-00000-of-00001.parquet
-```
-输出:
-```
-[process_output.md](process_output.md)
-```
 
 ## 📦 模型与数据
 
@@ -100,9 +80,7 @@ snapshot_download('Qwen/Qwen2.5-0.5B-Instruct', local_dir='model/Qwen2.5-0.5B-In
 
 ### 1. 数据预处理
 
-```bash
-python3 recipe/retool/retool_sft_preprocess.py
-```
+
 
 * 从 `ReTool-SFT` 数据集中提取训练样本，可能包含用户输入、tool-calling 格式、ground truth 等。
 将 JoeYing/ReTool-SFT 数据集中原始的对话数据（包含 <code>、<interpreter>、<answer> 等标签）转换为标准的多轮工具调用格式（tool-calling messages）并存储为 .parquet 格式数据。
@@ -144,12 +122,35 @@ curl 'http://localhost:8080/run_code' \
 }
 
 
+```bash
+export HF_ENDPOINT=https://hf-mirror.com
+python retool_sft_preprocess.py
+```
+原理:
+```
+读取工具配置文件 sandbox_fusion_tool_config.yaml，构造 tool schema。
+加载 HuggingFace 数据集 JoeYing/ReTool-SFT。
+对每个样本 row 执行 process 函数，提取标准格式的 messages 列表：
+用户问题
+助手的解释和代码（带 tool_calls）
+工具执行结果（role=tool）
+助手最后的答案
+保存处理后的数据为 parquet 文件，用于训练或评估 downstream 模型。
+最终的文件保存为：
+wuxibin/ReTool-SFT/data/train-00000-of-00001.parquet
+```
+输出:
+```
+[process_output.md](process_output.md)
+```
+
 ### 2. 启动训练脚本
 
 ```bash
-bash recipe/retool/run_qwen2-32b_sft.sh
+注意设置使用哪个显卡
+export CUDA_VISIBLE_DEVICES=1,2
+bash run_qwen2-05b_sft.sh
 ```
-
 * 启动基于 Qwen2.5-32B 的监督微调训练。
 
 ### ✅ 微调后评估结果

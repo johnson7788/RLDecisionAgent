@@ -10,8 +10,8 @@ experiment_name=multiturn-sft-Qwen2.5-0.5B-Instruct
 HDFS_ROOT=${HDFS_ROOT:-$PWD}
 DATA_ROOT=${DATA_ROOT:-$PWD}
 
-TRAIN_DATA=$DATA_ROOT/dataset/wuxibin/ReTool-SFT/data/train-00000-of-00001.parquet
-EVAL_DATA=$DATA_ROOT/dataset/wuxibin/ReTool-SFT/data/train-00000-of-00001.parquet
+TRAIN_DATA=$DATA_ROOT/wuxibin/ReTool-SFT/data/train-00000-of-00001.parquet
+EVAL_DATA=$DATA_ROOT/wuxibin/ReTool-SFT/data/train-00000-of-00001.parquet
 MODEL_PATH=$HDFS_ROOT/model/Qwen2.5-0.5B-Instruct
 SAVE_PATH=$DATA_ROOT/checkpoint/$experiment_name
 
