@@ -35,8 +35,8 @@ messages = [
     {"role": "user", "content": prompt}
 ]
 
-# ✅ 构造工具 schema（注意 function schema 合法性）
-tools = [
+# ✅ 构造工具 schema（注意 function schema 合法性）, 第一种tools格式和第2种tool格式，第一种比第2种更详细
+tools_first = [
     {
         "type": "function",
         "function": {
@@ -53,9 +53,21 @@ tools = [
     }
 ]
 
+tools_second = [
+        {
+          "function": {
+            "arguments": {
+              "code": "import math\n\nsqrt10 = math.sqrt(10)\nsqrt80 = math.sqrt(80)\nsum_sqrt = sqrt10 + sqrt80\nprint(f\"√10 ≈ {sqrt10:.6f}, √80 ≈ {sqrt80:.6f}, sum ≈ {sum_sqrt:.6f}\")"
+            },
+            "name": "code_interpreter"
+          },
+          "type": "function"
+        }
+      ]
+
 text = tokenizer.apply_chat_template(
     messages,
-    tools=tools,
+    tools=tools_second,
     tokenize=False,
     add_generation_prompt=True
 )
