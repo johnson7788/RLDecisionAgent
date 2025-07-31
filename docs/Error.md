@@ -15,7 +15,7 @@ http_proxy=http://127.0.0.1:7890
 https_proxy=http://127.0.0.1:7890
 ```
 
-## 3. SFT错误
+## 3. SFT错误, 数据集过少，检查数据集数量
 ```
  bash run_qwen2-05b_sft.sh
 + export CUDA_VISIBLE_DEVICES=1,2
@@ -92,6 +92,94 @@ Root Cause (first observed failure):
   host      : yaqiyun-SYS-4028GR-TR2
   rank      : 1 (local_rank: 1)
   exitcode  : 1 (pid: 3248030)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================
+
+python，检查数据数量是否过少
+import pandas as pd
+df = pd.read_parquet('/media/wac/backup/john/johnson/RLDecisionAgent/backend/reTool/wuxibin/ReTool-SFT/data/train-00000-of-00001.parquet')
+print(len(df))
+print(df.head())
+
+```
+
+
+
+## 4. Tool不合法
+```
+{'content': "Counter({'P': 3, 'I': 3, 'E': 2, 'N': 2, 'G': 1, 'O': 1, 'R': 1, 'C': 1, 'L': 1})", 'role': 'tool', 'tool_calls': None}
+ {'content': "The output shows the letters with their counts: P (3), I (3), E (2), N (2), and single occurrences for G, O, R, C, L. Now, we need to determine the maximum number of draws required to guarantee at least two pairs.\n\nUsing the pigeonhole principle, the worst-case scenario involves drawing all single-occurrence letters first (5 letters). For the remaining letters (P, I, E, N), we maximize draws without forming two pairs. The optimal strategy is to take 3 letters from one multi-occurrence group (e.g., 3 P's creates 1 pair + 1 single) and 1 each from the others. This gives:\n\nSingle letters: 5\nMulti-occurrence letters: 3 (P) + 1 (I) + 1 (E) + 1 (N) = 6\nTotal: 5 + 6 = 11\n\nThe next draw (12th) must complete a second pair. Thus, the answer is:\n\n\n\\boxed{12}", 'role': 'assistant', 'tool_calls': None}]
+Tools: [{"type": "function", "function": {"name": "code_interpreter", "description": "A tool for executing code.", "parameters": {"type": "object", "properties": {"code": {"type": "string", "description": "The code to execute."}}, "required": ["code"]}}}]
+Enable thinking: None
+Error executing job with overrides: ['data.train_files=/media/wac/backup/john/johnson/RLDecisionAgent/backend/reTool/wuxibin/ReTool-SFT/data/train-00000-of-00001.parquet', 'data.val_files=/media/wac/backup/john/johnson/RLDecisionAgent/backend/reTool/wuxibin/ReTool-SFT/data/train-00000-of-00001.parquet', 'data.max_length=16384', 'data.train_batch_size=32', 'data.multiturn.enable=true', 'data.multiturn.messages_key=messages', 'data.multiturn.tools_key=tools', 'data.micro_batch_size_per_gpu=4', 'model.partial_pretrain=/media/wac/backup/john/johnson/RLDecisionAgent/backend/reTool/model/Qwen2.5-0.5B-Instruct', 'model.strategy=fsdp', 'trainer.default_local_dir=/media/wac/backup/john/johnson/RLDecisionAgent/backend/reTool/checkpoint/multiturn-sft-Qwen2.5-0.5B-Instruct', 'trainer.project_name=wuxibin-multiturn-sft', 'trainer.experiment_name=multiturn-sft-Qwen2.5-0.5B-Instruct', 'trainer.logger=["console","wandb"]', 'trainer.total_epochs=6', 'ulysses_sequence_parallel_size=2', 'use_remove_padding=true']
+Traceback (most recent call last):
+  File "/media/wac/backup/john/johnson/RLDecisionAgent/verl/verl/trainer/fsdp_sft_trainer.py", line 801, in main
+    run_sft(config)
+  File "/media/wac/backup/john/johnson/RLDecisionAgent/verl/verl/trainer/fsdp_sft_trainer.py", line 794, in run_sft
+    trainer.fit()
+  File "/media/wac/backup/john/johnson/RLDecisionAgent/verl/verl/trainer/fsdp_sft_trainer.py", line 721, in fit
+    for step_in_epoch, data in enumerate(
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/tqdm/std.py", line 1169, in __iter__
+    for obj in iterable:
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/torchdata/stateful_dataloader/stateful_dataloader.py", line 450, in __next__
+    return super().__next__()
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/torch/utils/data/dataloader.py", line 708, in __next__
+    data = self._next_data()
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/torchdata/stateful_dataloader/stateful_dataloader.py", line 1456, in _next_data
+    return self._process_data(data, worker_id, state_dict)
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/torchdata/stateful_dataloader/stateful_dataloader.py", line 1543, in _process_data
+    data.reraise()
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/torch/_utils.py", line 733, in reraise
+    raise exception
+ValueError: Caught ValueError in DataLoader worker process 0.
+Original Traceback (most recent call last):
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/torchdata/stateful_dataloader/worker.py", line 242, in _worker_loop
+    data = fetcher.fetch(index)  # type: ignore[union-attr]
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/torch/utils/data/_utils/fetch.py", line 52, in fetch
+    data = [self.dataset[idx] for idx in possibly_batched_index]
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/torch/utils/data/_utils/fetch.py", line 52, in <listcomp>
+    data = [self.dataset[idx] for idx in possibly_batched_index]
+  File "/media/wac/backup/john/johnson/RLDecisionAgent/verl/verl/utils/dataset/multiturn_sft_dataset.py", line 234, in __getitem__
+    full_tokens = tokenizer.apply_chat_template(
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/transformers/tokenization_utils_base.py", line 1665, in apply_chat_template
+    raise ValueError(
+ValueError: Tools should either be a JSON schema, or a callable function with type hints and a docstring suitable for auto-conversion to a schema.
+
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+[rank1]:[W731 11:08:39.927063060 ProcessGroupNCCL.cpp:1496] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+wandb: (1) Create a W&B account
+wandb: (2) Use an existing W&B account
+wandb: (3) Don't visualize my results
+wandb: Enter your choice: W0731 11:08:41.198000 3253423 /media/wac/backup/anaconda3/envs/gpt/lib/python3.10/site-packages/torch/distributed/elastic/multiprocessing/api.py:897] Sending process 3253490 closing signal SIGTERM
+E0731 11:08:41.515000 3253423 /media/wac/backup/anaconda3/envs/gpt/lib/python3.10/site-packages/torch/distributed/elastic/multiprocessing/api.py:869] failed (exitcode: 1) local_rank: 1 (pid: 3253491) of binary: /home/wac/johnson/anaconda3/envs/gpt/bin/python
+Traceback (most recent call last):
+  File "/home/wac/johnson/anaconda3/envs/gpt/bin/torchrun", line 8, in <module>
+    sys.exit(main())
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 355, in wrapper
+    return f(*args, **kwargs)
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/torch/distributed/run.py", line 918, in main
+    run(args)
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/torch/distributed/run.py", line 909, in run
+    elastic_launch(
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/torch/distributed/launcher/api.py", line 138, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/torch/distributed/launcher/api.py", line 269, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError:
+============================================================
+verl.trainer.fsdp_sft_trainer FAILED
+------------------------------------------------------------
+Failures:
+  <NO_OTHER_FAILURES>
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2025-07-31_11:08:41
+  host      : yaqiyun-SYS-4028GR-TR2
+  rank      : 1 (local_rank: 1)
+  exitcode  : 1 (pid: 3253491)
   error_file: <N/A>
   traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
 ============================================================
