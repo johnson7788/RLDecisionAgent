@@ -110,7 +110,7 @@ python3 -m verl.trainer.main_ppo \
     critic.model.fsdp_config.param_offload=$offload \
     critic.model.fsdp_config.optimizer_offload=$offload \
     trainer.critic_warmup=$critic_warmup \
-    trainer.logger=['console','wandb'] \
+    trainer.logger=['console'] \
     trainer.project_name=$project_name \
     trainer.experiment_name=$experiment_name \
     trainer.n_gpus_per_node=$ARNOLD_WORKER_GPU \

@@ -1,5 +1,8 @@
 set -x
 
+# 使用哪个显卡
+export CUDA_VISIBLE_DEVICES=1,2
+
 # ================= data/model/tool =================
 HDFS_ROOT=${HDFS_ROOT:-$PWD}
 DATA_ROOT=${DATA_ROOT:-$PWD}
@@ -17,7 +20,7 @@ tool_config_path=recipe/retool/sandbox_fusion_tool_config.yaml
 
 # wandb
 project_name=wuxibin_retool
-experiment_name=qwen2.5-32b_dapo
+experiment_name=qwen2.5-05b_dapo
 default_local_dir=$DATA_ROOT/checkpoint/$experiment_name
 
 # ================= algorithm =================
@@ -94,7 +97,7 @@ python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.rollout.val_kwargs.top_p=0.6 \
     actor_rollout_ref.rollout.val_kwargs.temperature=1.0 \
     actor_rollout_ref.rollout.val_kwargs.n=$n_resp_per_prompt_val \
-    trainer.logger=['console','wandb'] \
+    trainer.logger=['console'] \
     trainer.project_name=$project_name \
     trainer.experiment_name=$experiment_name \
     trainer.n_gpus_per_node=$ARNOLD_WORKER_GPU \

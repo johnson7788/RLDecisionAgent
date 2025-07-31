@@ -310,6 +310,24 @@ Epoch 1/6:  11%|█████████▉                                  
 Epoch 1/6:  13%|███████████▎                                                                            | 8/62 [00:59<06:24,  7.11s/it]step:9 - train/loss:0.9712172150611877 - train/lr(1e-3):0.0024324324324324327
 Epoch 1/6:  15%|████████████▊                                                                           | 9/62 [01:06<06:18,  7.13s/it]step:10 - train/loss:0.8903839588165283 - train/lr(1e-3):0.002702702702702703
 Epoch 1/6:  16%|██████████████                                                                         | 10/62 [01:13<06:05,  7.03s/it]
+step:246 - train/loss:0.5490185022354126 - train/lr(1e-3):7.79617909009489e-06
+Epoch 2/2:  97%|██████████████████████████████████████████████████████████████████████████████████▎  | 121/125 [12:26<00:24,  6.06s/it]step:247 - train/loss:0.5956565737724304 - train/lr(1e-3):4.385849505708084e-06
+Epoch 2/2:  98%|██████████████████████████████████████████████████████████████████████████████████▉  | 122/125 [12:32<00:18,  6.07s/it]step:248 - train/loss:0.6328058242797852 - train/lr(1e-3):1.949424798228239e-06
+Epoch 2/2:  98%|███████████████████████████████████████████████████████████████████████████████████▋ | 123/125 [12:38<00:12,  6.01s/it]step:249 - train/loss:0.6089028716087341 - train/lr(1e-3):4.87379953478806e-07
+Epoch 2/2:  99%|████████████████████████████████████████████████████████████████████████████████████▎| 124/125 [12:44<00:05,  5.99s/it]step:250 - train/loss:0.5836241245269775 - train/lr(1e-3):0.0
+step:250 - val/loss:0.5834625363349915
+Saving checkpoint to: /workspace/verl/backend/reTool/checkpoint/multiturn-sft-Qwen2.5-0.5B-Instruct/global_step_250
+[2025-07-31 14:50:14,935][/workspace/verl/verl/verl/utils/checkpoint/fsdp_checkpoint_manager.py][INFO] - [Rank 0] Saved model to /workspace/verl/backend/reTool/checkpoint/multiturn-sft-Qwen2.5-0.5B-Instruct/global_step_250/model_world_size_2_rank_0.pt
+[2025-07-31 14:50:15,230][/workspace/verl/verl/verl/utils/checkpoint/fsdp_checkpoint_manager.py][INFO] - [Rank 1] Saved model to /workspace/verl/backend/reTool/checkpoint/multiturn-sft-Qwen2.5-0.5B-Instruct/global_step_250/model_world_size_2_rank_1.pt
+[2025-07-31 14:50:18,218][/workspace/verl/verl/verl/utils/checkpoint/fsdp_checkpoint_manager.py][INFO] - [Rank 0] Saved optim to /workspace/verl/backend/reTool/checkpoint/multiturn-sft-Qwen2.5-0.5B-Instruct/global_step_250/optim_world_size_2_rank_0.pt
+[2025-07-31 14:50:18,220][/workspace/verl/verl/verl/utils/checkpoint/fsdp_checkpoint_manager.py][INFO] - [Rank 0] Saved extra_state to /workspace/verl/backend/reTool/checkpoint/multiturn-sft-Qwen2.5-0.5B-Instruct/global_step_250/extra_state_world_size_2_rank_0.pt
+[2025-07-31 14:50:18,393][/workspace/verl/verl/verl/utils/checkpoint/fsdp_checkpoint_manager.py][INFO] - [Rank 0] Saved model config and tokenizer class to /workspace/verl/backend/reTool/checkpoint/multiturn-sft-Qwen2.5-0.5B-Instruct/global_step_250/huggingface
+[2025-07-31 14:50:18,876][/workspace/verl/verl/verl/utils/checkpoint/fsdp_checkpoint_manager.py][INFO] - [Rank 1] Saved optim to /workspace/verl/backend/reTool/checkpoint/multiturn-sft-Qwen2.5-0.5B-Instruct/global_step_250/optim_world_size_2_rank_1.pt
+[2025-07-31 14:50:18,878][/workspace/verl/verl/verl/utils/checkpoint/fsdp_checkpoint_manager.py][INFO] - [Rank 1] Saved extra_state to /workspace/verl/backend/reTool/checkpoint/multiturn-sft-Qwen2.5-0.5B-Instruct/global_step_250/extra_state_world_size_2_rank_1.pt
+Saved dataloader state to: /workspace/verl/backend/reTool/checkpoint/multiturn-sft-Qwen2.5-0.5B-Instruct/global_step_250/data.pt
+Updated checkpoint tracker: /workspace/verl/backend/reTool/checkpoint/multiturn-sft-Qwen2.5-0.5B-Instruct/latest_checkpointed_iteration.txt
+Final validation metrics: {'val/loss': 0.5834625363349915}
+Epoch 2/2:  99%|████████████████████████████████████████████████████████████████████████████████████▎| 124/125 [16:00<00:07,  7.75s/it]
 ```
 
 训练时显卡状态
@@ -326,10 +344,7 @@ nvidia-smi
 +-----------------------------------------+------------------------+----------------------+
 ```
 
-
-* 启动基于 Qwen2.5-32B 的监督微调训练。
-
-### ✅ 微调后评估结果
+### ✅ 微调后评估结果(如何评估??)
 
 ```text
 val-core/aime_2025/acc/mean@30: 0.24
@@ -348,7 +363,7 @@ Retool 提供了两种 RL 策略：
 ### 🎯 GRPO（Generalized REINFORCE with Policy Optimization）
 
 ```bash
-bash recipe/retool/run_qwen2-32b_dapo.sh
+bash run_qwen2-05b_dapo.sh
 ```
 
 **评估结果（150步）**：
@@ -363,7 +378,7 @@ bash recipe/retool/run_qwen2-32b_dapo.sh
 ### 🤖 PPO（Proximal Policy Optimization）
 
 ```bash
-bash recipe/retool/run_qwen2-32b_ppo.sh
+bash recipe/retool/run_qwen2-05b_ppo.sh
 ```
 
 **评估结果（250步）**：
@@ -383,12 +398,3 @@ PPO 相比 GRPO 在该设置中略低，可能与超参或策略更新有关。
 | 强化学习     | GRPO | DAPO-Math-17k | `run_qwen2-32b_dapo.sh` | 0.6          | 10   |
 | 强化学习     | PPO  | DAPO-Math-17k | `run_qwen2-32b_ppo.sh`  | 0.55         | 8.3  |
 
-
-
-## 错误总结
-RuntimeError: cannot reshape tensor of 0 elements into shape [-1, 0] because the unspecified dimension size -1 can be any value and is ambiguous
-ulysses_sequence_parallel_size
-Ulysses 的序列并行维度 ulysses_sequence_parallel_size 超出了实际 GPU 数量，构建 device mesh 会失败。
-CUDA_VISIBLE_DEVICES=1,2  # 实际只有 2 块卡
-torchrun --nproc_per_node=2
-改成 ulysses_sequence_parallel_size=2

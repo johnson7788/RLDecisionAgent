@@ -219,3 +219,11 @@ model = AutoModelForCausalLM.from_pretrained(
     device_map="auto"
 )
 
+
+## 6. 并行GPU数量
+RuntimeError: cannot reshape tensor of 0 elements into shape [-1, 0] because the unspecified dimension size -1 can be any value and is ambiguous
+ulysses_sequence_parallel_size
+Ulysses 的序列并行维度 ulysses_sequence_parallel_size 超出了实际 GPU 数量，构建 device mesh 会失败。
+CUDA_VISIBLE_DEVICES=1,2  # 实际只有 2 块卡
+torchrun --nproc_per_node=2
+改成 ulysses_sequence_parallel_size=2
