@@ -35,7 +35,7 @@ messages = [
     {"role": "user", "content": prompt}
 ]
 
-# ✅ 构造工具 schema（注意 function schema 合法性）, 第一种tools格式和第2种tool格式，第一种比第2种更详细
+# ✅ 构造工具 schema（注意 function schema 合法性）, 第一种tools格式模型选择
 tools_first = [
     {
         "type": "function",
@@ -52,8 +52,8 @@ tools_first = [
         }
     }
 ]
-
-tools_second = [
+# Call的时候，输出参数
+tools_second_call = [
         {
           "function": {
             "arguments": {
