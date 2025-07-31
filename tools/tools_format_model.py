@@ -5,6 +5,14 @@
 # @Author: johnson
 # @Contact : github: johnson7788
 # @Desc  : 测试模型使用工具的格式
+# 输出示例
+# 🧠 模型响应内容：
+# <tool_call>
+# {"name": "math.sqrt", "arguments": {"num": "9384"}}
+# </tool_call>
+# <tool_call>
+# {"name": "pow", "arguments": {"base": "math.sqrt(9384)", "exponent": 9}}
+# </tool_call>
 
 
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -14,6 +22,7 @@ import torch
 model_name = "Qwen/Qwen2.5-0.5B-Instruct"
 model = AutoModelForCausalLM.from_pretrained(
     model_name,
+    sliding_window=None,
     torch_dtype="auto",
     device_map="auto"
 )
@@ -75,3 +84,4 @@ generated_ids = [
 response = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
 print("🧠 模型响应内容：\n")
 print(response)
+

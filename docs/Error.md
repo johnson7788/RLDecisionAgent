@@ -187,3 +187,19 @@ Root Cause (first observed failure):
   traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
 ============================================================
 ```
+
+## 5. Sliding Window Attention is enabled but not implemented for `sdpa`; unexpected results may be encountered.
+禁用
+from transformers import AutoModelForCausalLM
+model = AutoModelForCausalLM.from_pretrained(
+    "你的模型路径",
+    sliding_window=None
+)
+或者，代替默认 sdpa 后端，使用支持 sliding window 的实现
+model = AutoModelForCausalLM.from_pretrained(
+    "深度模型名称",
+    attn_implementation="flash_attention_2",
+    torch_dtype="torch.bfloat16",  # 或你模型指定的 dtype
+    device_map="auto"
+)
+
