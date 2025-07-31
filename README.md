@@ -26,7 +26,7 @@ docker start verl
 启动名为 verl 的容器（前面已经创建了，但还未运行）。
 
 ## 安装一些依赖
-cd verl
+cd /workspace/verl
 pip3 install --no-deps -e .
 镜像中已经安装sglang和vllm
 # pip freeze | grep sglang
