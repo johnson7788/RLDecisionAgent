@@ -139,8 +139,8 @@ if __name__ == "__main__":
 
     print(f"[main] Dataset loaded. Number of samples: {len(data)}")
 
-    # 只处理前几个样本用于观察结构
-    data = data.select(range(3))
+    # 打印的部分数据，只处理前100个样本用于观察结构或者测试
+    # data_print = data.select(range(100))
 
     print("\n[main] Processing dataset...")
     data = data.map(process, fn_kwargs={"tools": tools})
