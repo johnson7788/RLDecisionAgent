@@ -126,7 +126,7 @@ def process(row: dict, *, tools: str):
 
 
 if __name__ == "__main__":
-    tools_config_file = "recipe/retool/sandbox_fusion_tool_config.yaml"
+    tools_config_file = "./sandbox_fusion_tool_config.yaml"
     tools_config = OmegaConf.load(tools_config_file)
     tool_schema = OmegaConf.to_container(tools_config["tools"][0]["tool_schema"])
     tools = json.dumps([tool_schema])

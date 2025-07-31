@@ -3,7 +3,7 @@
 # 文档
 https://www.notion.so/verl-reTool-recipe-2398b5b7feba80a58156fa936f9f8de6
 
-# 数据
+# 1. 数据下载
 
 下载和处理数据BytedTsinghua-SIA/DAPO-Math-17k
 python3 examples/data_preprocess/dapo_multiturn_w_tool.py
@@ -56,7 +56,26 @@ Sample 2:
     }
 }
 ```
-
+# 数据处理
+export HF_ENDPOINT=https://hf-mirror.com
+python retool_sft_preprocess.py
+原理:
+```
+读取工具配置文件 sandbox_fusion_tool_config.yaml，构造 tool schema。
+加载 HuggingFace 数据集 JoeYing/ReTool-SFT。
+对每个样本 row 执行 process 函数，提取标准格式的 messages 列表：
+用户问题
+助手的解释和代码（带 tool_calls）
+工具执行结果（role=tool）
+助手最后的答案
+保存处理后的数据为 parquet 文件，用于训练或评估 downstream 模型。
+最终的文件保存为：
+wuxibin/ReTool-SFT/data/train-00000-of-00001.parquet
+```
+输出:
+```
+[process_output.md](process_output.md)
+```
 
 ## 📦 模型与数据
 
@@ -68,6 +87,14 @@ Sample 2:
 | Val dataset | [yentinglin/aime\_2025](https://huggingface.co/datasets/yentinglin/aime_2025) —— 用于评估模型的泛化能力。                       |
 
 ---
+
+# 下载模型
+```
+cd backend/reTool
+python
+from modelscope import snapshot_download
+snapshot_download('Qwen/Qwen2.5-0.5B-Instruct', local_dir='model/Qwen2.5-0.5B-Instruct')
+```
 
 ## 🚀 微调阶段（SFT）
 
