@@ -262,6 +262,71 @@ wuxibin/ReTool-SFT/data/train-00000-of-00001.parquet
 export CUDA_VISIBLE_DEVICES=1,2
 bash run_qwen2-05b_sft.sh
 ```
+输出信息:
+```
+bash run_qwen2-05b_sft.sh
++ export CUDA_VISIBLE_DEVICES=1,2
++ CUDA_VISIBLE_DEVICES=1,2
++ nnodes=1
++ nproc_per_node=2
++ experiment_name=multiturn-sft-Qwen2.5-0.5B-Instruct
++ HDFS_ROOT=/workspace/verl/backend/reTool
++ DATA_ROOT=/workspace/verl/backend/reTool
++ TRAIN_DATA=/workspace/verl/backend/reTool/wuxibin/ReTool-SFT/data/train-00000-of-00001.parquet
++ EVAL_DATA=/workspace/verl/backend/reTool/wuxibin/ReTool-SFT/data/train-00000-of-00001.parquet
++ MODEL_PATH=/workspace/verl/backend/reTool/model/Qwen2.5-0.5B-Instruct
++ SAVE_PATH=/workspace/verl/backend/reTool/checkpoint/multiturn-sft-Qwen2.5-0.5B-Instruct
++ torchrun --nnodes=1 --nproc_per_node=2 -m verl.trainer.fsdp_sft_trainer data.train_files=/workspace/verl/backend/reTool/wuxibin/ReTool-SFT/data/train-00000-of-00001.parquet data.val_files=/workspace/verl/backend/reTool/wuxibin/ReTool-SFT/data/train-00000-of-00001.parquet data.max_length=16384 data.train_batch_size=32 data.multiturn.enable=true data.multiturn.messages_key=messages data.multiturn.tools_key=tools data.micro_batch_size_per_gpu=4 model.partial_pretrain=/workspace/verl/backend/reTool/model/Qwen2.5-0.5B-Instruct model.strategy=fsdp trainer.default_local_dir=/workspace/verl/backend/reTool/checkpoint/multiturn-sft-Qwen2.5-0.5B-Instruct trainer.project_name=wuxibin-multiturn-sft trainer.experiment_name=multiturn-sft-Qwen2.5-0.5B-Instruct 'trainer.logger=["console"]' trainer.total_epochs=6 ulysses_sequence_parallel_size=2 use_remove_padding=true
+W0731 14:17:26.174000 2038 torch/distributed/run.py:792]
+W0731 14:17:26.174000 2038 torch/distributed/run.py:792] *****************************************
+W0731 14:17:26.174000 2038 torch/distributed/run.py:792] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed.
+W0731 14:17:26.174000 2038 torch/distributed/run.py:792] *****************************************
+Flash Attention 2.0 only supports torch.float16 and torch.bfloat16 dtypes, but the current dype in Qwen2ForCausalLM is torch.float32. You should run training or inference using Automatic Mixed-Precision via the `with torch.autocast(device_type='torch_device'):` decorator, or load the model with the `torch_dtype` argument. Example: `model = AutoModel.from_pretrained("openai/whisper-tiny", attn_implementation="flash_attention_2", torch_dtype=torch.float16)`
+You are attempting to use Flash Attention 2.0 with a model not initialized on GPU. Make sure to move the model to GPU after initializing it on CPU with `model.to('cuda')`.
+Monkey patch _flash_attention_forward in transformers.integrations.flash_attention
+Skipping monkey patch for Qwen2ForCausalLM as use_fused_kernels is False or fused_kernels_backend is None
+Normalize batch size by dp 1
+Using sequence parallel size: 2
+Using remove padding: True
+Using SP rank 0 and size 1 for data distribution
+Each SP rank gets different data, but the same data WITHIN the same rank
+Using FSDP rank 0 and size 1 for data distribution
+Flash Attention 2.0 only supports torch.float16 and torch.bfloat16 dtypes, but the current dype in Qwen2ForCausalLM is torch.float32. You should run training or inference using Automatic Mixed-Precision via the `with torch.autocast(device_type='torch_device'):` decorator, or load the model with the `torch_dtype` argument. Example: `model = AutoModel.from_pretrained("openai/whisper-tiny", attn_implementation="flash_attention_2", torch_dtype=torch.float16)`
+You are attempting to use Flash Attention 2.0 with a model not initialized on GPU. Make sure to move the model to GPU after initializing it on CPU with `model.to('cuda')`.
+Monkey patch _flash_attention_forward in transformers.integrations.flash_attention
+Skipping monkey patch for Qwen2ForCausalLM as use_fused_kernels is False or fused_kernels_backend is None
+functools.partial(<function _or_policy at 0x7ee4c8fe88b0>, policies=[functools.partial(<function transformer_auto_wrap_policy at 0x7ee4c8fe8790>, transformer_layer_cls={<class 'transformers.models.qwen2.modeling_qwen2.Qwen2DecoderLayer'>})])
+NCCL version 2.21.5+cuda12.4
+Number of steps/epoch 62, number of epochs 6, total number of steps 372
+{'data': {'train_batch_size': 32, 'micro_batch_size': None, 'micro_batch_size_per_gpu': 4, 'train_files': '/workspace/verl/backend/reTool/wuxibin/ReTool-SFT/data/train-00000-of-00001.parquet', 'val_files': '/workspace/verl/backend/reTool/wuxibin/ReTool-SFT/data/train-00000-of-00001.parquet', 'prompt_key': 'question', 'response_key': 'answer', 'prompt_dict_keys': None, 'response_dict_keys': None, 'multiturn': {'enable': True, 'messages_key': 'messages', 'tools_key': 'tools', 'enable_thinking_key': 'enable_thinking'}, 'max_length': 16384, 'truncation': 'error', 'balance_dp_token': False, 'chat_template': None, 'custom_cls': {'path': None, 'name': None}, 'use_shm': False}, 'model': {'partial_pretrain': '/workspace/verl/backend/reTool/model/Qwen2.5-0.5B-Instruct', 'use_shm': False, 'fsdp_config': {'model_dtype': 'fp32', 'wrap_policy': {'min_num_params': 0}, 'cpu_offload': False, 'offload_params': False}, 'external_lib': None, 'enable_gradient_checkpointing': True, 'trust_remote_code': False, 'lora_rank': 0, 'lora_alpha': 16, 'target_modules': 'all-linear', 'use_liger': False, 'strategy': 'fsdp'}, 'optim': {'lr': 1e-05, 'betas': [0.9, 0.95], 'weight_decay': 0.01, 'warmup_steps_ratio': 0.1, 'clip_grad': 1.0, 'lr_scheduler': 'cosine'}, 'ulysses_sequence_parallel_size': 2, 'use_remove_padding': True, 'trainer': {'default_local_dir': '/workspace/verl/backend/reTool/checkpoint/multiturn-sft-Qwen2.5-0.5B-Instruct', 'default_hdfs_dir': None, 'project_name': 'wuxibin-multiturn-sft', 'experiment_name': 'multiturn-sft-Qwen2.5-0.5B-Instruct', 'total_epochs': 6, 'total_training_steps': None, 'logger': ['console'], 'seed': 1, 'save_freq': -1, 'test_freq': -1, 'nnodes': 1, 'n_gpus_per_node': 8, 'max_ckpt_to_keep': None, 'resume_mode': 'auto', 'resume_from_path': None, 'checkpoint': {'save_contents': ['model', 'optimizer', 'extra'], 'load_contents': '${trainer.checkpoint.save_contents}'}, 'device': 'cuda'}}
+Epoch 1/6:   0%|                                                                                                | 0/62 [00:00<?, ?it/s]step:1 - train/loss:1.0605114698410034 - train/lr(1e-3):0.0002702702702702703
+Epoch 1/6:   2%|█▍                                                                                      | 1/62 [00:09<09:36,  9.45s/it]step:2 - train/loss:1.0065364837646484 - train/lr(1e-3):0.0005405405405405405
+Epoch 1/6:   3%|██▊                                                                                     | 2/62 [00:16<08:03,  8.06s/it]step:3 - train/loss:1.01118004322052 - train/lr(1e-3):0.0008108108108108109
+Epoch 1/6:   5%|████▎                                                                                   | 3/62 [00:23<07:21,  7.48s/it]step:4 - train/loss:1.0045815706253052 - train/lr(1e-3):0.001081081081081081
+Epoch 1/6:   6%|█████▋                                                                                  | 4/62 [00:31<07:27,  7.71s/it]step:5 - train/loss:0.9921297430992126 - train/lr(1e-3):0.0013513513513513514
+Epoch 1/6:   8%|███████                                                                                 | 5/62 [00:38<07:01,  7.40s/it]step:6 - train/loss:0.8889124989509583 - train/lr(1e-3):0.0016216216216216218
+Epoch 1/6:  10%|████████▌                                                                               | 6/62 [00:45<06:47,  7.27s/it]step:7 - train/loss:1.0498483180999756 - train/lr(1e-3):0.0018918918918918923
+Epoch 1/6:  11%|█████████▉                                                                              | 7/62 [00:52<06:38,  7.24s/it]step:8 - train/loss:0.913988471031189 - train/lr(1e-3):0.002162162162162162
+Epoch 1/6:  13%|███████████▎                                                                            | 8/62 [00:59<06:24,  7.11s/it]step:9 - train/loss:0.9712172150611877 - train/lr(1e-3):0.0024324324324324327
+Epoch 1/6:  15%|████████████▊                                                                           | 9/62 [01:06<06:18,  7.13s/it]step:10 - train/loss:0.8903839588165283 - train/lr(1e-3):0.002702702702702703
+Epoch 1/6:  16%|██████████████                                                                         | 10/62 [01:13<06:05,  7.03s/it]
+```
+
+训练时显卡状态
+```
+nvidia-smi
++-----------------------------------------+------------------------+----------------------+
+|   1  NVIDIA GeForce RTX 4090 D      Off |   00000000:0D:00.0 Off |                  Off |
+| 30%   58C    P2            160W /  425W |   22877MiB /  24564MiB |     90%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+|   2  NVIDIA GeForce RTX 4090 D      Off |   00000000:0E:00.0 Off |                  Off |
+| 30%   60C    P2            159W /  425W |   22445MiB /  24564MiB |     94%      Default |
+|                                         |                        |                  N/A |
++-----------------------------------------+------------------------+----------------------+
+```
+
+
 * 启动基于 Qwen2.5-32B 的监督微调训练。
 
 ### ✅ 微调后评估结果
