@@ -150,7 +150,7 @@ python retool_sft_preprocess.py
 工具执行结果（role=tool）
 助手最后的答案
 保存处理后的数据为 parquet 文件，用于训练或评估 downstream 模型。
-最终的文件保存为：
+最终的文件保存为当前目录下的：
 wuxibin/ReTool-SFT/data/train-00000-of-00001.parquet
 ```
 输出:
