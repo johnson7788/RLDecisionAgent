@@ -116,7 +116,7 @@ python3 -m verl.trainer.main_ppo \
     trainer.n_gpus_per_node=$ARNOLD_WORKER_GPU \
     trainer.val_before_train=True \
     trainer.log_val_generations=100 \
-    trainer.nnodes=$ARNOLD_WORKER_NUM \
+    trainer.nnodes=1 \
     trainer.save_freq=30 \
     trainer.default_local_dir=$default_local_dir \
     trainer.test_freq=5 \

@@ -63,9 +63,9 @@ python3 -m verl.trainer.main_ppo \
     data.max_response_length=$max_response_length \
     data.filter_overlong_prompts=True \
     data.truncation='error' \
-    data.custom_cls.path=recipe/retool/retool.py \
+    data.custom_cls.path=retool.py \
     data.custom_cls.name=CustomRLHFDataset \
-    custom_reward_function.path=recipe/retool/retool.py \
+    custom_reward_function.path=retool.py \
     custom_reward_function.name=compute_score \
     actor_rollout_ref.model.path=$model_path \
     actor_rollout_ref.model.use_remove_padding=True \
@@ -102,7 +102,7 @@ python3 -m verl.trainer.main_ppo \
     trainer.n_gpus_per_node=$ARNOLD_WORKER_GPU \
     trainer.val_before_train=True \
     trainer.log_val_generations=100 \
-    trainer.nnodes=$ARNOLD_WORKER_NUM \
+    trainer.nnodes=1 \
     trainer.save_freq=30 \
     trainer.default_local_dir=$default_local_dir \
     trainer.test_freq=5 \

@@ -234,3 +234,28 @@ HTTP_PROXY=http://192.168.100.8:7890
 HTTPS_PROXY=http://192.168.100.8:7890
 http_proxy=http://192.168.100.8:7890
 https_proxy=http://192.168.100.8:7890
+
+
+## 8. trainer nnodes报错，检查$ARNOLD_WORKER_NUM是否有值
+ray.exceptions.RayTaskError(TypeError): ray::TaskRunner.run() (pid=51454, ip=192.168.100.8, actor_id=25af338a4901e3bf7de0eafb01000000, repr=<main_ppo.TaskRunner object at 0x73c820168850>)
+  File "/workspace/verl/verl/verl/trainer/main_ppo.py", line 182, in run
+    global_pool_id: [config.trainer.n_gpus_per_node] * config.trainer.nnodes,
+TypeError: can't multiply sequence by non-int of type 'str'
+
+trainer.nnodes=$ARNOLD_WORKER_NUM 
+
+
+## 9. 报错,Reward函数没有找到
+ray.exceptions.RayTaskError(FileNotFoundError): ray::TaskRunner.run() (pid=57583, ip=192.168.100.8, actor_id=21407495e89bd14ae1d0a83e01000000, repr=<main_ppo.TaskRunner object at 0x7f17c7364910>)
+  File "/workspace/verl/verl/verl/trainer/main_ppo.py", line 211, in run
+    reward_fn = load_reward_manager(
+  File "/workspace/verl/verl/verl/trainer/ppo/reward.py", line 111, in load_reward_manager
+    compute_score = get_custom_reward_fn(config)
+  File "/workspace/verl/verl/verl/trainer/ppo/reward.py", line 62, in get_custom_reward_fn
+    raise FileNotFoundError(f"Reward function file '{file_path}' not found.")
+FileNotFoundError: Reward function file 'recipe/retool/retool.py' not found.
+
+去掉retool.py前面的路径
+data.custom_cls.path=retool.py \
+    data.custom_cls.name=CustomRLHFDataset \
+    custom_reward_function.path=retool.py \
