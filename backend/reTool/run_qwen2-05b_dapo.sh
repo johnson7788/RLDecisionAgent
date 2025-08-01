@@ -7,8 +7,8 @@ export CUDA_VISIBLE_DEVICES=1,2
 HDFS_ROOT=${HDFS_ROOT:-$PWD}
 DATA_ROOT=${DATA_ROOT:-$PWD}
 
-dapo_math_17k=$DATA_ROOT/dataset/BytedTsinghua
-aime_2024=$DATA_ROOT/dataset/Maxwell
+dapo_math_17k=$DATA_ROOT/dataset/BytedTsinghua/train
+aime_2024=$DATA_ROOT/dataset/Maxwell/validation
 model_path=$HDFS_ROOT/checkpoint/multiturn-sft-Qwen2.5-0.5B-Instruct/global_step_250/huggingface
 
 train_files="['$dapo_math_17k']"
@@ -38,8 +38,6 @@ max_prompt_length=2048
 max_response_length=16384
 actor_lr=1e-6
 
-train_batch_size=512
-ppo_mini_batch_size=64
 n_resp_per_prompt=16
 n_resp_per_prompt_val=30
 
@@ -58,7 +56,7 @@ python3 -m verl.trainer.main_ppo \
     data.train_files="$train_files" \
     data.val_files="$test_files" \
     data.return_raw_chat=True \
-    data.train_batch_size=$train_batch_size \
+    data.train_batch_size=16 \
     data.max_prompt_length=$max_prompt_length \
     data.max_response_length=$max_response_length \
     data.filter_overlong_prompts=True \
@@ -77,7 +75,7 @@ python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.actor.clip_ratio_c=10.0 \
     actor_rollout_ref.actor.optim.lr=$actor_lr \
     actor_rollout_ref.actor.use_dynamic_bsz=True \
-    actor_rollout_ref.actor.ppo_mini_batch_size=$ppo_mini_batch_size \
+    actor_rollout_ref.actor.ppo_mini_batch_size=8 \
     actor_rollout_ref.actor.ppo_max_token_len_per_gpu=$actor_max_token_len_per_gpu \
     actor_rollout_ref.actor.ulysses_sequence_parallel_size=$train_sp \
     actor_rollout_ref.actor.fsdp_config.param_offload=$offload \
@@ -99,7 +97,7 @@ python3 -m verl.trainer.main_ppo \
     trainer.logger=['console'] \
     trainer.project_name=$project_name \
     trainer.experiment_name=$experiment_name \
-    trainer.n_gpus_per_node=$ARNOLD_WORKER_GPU \
+    trainer.n_gpus_per_node=1 \
     trainer.val_before_train=True \
     trainer.log_val_generations=100 \
     trainer.nnodes=1 \

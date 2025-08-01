@@ -42,8 +42,8 @@ gae_lam=1.0
 
 critic_warmup=20
 
-train_batch_size=1024
-ppo_mini_batch_size=256
+train_batch_size=32
+ppo_mini_batch_size=16
 n_resp_per_prompt_val=30
 
 # ================= perfomance =================
@@ -113,7 +113,7 @@ python3 -m verl.trainer.main_ppo \
     trainer.logger=['console'] \
     trainer.project_name=$project_name \
     trainer.experiment_name=$experiment_name \
-    trainer.n_gpus_per_node=$ARNOLD_WORKER_GPU \
+    trainer.n_gpus_per_node=1 \
     trainer.val_before_train=True \
     trainer.log_val_generations=100 \
     trainer.nnodes=1 \

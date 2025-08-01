@@ -297,3 +297,26 @@ datasets==4.0.0
 
 pip freeze | grep datasets
 datasets==3.6.0
+
+## 11.训练代码报错，检查下trainer.n_gpus_per_node的值是否不为空
+Traceback (most recent call last):
+  File "/workspace/verl/verl/verl/trainer/main_ppo.py", line 40, in main
+    run_ppo(config)
+  File "/workspace/verl/verl/verl/trainer/main_ppo.py", line 77, in run_ppo
+    ray.get(runner.run.remote(config))
+  File "/usr/local/lib/python3.10/dist-packages/ray/_private/auto_init_hook.py", line 21, in auto_init_wrapper
+    return fn(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/ray/_private/client_mode_hook.py", line 103, in wrapper
+    return func(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/ray/_private/worker.py", line 2822, in get
+    values, debugger_breakpoint = worker.get_objects(object_refs, timeout=timeout)
+  File "/usr/local/lib/python3.10/dist-packages/ray/_private/worker.py", line 930, in get_objects
+    raise value.as_instanceof_cause()
+ray.exceptions.RayTaskError(TypeError): ray::TaskRunner.run() (pid=109884, ip=192.168.100.8, actor_id=784a0f42f766c312b7850c1b01000000, repr=<main_ppo.TaskRunner object at 0x762381f4c910>)
+  File "/workspace/verl/verl/verl/trainer/main_ppo.py", line 227, in run
+    trainer = RayPPOTrainer(
+  File "/workspace/verl/verl/verl/trainer/ppo/ray_trainer.py", line 384, in __init__
+    self._validate_config()
+  File "/workspace/verl/verl/verl/trainer/ppo/ray_trainer.py", line 411, in _validate_config
+    assert real_train_batch_size % minimal_bsz == 0, (
+TypeError: unsupported operand type(s) for %: 'int' and 'str'
