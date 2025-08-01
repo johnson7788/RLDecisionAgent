@@ -7,13 +7,12 @@ export CUDA_VISIBLE_DEVICES=1,2
 HDFS_ROOT=${HDFS_ROOT:-$PWD}
 DATA_ROOT=${DATA_ROOT:-$PWD}
 
-dapo_math_17k=$DATA_ROOT/dataset/BytedTsinghua-SIA/DAPO-Math-17k
-aime_2024=$DATA_ROOT/dataset/Maxwell-Jia/AIME_2024
-aime_2025=$DATA_ROOT/dataset/yentinglin/aime_2025
+dapo_math_17k=$DATA_ROOT/dataset/BytedTsinghua
+aime_2024=$DATA_ROOT/dataset/Maxwell
 model_path=$HDFS_ROOT/checkpoint/multiturn-sft-Qwen2.5-0.5B-Instruct/global_step_250/huggingface
 
 train_files="['$dapo_math_17k']"
-test_files="['$aime_2025']"
+test_files="['$aime_2024']"
 
 # tool
 tool_config_path=recipe/retool/sandbox_fusion_tool_config.yaml
