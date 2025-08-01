@@ -33,6 +33,6 @@ torchrun --nnodes=$nnodes \
     trainer.experiment_name=$experiment_name \
     trainer.logger='["console"]' \
     trainer.total_epochs=2 \
-    trainer.save_freq=1 \
+    trainer.save_freq=-1 \
     ulysses_sequence_parallel_size=2 \
     use_remove_padding=true
