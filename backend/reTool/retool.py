@@ -70,6 +70,7 @@ class CustomRLHFDataset(RLHFDataset):
         dataframes = []
         for parquet_file in self.data_files:
             # read parquet files and cache
+            print(f"加载parquet_file: {parquet_file}")
             dataframe = datasets.load_dataset(parquet_file)["train"]
             data_source = "/".join(parquet_file.split("/")[-2:])
             if data_source in ["Maxwell-Jia/AIME_2024", "yentinglin/aime_2025"]:
