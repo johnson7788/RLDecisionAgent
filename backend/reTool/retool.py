@@ -11,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import argparse
+import os
 import logging
 import re
 from typing import Any
@@ -118,3 +120,32 @@ def compute_score(data_source, solution_str, ground_truth, extra_info):
         result["pred"] = ""
 
     return result
+
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--data_dir", default="dataset/Maxwell", help="List of directories containing parquet datasets (e.g., Maxwell, BytedTsinghua)")
+    parser.add_argument("--split", default="validation", choices=["train", "validation", "test"], help="Dataset split to load")
+    args = parser.parse_args()
+
+    # 构造 data_files，例如 Maxwell/validation/data.parquet
+    data_files = []
+    data_dir = args.data_dir
+    parquet_path = os.path.join(data_dir, args.split, "data.parquet")
+    if not os.path.exists(parquet_path):
+        raise FileNotFoundError(f"Parquet file not found: {parquet_path}")
+    data_files.append(parquet_path)
+
+    # 加载 RLHF 数据集, 缺少tokenizer和config
+    dataset = CustomRLHFDataset(data_files=data_files)
+    dataset._read_files_and_tokenize()
+
+    # 打印几条样本
+    for i in range(min(3, len(dataset.dataframe))):
+        print(f"Sample {i}:")
+        print(dataset.dataframe[i])
+        print()
+
+if __name__ == "__main__":
+    main()

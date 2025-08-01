@@ -58,7 +58,9 @@ if __name__ == "__main__":
 
     local_dir = args.local_dir
     hdfs_dir = args.hdfs_dir
-    save_path = os.path.join(local_dir, "train.parquet")
+    local_dir = os.path.join(local_dir, "train")
+    os.makedirs(local_dir, exist_ok=True)
+    save_path = os.path.join(local_dir, "data.parquet")
     train_dataset.to_parquet(save_path)
     print(f"保存{len(train_dataset)}条数据到{save_path}")
     for i in range(3):

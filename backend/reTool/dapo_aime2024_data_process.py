@@ -194,7 +194,9 @@ if __name__ == "__main__":
 
     local_dir = args.local_dir
     hdfs_dir = args.hdfs_dir
-    save_path = os.path.join(local_dir, "test.parquet")
+    local_dir = os.path.join(args.local_dir, "validation")  # 保存为 validation split
+    os.makedirs(local_dir, exist_ok=True)
+    save_path = os.path.join(local_dir, "data.parquet")
     print(f"保存{args.tasks}数据{len(test_dataset)}条到: {save_path}")
     test_dataset.to_parquet(save_path)
 
