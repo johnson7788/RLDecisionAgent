@@ -320,3 +320,64 @@ ray.exceptions.RayTaskError(TypeError): ray::TaskRunner.run() (pid=109884, ip=19
   File "/workspace/verl/verl/verl/trainer/ppo/ray_trainer.py", line 411, in _validate_config
     assert real_train_batch_size % minimal_bsz == 0, (
 TypeError: unsupported operand type(s) for %: 'int' and 'str'
+
+## 12.训练报错， train_sp=2 模型并行需要和GPU数量一致
+(WorkerDict pid=136980) Exception raised in creation task: The actor died because of an error raised in its creation task, ray::s6M6paWorkerDict_0:0:WorkerDict.__init__() (pid=136980, ip=192.168.100.8, actor_id=802ec5a7e3e04c21babf95d701000000, repr=<verl.single_controller.ray.base.WorkerDict object at 0x721457a7cc70>)
+(WorkerDict pid=136980)   File "/usr/lib/python3.10/concurrent/futures/_base.py", line 451, in result
+(WorkerDict pid=136980)     return self.__get_result()
+(WorkerDict pid=136980)   File "/usr/lib/python3.10/concurrent/futures/_base.py", line 403, in __get_result
+(WorkerDict pid=136980)     raise self._exception
+(WorkerDict pid=136980)   File "/workspace/verl/verl/verl/single_controller/ray/base.py", line 799, in __init__
+(WorkerDict pid=136980)     self.worker_dict[key] = user_defined_cls(
+(WorkerDict pid=136980)   File "/workspace/verl/verl/verl/workers/fsdp_workers.py", line 140, in __init__
+(WorkerDict pid=136980)     self.ulysses_device_mesh = init_device_mesh(
+(WorkerDict pid=136980)   File "/usr/local/lib/python3.10/dist-packages/torch/distributed/device_mesh.py", line 1003, in init_device_mesh
+(WorkerDict pid=136980)     device_mesh = DeviceMesh(
+(WorkerDict pid=136980)   File "/usr/local/lib/python3.10/dist-packages/torch/distributed/device_mesh.py", line 453, in __init__
+(WorkerDict pid=136980)     self._init_process_groups()
+(WorkerDict pid=136980)   File "/usr/local/lib/python3.10/dist-packages/torch/distributed/device_mesh.py", line 530, in _init_process_groups
+(WorkerDict pid=136980)     pg_ranks_by_dim = self.mesh.swapdims(-1, dim).reshape(
+(WorkerDict pid=136980) RuntimeError: cannot reshape tensor of 0 elements into shape [-1, 0] because the unspecified dimension size -1 can be any value and is ambiguous
+Traceback (most recent call last):
+  File "/workspace/verl/verl/verl/trainer/main_ppo.py", line 40, in main
+    run_ppo(config)
+  File "/workspace/verl/verl/verl/trainer/main_ppo.py", line 77, in run_ppo
+    ray.get(runner.run.remote(config))
+  File "/usr/local/lib/python3.10/dist-packages/ray/_private/auto_init_hook.py", line 21, in auto_init_wrapper
+    return fn(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/ray/_private/client_mode_hook.py", line 103, in wrapper
+    return func(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/ray/_private/worker.py", line 2822, in get
+    values, debugger_breakpoint = worker.get_objects(object_refs, timeout=timeout)
+  File "/usr/local/lib/python3.10/dist-packages/ray/_private/worker.py", line 930, in get_objects
+    raise value.as_instanceof_cause()
+ray.exceptions.RayTaskError(ActorDiedError): ray::TaskRunner.run() (pid=134546, ip=192.168.100.8, actor_id=b7edf6d4d6e698cba0aa6a5b01000000, repr=<main_ppo.TaskRunner object at 0x70b02c530970>)
+  File "/workspace/verl/verl/verl/trainer/main_ppo.py", line 242, in run
+    trainer.init_workers()
+  File "/workspace/verl/verl/verl/trainer/ppo/ray_trainer.py", line 866, in init_workers
+    self.actor_rollout_wg.init_model()
+  File "/workspace/verl/verl/verl/single_controller/ray/base.py", line 50, in __call__
+    output = ray.get(output)
+ray.exceptions.ActorDiedError: The actor died because of an error raised in its creation task, ray::s6M6paWorkerDict_0:0:WorkerDict.__init__() (pid=136980, ip=192.168.100.8, actor_id=802ec5a7e3e04c21babf95d701000000, repr=<verl.single_controller.ray.base.WorkerDict object at 0x721457a7cc70>)
+  File "/usr/lib/python3.10/concurrent/futures/_base.py", line 451, in result
+    return self.__get_result()
+  File "/usr/lib/python3.10/concurrent/futures/_base.py", line 403, in __get_result
+    raise self._exception
+  File "/workspace/verl/verl/verl/single_controller/ray/base.py", line 799, in __init__
+    self.worker_dict[key] = user_defined_cls(
+  File "/workspace/verl/verl/verl/workers/fsdp_workers.py", line 140, in __init__
+    self.ulysses_device_mesh = init_device_mesh(
+  File "/usr/local/lib/python3.10/dist-packages/torch/distributed/device_mesh.py", line 1003, in init_device_mesh
+    device_mesh = DeviceMesh(
+  File "/usr/local/lib/python3.10/dist-packages/torch/distributed/device_mesh.py", line 453, in __init__
+    self._init_process_groups()
+  File "/usr/local/lib/python3.10/dist-packages/torch/distributed/device_mesh.py", line 530, in _init_process_groups
+    pg_ranks_by_dim = self.mesh.swapdims(-1, dim).reshape(
+RuntimeError: cannot reshape tensor of 0 elements into shape [-1, 0] because the unspecified dimension size -1 can be any value and is ambiguous
+
+## 13.报错
+  File "/usr/local/lib/python3.10/dist-packages/transformers/modeling_utils.py", line 4260, in from_pretrained
+    checkpoint_files, sharded_metadata = _get_resolved_checkpoint_files(
+  File "/usr/local/lib/python3.10/dist-packages/transformers/modeling_utils.py", line 952, in _get_resolved_checkpoint_files
+    raise EnvironmentError(
+OSError: Error no file named pytorch_model.bin, model.safetensors, tf_model.h5, model.ckpt.index or flax_model.msgpack found in directory /workspace/verl/backend/reTool/checkpoint/multiturn-sft-Qwen2.5-0.5B-Instruct/global_step_250/huggingface.

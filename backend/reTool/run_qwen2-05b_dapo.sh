@@ -43,7 +43,7 @@ n_resp_per_prompt_val=30
 
 # ================= perfomance =================
 infer_tp=4 # vllm
-train_sp=8 # train
+train_sp=2 # train
 offload=True
 
 actor_max_token_len_per_gpu=$(( (max_prompt_length + max_response_length) * 1 ))
@@ -77,7 +77,7 @@ python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.actor.use_dynamic_bsz=True \
     actor_rollout_ref.actor.ppo_mini_batch_size=8 \
     actor_rollout_ref.actor.ppo_max_token_len_per_gpu=$actor_max_token_len_per_gpu \
-    actor_rollout_ref.actor.ulysses_sequence_parallel_size=$train_sp \
+    actor_rollout_ref.actor.ulysses_sequence_parallel_size=2 \
     actor_rollout_ref.actor.fsdp_config.param_offload=$offload \
     actor_rollout_ref.actor.fsdp_config.optimizer_offload=$offload \
     actor_rollout_ref.ref.log_prob_max_token_len_per_gpu=$log_prob_max_token_len_per_gpu \
@@ -97,7 +97,7 @@ python3 -m verl.trainer.main_ppo \
     trainer.logger=['console'] \
     trainer.project_name=$project_name \
     trainer.experiment_name=$experiment_name \
-    trainer.n_gpus_per_node=1 \
+    trainer.n_gpus_per_node=2 \
     trainer.val_before_train=True \
     trainer.log_val_generations=100 \
     trainer.nnodes=1 \
