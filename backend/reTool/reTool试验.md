@@ -3,11 +3,11 @@
 # 文档
 https://www.notion.so/verl-reTool-recipe-2398b5b7feba80a58156fa936f9f8de6
 
-# 1. 数据下载
+# 1. 数据下载(这里用于强化学习训练的数据集)
 
 下载和处理数据BytedTsinghua-SIA/DAPO-Math-17k
 export HF_ENDPOINT=https://hf-mirror.com
-python3 examples/data_preprocess/dapo_multiturn_w_tool.py
+python3 dapo_multiturn_w_tool.py
 ```
 输出
 README.md: 100%|███████████████████████████████████████████████████████████████████████████████████████| 145/145 [00:00<00:00, 518kB/s]
@@ -94,7 +94,7 @@ snapshot_download('Qwen/Qwen2.5-0.5B-Instruct', local_dir='model/Qwen2.5-0.5B-In
 
 ## 🚀 微调阶段（SFT）
 
-### 2.1 数据预处理
+### 2.1 数据预处理(加载huggingface上的JoeYing/ReTool-SFT)
 
 * 从 `ReTool-SFT` 数据集中提取训练样本，可能包含用户输入、tool-calling 格式、ground truth 等。
 将 JoeYing/ReTool-SFT 数据集中原始的对话数据（包含 <code>、<interpreter>、<answer> 等标签）转换为标准的多轮工具调用格式（tool-calling messages）并存储为 .parquet 格式数据。

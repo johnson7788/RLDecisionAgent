@@ -26,12 +26,13 @@ from verl.utils.hdfs_io import copy, makedirs
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--local_dir", default="~/data/retool_dapo")
+    parser.add_argument("--local_dir", default="./dataset")
     parser.add_argument("--hdfs_dir", default=None)
 
     args = parser.parse_args()
 
-    data_path = "BytedTsinghua-SIA/DAPO-Math-17k"
+    # data_path = "BytedTsinghua-SIA/DAPO-Math-17k"
+    data_path = "Maxwell-Jia/AIME_2024"
     dataset = datasets.load_dataset(data_path, "default")
 
     train_dataset = dataset["train"]
