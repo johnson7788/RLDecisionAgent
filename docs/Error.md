@@ -259,3 +259,41 @@ FileNotFoundError: Reward function file 'recipe/retool/retool.py' not found.
 data.custom_cls.path=retool.py \
     data.custom_cls.name=CustomRLHFDataset \
     custom_reward_function.path=retool.py \
+
+
+## 10.报错， 
+    raise value.as_instanceof_cause()
+ray.exceptions.RayTaskError(ValueError): ray::TaskRunner.run() (pid=63702, ip=192.168.100.8, actor_id=2255078b5577b0a9ae53a50f01000000, repr=<main_ppo.TaskRunner object at 0x7ad4abf50970>)
+  File "/workspace/verl/verl/verl/trainer/main_ppo.py", line 222, in run
+    train_dataset = create_rl_dataset(config.data.train_files, config.data, tokenizer, processor, is_train=True)
+  File "/workspace/verl/verl/verl/trainer/main_ppo.py", line 287, in create_rl_dataset
+    dataset = dataset_cls(
+  File "/workspace/verl/verl/verl/utils/dataset/rl_dataset.py", line 121, in __init__
+    self._read_files_and_tokenize()
+  File "/workspace/verl/backend/reTool/retool.py", line 71, in _read_files_and_tokenize
+    dataframe = datasets.load_dataset(parquet_file)["train"]
+  File "/usr/local/lib/python3.10/dist-packages/datasets/load.py", line 2084, in load_dataset
+    builder_instance.download_and_prepare(
+  File "/usr/local/lib/python3.10/dist-packages/datasets/builder.py", line 925, in download_and_prepare
+    self._download_and_prepare(
+  File "/usr/local/lib/python3.10/dist-packages/datasets/builder.py", line 979, in _download_and_prepare
+    split_generators = self._split_generators(dl_manager, **split_generators_kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/datasets/packaged_modules/parquet/parquet.py", line 60, in _split_generators
+    self.info.features = datasets.Features.from_arrow_schema(pq.read_schema(f))
+  File "/usr/local/lib/python3.10/dist-packages/datasets/features/features.py", line 1850, in from_arrow_schema
+    metadata_features = Features.from_dict(metadata["info"]["features"])
+  File "/usr/local/lib/python3.10/dist-packages/datasets/features/features.py", line 1888, in from_dict
+    obj = generate_from_dict(dic)
+  File "/usr/local/lib/python3.10/dist-packages/datasets/features/features.py", line 1468, in generate_from_dict
+    return {key: generate_from_dict(value) for key, value in obj.items()}
+  File "/usr/local/lib/python3.10/dist-packages/datasets/features/features.py", line 1468, in <dictcomp>
+    return {key: generate_from_dict(value) for key, value in obj.items()}
+  File "/usr/local/lib/python3.10/dist-packages/datasets/features/features.py", line 1474, in generate_from_dict
+    raise ValueError(f"Feature type '{_type}' not found. Available feature types: {list(_FEATURE_TYPES.keys())}")
+ValueError: Feature type 'List' not found. Available feature types: ['Value', 'ClassLabel', 'Translation', 'TranslationVariableLanguages', 'LargeList', 'Sequence', 'Array2D', 'Array3D', 'Array4D', 'Array5D', 'Audio', 'Image', 'Video', 'Pdf']
+解决办法，使用相同的datasets
+pip freeze | grep datasets
+datasets==4.0.0
+
+pip freeze | grep datasets
+datasets==3.6.0
