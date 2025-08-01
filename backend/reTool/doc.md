@@ -250,3 +250,17 @@ log_prob_max_token_len_per_gpu=$(( actor_max_token_len_per_gpu * 4 ))
 
 9. **CUDA\_VISIBLE\_DEVICES**
    设置为`1,2`，但`trainer.n_gpus_per_node=2`，符合设置，但要确保机器上第1和第2号GPU状态良好。
+
+
+## SFT的模型输出结果，2张显卡
+```
+ls -R checkpoint/multiturn-sft-Qwen2.5-0.5B-Instruct/global_step_250/
+checkpoint/multiturn-sft-Qwen2.5-0.5B-Instruct/global_step_250/:
+data.pt                             fsdp_config.json              model_world_size_2_rank_1.pt
+extra_state_world_size_2_rank_0.pt  huggingface                   optim_world_size_2_rank_0.pt
+extra_state_world_size_2_rank_1.pt  model_world_size_2_rank_0.pt  optim_world_size_2_rank_1.pt
+
+checkpoint/multiturn-sft-Qwen2.5-0.5B-Instruct/global_step_250/huggingface:
+added_tokens.json  config.json  generation_config.json  merges.txt  special_tokens_map.json  tokenizer.json  tokenizer_config.json  vocab.json
+
+```

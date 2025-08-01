@@ -1,10 +1,10 @@
 #!/bin/bash
 set -x
 # 使用哪个显卡
-export CUDA_VISIBLE_DEVICES=1,2
+#export CUDA_VISIBLE_DEVICES=1,2
 
 nnodes=1
-nproc_per_node=2
+nproc_per_node=1
 
 experiment_name=multiturn-sft-Qwen2.5-0.5B-Instruct
 HDFS_ROOT=${HDFS_ROOT:-$PWD}
@@ -32,7 +32,7 @@ torchrun --nnodes=$nnodes \
     trainer.project_name=wuxibin-multiturn-sft \
     trainer.experiment_name=$experiment_name \
     trainer.logger='["console"]' \
-    trainer.total_epochs=2 \
+    trainer.total_epochs=1 \
     trainer.save_freq=-1 \
-    ulysses_sequence_parallel_size=2 \
+    ulysses_sequence_parallel_size=1 \
     use_remove_padding=true
