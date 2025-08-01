@@ -31,6 +31,7 @@ We create a train set and a val set. Both of them are used of SFT and RL. You ca
 
 To run the SFT
 ```bash
+export HF_ENDPOINT=https://hf-mirror.com
 bash train_sft.sh
 ```
 We train SFT for 3 epochs. After 3 epochs, the validation score is around 0.12.
