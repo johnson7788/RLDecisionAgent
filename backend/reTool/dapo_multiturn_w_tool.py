@@ -26,7 +26,7 @@ from verl.utils.hdfs_io import copy, makedirs
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--local_dir", default="./dataset")
+    parser.add_argument("--local_dir", default="./dataset/BytedTsinghua")
     parser.add_argument("--hdfs_dir", default=None)
 
     args = parser.parse_args()

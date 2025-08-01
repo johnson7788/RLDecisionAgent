@@ -173,7 +173,7 @@ SUPPORTED_TASKS = TASK2DATA.keys()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--local_dir", default="./dataset")
+    parser.add_argument("--local_dir", default="./dataset/Maxwell")
     parser.add_argument("--hdfs_dir", default=None)
     parser.add_argument("--tasks", default="aime2024")
 
