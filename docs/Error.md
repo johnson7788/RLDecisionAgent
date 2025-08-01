@@ -227,3 +227,10 @@ Ulysses 的序列并行维度 ulysses_sequence_parallel_size 超出了实际 GPU
 CUDA_VISIBLE_DEVICES=1,2  # 实际只有 2 块卡
 torchrun --nproc_per_node=2
 改成 ulysses_sequence_parallel_size=2
+
+## 7. 容器内的代理配置，配置成主机的代理接口
+ALL_PROXY=http://192.168.100.80:7890
+HTTP_PROXY=http://192.168.100.8:7890
+HTTPS_PROXY=http://192.168.100.8:7890
+http_proxy=http://192.168.100.8:7890
+https_proxy=http://192.168.100.8:7890

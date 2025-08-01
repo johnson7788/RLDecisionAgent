@@ -31,8 +31,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # data_path = "BytedTsinghua-SIA/DAPO-Math-17k"
-    data_path = "Maxwell-Jia/AIME_2024"
+    data_path = "BytedTsinghua-SIA/DAPO-Math-17k"
     dataset = datasets.load_dataset(data_path, "default")
 
     train_dataset = dataset["train"]
@@ -59,8 +58,9 @@ if __name__ == "__main__":
 
     local_dir = args.local_dir
     hdfs_dir = args.hdfs_dir
-
-    train_dataset.to_parquet(os.path.join(local_dir, "train.parquet"))
+    save_path = os.path.join(local_dir, "train.parquet")
+    train_dataset.to_parquet(save_path)
+    print(f"保存{len(train_dataset)}条数据到{save_path}")
     for i in range(3):
         print(f"Sample {i}:")
         print(train_dataset[i])

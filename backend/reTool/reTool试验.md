@@ -5,7 +5,7 @@ https://www.notion.so/verl-reTool-recipe-2398b5b7feba80a58156fa936f9f8de6
 
 # 1. 数据下载(这里用于强化学习训练的数据集)
 
-下载和处理数据BytedTsinghua-SIA/DAPO-Math-17k
+下载和处理强化学习训练数据BytedTsinghua-SIA/DAPO-Math-17k
 export HF_ENDPOINT=https://hf-mirror.com
 python3 dapo_multiturn_w_tool.py
 ```
@@ -16,10 +16,9 @@ Generating train split: 1791700 examples [00:03, 449608.47 examples/s]
 Map:  19%|██████████████▍                                                            | 345877/1791700 [00:46<03:03, 7857.80 examples/s]
 
 ```
-
-数据会下载到~/data/retool_dapo
+数据会下载到./dataset
 ```
-ls ~/data/retool_dapo
+ls ./dataset
 train.parquet
 ```
 
@@ -72,6 +71,10 @@ Sample 2:
     }
 }
 ```
+
+下载强化学习测试数据，"Maxwell-Jia/AIME_2024"
+export HF_ENDPOINT=https://hf-mirror.com
+python dapo_aime2024_data_process.py
 
 ## 📦 模型与数据
 
