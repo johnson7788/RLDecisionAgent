@@ -382,7 +382,7 @@ RuntimeError: cannot reshape tensor of 0 elements into shape [-1, 0] because the
     raise EnvironmentError(
 OSError: Error no file named pytorch_model.bin, model.safetensors, tf_model.h5, model.ckpt.index or flax_model.msgpack found in directory /workspace/verl/backend/reTool/checkpoint/multiturn-sft-Qwen2.5-0.5B-Instruct/global_step_250/huggingface.
 
-## 14. PPO训练时报错
+## 14. PPO训练时报错，显存不足，指定显卡或者清理显存。 export CUDA_VISIBLE_DEVICES=1,2
 Traceback (most recent call last):
   File "/workspace/verl/verl/verl/trainer/main_ppo.py", line 40, in main
     run_ppo(config)
