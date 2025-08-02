@@ -36,6 +36,16 @@ bash train_sft.sh
 ```
 We train SFT for 3 epochs. After 3 epochs, the validation score is around 0.12.
 
+合并FSDP训练后的模型
+```
+python /workspace/verl/verl/scripts/legacy_model_merger.py merge \
+    --backend fsdp \
+    --local_dir models/sft/global_step_105 \
+    --target_dir models/merged_hf_model
+```
+导出后的模型:
+models/merged_hf_model
+
 To run GRPO
 ```bash
 bash train_grpo.sh

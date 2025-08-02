@@ -381,3 +381,61 @@ RuntimeError: cannot reshape tensor of 0 elements into shape [-1, 0] because the
   File "/usr/local/lib/python3.10/dist-packages/transformers/modeling_utils.py", line 952, in _get_resolved_checkpoint_files
     raise EnvironmentError(
 OSError: Error no file named pytorch_model.bin, model.safetensors, tf_model.h5, model.ckpt.index or flax_model.msgpack found in directory /workspace/verl/backend/reTool/checkpoint/multiturn-sft-Qwen2.5-0.5B-Instruct/global_step_250/huggingface.
+
+## 14. PPO训练时报错
+Traceback (most recent call last):
+  File "/workspace/verl/verl/verl/trainer/main_ppo.py", line 40, in main
+    run_ppo(config)
+  File "/workspace/verl/verl/verl/trainer/main_ppo.py", line 77, in run_ppo
+    ray.get(runner.run.remote(config))
+  File "/usr/local/lib/python3.10/dist-packages/ray/_private/auto_init_hook.py", line 21, in auto_init_wrapper
+    return fn(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/ray/_private/client_mode_hook.py", line 103, in wrapper
+    return func(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/ray/_private/worker.py", line 2822, in get
+    values, debugger_breakpoint = worker.get_objects(object_refs, timeout=timeout)
+  File "/usr/local/lib/python3.10/dist-packages/ray/_private/worker.py", line 930, in get_objects
+    raise value.as_instanceof_cause()
+ray.exceptions.RayTaskError(ValueError): ray::TaskRunner.run() (pid=239082, ip=192.168.100.8, actor_id=694a55ad70568964cb986ed701000000, repr=<main_ppo.TaskRunner object at 0x7241c1b089d0>)
+  File "/workspace/verl/verl/verl/trainer/main_ppo.py", line 242, in run
+    trainer.init_workers()
+  File "/workspace/verl/verl/verl/trainer/ppo/ray_trainer.py", line 866, in init_workers
+    self.actor_rollout_wg.init_model()
+  File "/workspace/verl/verl/verl/single_controller/ray/base.py", line 50, in __call__
+    output = ray.get(output)
+ray.exceptions.RayTaskError(ValueError): ray::WorkerDict.actor_rollout_init_model() (pid=239450, ip=192.168.100.8, actor_id=415e97a811c421b11a495d6b01000000, repr=<verl.single_controller.ray.base.WorkerDict object at 0x792471eca680>)
+  File "/workspace/verl/verl/verl/single_controller/ray/base.py", line 720, in func
+    return getattr(self.worker_dict[key], name)(*args, **kwargs)
+  File "/workspace/verl/verl/verl/single_controller/base/decorator.py", line 514, in inner
+    return func(*args, **kwargs)
+  File "/workspace/verl/verl/verl/workers/fsdp_workers.py", line 628, in init_model
+    self.rollout, self.rollout_sharding_manager = self._build_rollout(
+  File "/workspace/verl/verl/verl/workers/fsdp_workers.py", line 501, in _build_rollout
+    rollout = vllm_rollout_cls(
+  File "/workspace/verl/verl/verl/workers/rollout/vllm_rollout/vllm_rollout_spmd.py", line 166, in __init__
+    self.inference_engine = LLM(
+  File "/usr/local/lib/python3.10/dist-packages/vllm/utils.py", line 1161, in inner
+    return fn(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/vllm/entrypoints/llm.py", line 247, in __init__
+    self.llm_engine = LLMEngine.from_engine_args(
+  File "/usr/local/lib/python3.10/dist-packages/vllm/engine/llm_engine.py", line 510, in from_engine_args
+    return engine_cls.from_vllm_config(
+  File "/usr/local/lib/python3.10/dist-packages/vllm/v1/engine/llm_engine.py", line 112, in from_vllm_config
+    return cls(vllm_config=vllm_config,
+  File "/usr/local/lib/python3.10/dist-packages/vllm/v1/engine/llm_engine.py", line 92, in __init__
+    self.engine_core = EngineCoreClient.make_client(
+  File "/usr/local/lib/python3.10/dist-packages/vllm/v1/engine/core_client.py", line 75, in make_client
+    return InprocClient(vllm_config, executor_class, log_stats)
+  File "/usr/local/lib/python3.10/dist-packages/vllm/v1/engine/core_client.py", line 198, in __init__
+    self.engine_core = EngineCore(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/vllm/v1/engine/core.py", line 71, in __init__
+    self._initialize_kv_caches(vllm_config)
+  File "/usr/local/lib/python3.10/dist-packages/vllm/v1/engine/core.py", line 133, in _initialize_kv_caches
+    kv_cache_configs = [
+  File "/usr/local/lib/python3.10/dist-packages/vllm/v1/engine/core.py", line 134, in <listcomp>
+    get_kv_cache_config(vllm_config, kv_cache_spec_one_worker,
+  File "/usr/local/lib/python3.10/dist-packages/vllm/v1/core/kv_cache_utils.py", line 699, in get_kv_cache_config
+    check_enough_kv_cache_memory(vllm_config, kv_cache_spec, available_memory)
+  File "/usr/local/lib/python3.10/dist-packages/vllm/v1/core/kv_cache_utils.py", line 527, in check_enough_kv_cache_memory
+    raise ValueError("No available memory for the cache blocks. "
+ValueError: No available memory for the cache blocks. Try increasing `gpu_memory_utilization` when initializing the engine.
