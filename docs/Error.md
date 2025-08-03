@@ -439,3 +439,26 @@ ray.exceptions.RayTaskError(ValueError): ray::WorkerDict.actor_rollout_init_mode
   File "/usr/local/lib/python3.10/dist-packages/vllm/v1/core/kv_cache_utils.py", line 527, in check_enough_kv_cache_memory
     raise ValueError("No available memory for the cache blocks. "
 ValueError: No available memory for the cache blocks. Try increasing `gpu_memory_utilization` when initializing the engine.
+
+# 15.  PPO最后训练阶段报错
+0.011548247188329697 - critic/returns/max:2.4748666286468506 - critic/returns/min:-1.6201815605163574 - response_length/mean:87.4609375 - r
+esponse_length/max:128.0 - response_length/min:39.0 - response_length/clip_ratio:0.2265625 - prompt_length/mean:57.875 - prompt_length/max:
+73.0 - prompt_length/min:47.0 - prompt_length/clip_ratio:0.0 - timing_s/start_profile:0.00016492418944835663 - timing_s/generate_sequences:
+4.5007100105285645 - timing_s/reshard:0.33666151762008667 - timing_s/gen:5.458714358508587 - timing_s/reward:0.06054678000509739 - timing_s
+/old_log_prob:0.5929685160517693 - timing_s/adv:0.012546919286251068 - timing_s/update_actor:2.6866441518068314 - timing_s/testing:21.20649
+6983766556 - timing_s/step:30.030646292492747 - timing_s/stop_profile:9.175390005111694e-05 - timing_per_token_ms/gen:0.4876028904429287 -
+timing_per_token_ms/update_actor:0.1444199404293303 - timing_per_token_ms/adv:0.0006744567696743035 - perf/total_num_tokens:18603 - perf/ti
+me_per_step:30.030646292492747 - perf/throughput:619.4671875793262
+(TaskRunner pid=267532) ("Final validation metrics: {'val-aux/char_count/reward/mean@1': "
+(TaskRunner pid=267532)  "0.2008238928939238, 'val-aux/char_count/reward/mean@2': 0.0, "
+(TaskRunner pid=267532)  "'val-aux/char_count/reward/std@2': 0.0, "
+(TaskRunner pid=267532)  "'val-aux/char_count/reward/best@2/mean': 0.0, "
+(TaskRunner pid=267532)  "'val-aux/char_count/reward/best@2/std': 0.0, "
+(TaskRunner pid=267532)  "'val-aux/char_count/reward/worst@2/mean': 0.0, "
+(TaskRunner pid=267532)  "'val-aux/char_count/reward/worst@2/std': 0.0, "
+(TaskRunner pid=267532)  "'val-core/char_count/reward/mean@3': 0.0, 'val-aux/char_count/reward/std@3': "
+(TaskRunner pid=267532)  "0.0, 'val-core/char_count/reward/best@3/mean': 0.0, "
+(TaskRunner pid=267532)  "'val-core/char_count/reward/best@3/std': 0.0, "
+(TaskRunner pid=267532)  "'val-aux/char_count/reward/worst@3/mean': 0.0, "
+(TaskRunner pid=267532)  "'val-aux/char_count/reward/worst@3/std': 0.0}")
+(raylet) A worker died or was killed while executing a task by an unexpected system error. To troubleshoot the problem, check the logs for the dead worker. RayTask ID: ffffffffffffffffc90bbe1574830f10a33b147c01000000 Worker ID: f7ea96b1e8e804f578390a97c97d6bf28b5bc9fed13f0ef433e444c7 Node ID: cc69c4cc97291a2847bc91bcfbd1f19c419b6e6fbe86aad345f2f665 Worker IP address: 192.168.100.8 Worker port: 41497 Worker PID: 269812 Worker exit type: SYSTEM_ERROR Worker exit detail: Worker exits unexpectedly by a signal. SystemExit is raised (sys.exit is called). Exit code: 1. The process receives a SIGTERM.

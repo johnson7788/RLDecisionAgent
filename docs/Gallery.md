@@ -132,3 +132,11 @@ Prompt ─────────► Actor ────────────
 
 
 Maxwell-Jia/AIME_2024
+
+
+# verl配置文件路径
+[evaluation.yaml](..%2Fverl%2Fverl%2Ftrainer%2Fconfig%2Fevaluation.yaml)
+[generation.yaml](..%2Fverl%2Fverl%2Ftrainer%2Fconfig%2Fgeneration.yaml)
+[ppo_megatron_trainer.yaml](..%2Fverl%2Fverl%2Ftrainer%2Fconfig%2Fppo_megatron_trainer.yaml)
+[ppo_trainer.yaml](..%2Fverl%2Fverl%2Ftrainer%2Fconfig%2Fppo_trainer.yaml)
+[sft_trainer.yaml](..%2Fverl%2Fverl%2Ftrainer%2Fconfig%2Fsft_trainer.yaml)
