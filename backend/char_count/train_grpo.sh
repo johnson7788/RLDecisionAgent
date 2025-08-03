@@ -5,7 +5,7 @@ python3 -m verl.trainer.main_ppo \
     algorithm.adv_estimator=grpo \
     data.train_files=./char_count/rl/train.parquet \
     data.val_files=./char_count/rl/test.parquet \
-    data.train_batch_size=128 \
+    data.train_batch_size=16 \
     data.max_prompt_length=128 \
     data.max_response_length=128 \
     data.filter_overlong_prompts=False \
@@ -13,7 +13,7 @@ python3 -m verl.trainer.main_ppo \
     actor_rollout_ref.model.path=./models/merged_hf_model \
     actor_rollout_ref.actor.optim.lr=1e-6 \
     actor_rollout_ref.model.use_remove_padding=True \
-    actor_rollout_ref.actor.ppo_mini_batch_size=16 \
+    actor_rollout_ref.actor.ppo_mini_batch_size=8 \
     actor_rollout_ref.actor.use_dynamic_bsz=True \
     actor_rollout_ref.actor.ppo_max_token_len_per_gpu=5000 \
     actor_rollout_ref.actor.use_kl_loss=False \

@@ -104,3 +104,50 @@ python scripts/legacy_model_merger.py test \
 * 安装 `transformers`
 * 安装 `torch`, `safetensors`, `accelerate`, `tqdm`
 * `verl` 自带的一些工具（`verl.utils` 下的 tokenizer 和 processor），你已经在使用 Verl 的话应该都有。
+
+
+# converter_hf_to_mcore.py
+converter_hf_to_mcore.py 是一个用于将 HuggingFace Transformers 格式的模型权重转换为 Megatron Core (mcore) 格式权重的脚本，支持分布式和单机转换，主要用于大模型（如 DeepseekV3、Qwen2/3 MoE、Qwen2.5 VL 等）的权重格式迁移。
+
+主要功能与流程如下：
+
+参数解析
+使用 argparse 解析命令行参数，包括 HuggingFace 模型路径、输出路径、是否用 CPU 初始化、是否测试转换、是否信任远程代码等。
+
+分布式环境初始化
+自动检测并初始化 torch.distributed 分布式环境，设置 pipeline 并行等参数。
+
+模型配置与分片
+读取 HuggingFace 配置，判断是否支持分布式转换，并根据 world_size 计算 pipeline 分片。
+
+Megatron Core 配置与模型初始化
+通过 hf_to_mcore_config 生成 mcore 配置，调用 get_model 初始化 Megatron Core 模型。
+
+HuggingFace 模型加载
+根据模型类型（如 Qwen2.5 VL、Qwen2 MoE、DeepseekV3 等）加载对应的 HuggingFace 模型。
+
+权重转换
+针对不同模型结构，调用不同的转换函数（如 convert_checkpoint_from_transformers_to_megatron、convert_checkpoint_from_transformers_to_megatron_qwen2_5_vl、convert_checkpoint_from_transformers_to_megatron_dpskv3），将 HuggingFace 权重逐层拷贝到 mcore 模型。
+
+权重保存
+使用 Megatron Core 的分布式 checkpoint 工具保存转换后的权重到指定输出路径。
+
+转换测试（可选）
+若指定 --test，会加载保存的权重并与当前模型权重做一致性校验。
+
+辅助函数说明：
+
+safe_copy：安全地将一个 tensor 的数据拷贝到另一个 tensor，并做 shape/dtype 检查。
+support_distributed_convert：判断当前模型是否支持分布式转换。
+noop_context：空上下文管理器，用于兼容不同初始化方式。
+适用场景：
+
+适用于需要将 HuggingFace 格式大模型权重迁移到 Megatron Core 体系下，支持多种主流大模型结构，且支持分布式高效转换。
+典型用法：
+
+python converter_hf_to_mcore.py --hf_model_path <hf_model_dir> --output_path <mcore_output_dir>
+或分布式：
+
+torchrun --nproc_per_node 1 --nnodes 4 --node_rank <RANK> converter_hf_to_mcore.py --hf_model_path <hf_model_dir> --output_path <mcore_output_dir>
+总结：
+本脚本是 HuggingFace 到 Megatron Core 权重格式转换的自动化工具，支持多模型、多并行场景，便于大模型训练和推理体系的切换。
