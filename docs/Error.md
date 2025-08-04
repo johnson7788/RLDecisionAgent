@@ -440,7 +440,7 @@ ray.exceptions.RayTaskError(ValueError): ray::WorkerDict.actor_rollout_init_mode
     raise ValueError("No available memory for the cache blocks. "
 ValueError: No available memory for the cache blocks. Try increasing `gpu_memory_utilization` when initializing the engine.
 
-# 15.  PPO最后训练阶段报错
+# 15.  PPO最后训练阶段报错，这个问题不用管，已经训完了，关闭进程的时候有错误，但是没啥影响
 0.011548247188329697 - critic/returns/max:2.4748666286468506 - critic/returns/min:-1.6201815605163574 - response_length/mean:87.4609375 - r
 esponse_length/max:128.0 - response_length/min:39.0 - response_length/clip_ratio:0.2265625 - prompt_length/mean:57.875 - prompt_length/max:
 73.0 - prompt_length/min:47.0 - prompt_length/clip_ratio:0.0 - timing_s/start_profile:0.00016492418944835663 - timing_s/generate_sequences:
