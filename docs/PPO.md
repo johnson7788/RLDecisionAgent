@@ -1,4 +1,7 @@
 # PPO训练的参数
+default_local_dir: 训练后的模型的保存路径
+
+
 /workspace/verl/backend/reTool/checkpoint/multiturn-sft-Qwen2.5-0.5B-Instruct/global_step_250# python3 -m verl.trainer.main_ppo -h
 main_ppo is powered by Hydra.
 

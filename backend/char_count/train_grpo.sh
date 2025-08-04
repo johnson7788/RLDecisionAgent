@@ -38,5 +38,6 @@ python3 -m verl.trainer.main_ppo \
     trainer.save_freq=-1 \
     trainer.test_freq=1 \
     trainer.total_epochs=1 \
+    trainer.default_local_dir=./checkpoint/smol135m_grpo \
     custom_reward_function.path=./reward_function.py \
     custom_reward_function.name=char_count_reward_function
