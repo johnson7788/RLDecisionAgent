@@ -33,11 +33,48 @@ To run the SFT
 ```bash
 export HF_ENDPOINT=https://hf-mirror.com
 bash train_sft.sh
+bash train_sft.sh
++ nproc_per_node=1
++ save_path=./models/sft
++ torchrun --standalone --nnodes=1 --nproc_per_node=1 -m verl.trainer.fsdp_sft_trainer data.train_files=/root/data/char_count/sft/train.parquet data.val_files=/root/data/char_count/sft/test.parquet data.prompt_key=prompt data.response_key=response data.micro_batch_size_per_gpu=8 data.max_length=256 data.train_batch_size=256 use_remove_padding=True model.partial_pretrain=HuggingFaceTB/SmolLM2-135M-Instruct trainer.default_local_dir=./models/sft trainer.project_name=char_count-sft trainer.experiment_name=char_count-sft-SmolLM2-135M-Instruct trainer.total_epochs=3 'trainer.logger=[console]' trainer.default_hdfs_dir=null
+Normalize batch size by dp 1
+Using sequence parallel size: 1
+Using remove padding: True
+Using FSDP rank 0 and size 1 for data distribution
+Flash Attention 2.0 only supports torch.float16 and torch.bfloat16 dtypes, but the current dype in LlamaForCausalLM is torch.float32. You should run training or inference using Automatic Mixed-Precision via the `with torch.autocast(device_type='torch_device'):` decorator, or load the model with the `torch_dtype` argument. Example: `model = AutoModel.from_pretrained("openai/whisper-tiny", attn_implementation="flash_attention_2", torch_dtype=torch.float16)`
+You are attempting to use Flash Attention 2.0 with a model not initialized on GPU. Make sure to move the model to GPU after initializing it on CPU with `model.to('cuda')`.
+Monkey patch _flash_attention_forward in transformers.integrations.flash_attention
+Skipping monkey patch for LlamaForCausalLM as use_fused_kernels is False or fused_kernels_backend is None
+functools.partial(<function _or_policy at 0x70775620c700>, policies=[functools.partial(<function transformer_auto_wrap_policy at 0x70775620c5e0>, transformer_layer_cls={<class 'transformers.models.llama.modeling_llama.LlamaDecoderLayer'>})])
+NCCL version 2.21.5+cuda12.4
+Number of steps/epoch 35, number of epochs 3, total number of steps 105
+{'data': {'train_batch_size': 256, 'micro_batch_size': None, 'micro_batch_size_per_gpu': 8, 'train_files': '/root/data/char_count/sft/train.parquet', 'val_files': '/root/data/char_count/sft/test.parquet', 'prompt_key': 'prompt', 'response_key': 'response', 'prompt_dict_keys': None, 'response_dict_keys': None, 'multiturn': {'enable': False, 'messages_key': 'messages', 'tools_key': 'tools', 'enable_thinking_key': 'enable_thinking'}, 'max_length': 256, 'truncation': 'error', 'balance_dp_token': False, 'chat_template': None, 'custom_cls': {'path': None, 'name': None}, 'use_shm': False}, 'model': {'partial_pretrain': 'HuggingFaceTB/SmolLM2-135M-Instruct', 'use_shm': False, 'fsdp_config': {'model_dtype': 'fp32', 'wrap_policy': {'min_num_params': 0}, 'cpu_offload': False, 'offload_params': False}, 'external_lib': None, 'enable_gradient_checkpointing': True, 'trust_remote_code': False, 'lora_rank': 0, 'lora_alpha': 16, 'target_modules': 'all-linear', 'use_liger': False, 'strategy': 'fsdp2'}, 'optim': {'lr': 1e-05, 'betas': [0.9, 0.95], 'weight_decay': 0.01, 'warmup_steps_ratio': 0.1, 'clip_grad': 1.0, 'lr_scheduler': 'cosine'}, 'ulysses_sequence_parallel_size': 1, 'use_remove_padding': True, 'trainer': {'default_local_dir': './models/sft', 'default_hdfs_dir': None, 'project_name': 'char_count-sft', 'experiment_name': 'char_count-sft-SmolLM2-135M-Instruct', 'total_epochs': 3, 'total_training_steps': None, 'logger': ['console'], 'seed': 1, 'save_freq': -1, 'test_freq': -1, 'nnodes': 1, 'n_gpus_per_node': 8, 'max_ckpt_to_keep': None, 'resume_mode': 'auto', 'resume_from_path': None, 'checkpoint': {'save_contents': ['model', 'optimizer', 'extra'], 'load_contents': '${trainer.checkpoint.save_contents}'}, 'device': 'cuda'}}
+Epoch 1/3:   0%|                                                                                            | 0/35 [00:00<?, ?it/s]step:1 - train/loss:1.1166926622390747 - train/lr(1e-3):0.0010000000000000002
+Epoch 1/3:   3%|██▍
+...
+Epoch 3/3:  83%|████████████████████████████████████████████████████████████████████▊              | 29/35 [06:26<01:19, 13.17s/it]step:100 - train/loss:0.0592457540333271 - train/lr(1e-3):6.81934829863884e-05
+Epoch 3/3:  86%|███████████████████████████████████████████████████████████████████████▏           | 30/35 [06:39<01:06, 13.23s/it]step:101 - train/loss:0.057852603495121 - train/lr(1e-3):4.367965336512403e-05
+Epoch 3/3:  89%|█████████████████████████████████████████████████████████████████████████▌         | 31/35 [06:53<00:52, 13.24s/it]step:102 - train/loss:0.06261121481657028 - train/lr(1e-3):2.4585487274942922e-05
+Epoch 3/3:  91%|███████████████████████████████████████████████████████████████████████████▉       | 32/35 [07:06<00:39, 13.18s/it]step:103 - train/loss:0.061319638043642044 - train/lr(1e-3):1.0931863906127327e-05
+Epoch 3/3:  94%|██████████████████████████████████████████████████████████████████████████████▎    | 33/35 [07:19<00:26, 13.15s/it]step:104 - train/loss:0.05746186152100563 - train/lr(1e-3):2.7337132953697555e-06
+Epoch 3/3:  97%|████████████████████████████████████████████████████████████████████████████████▋  | 34/35 [07:32<00:13, 13.14s/it]step:105 - train/loss:0.06290543079376221 - train/lr(1e-3):0.0
+step:105 - val/loss:0.058481086045503616
+Saving checkpoint to: ./models/sft/global_step_105
+[2025-08-04 12:26:42,932][/workspace/verl/verl/verl/utils/checkpoint/fsdp_checkpoint_manager.py][INFO] - [Rank 0] Saved model to /root/code/verl/recipe/char_count/models/sft/global_step_105/model_world_size_1_rank_0.pt
+[2025-08-04 12:26:44,374][/workspace/verl/verl/verl/utils/checkpoint/fsdp_checkpoint_manager.py][INFO] - [Rank 0] Saved optim to /root/code/verl/recipe/char_count/models/sft/global_step_105/optim_world_size_1_rank_0.pt
+[2025-08-04 12:26:44,376][/workspace/verl/verl/verl/utils/checkpoint/fsdp_checkpoint_manager.py][INFO] - [Rank 0] Saved extra_state to /root/code/verl/recipe/char_count/models/sft/global_step_105/extra_state_world_size_1_rank_0.pt
+[2025-08-04 12:26:45,202][/workspace/verl/verl/verl/utils/checkpoint/fsdp_checkpoint_manager.py][INFO] - [Rank 0] Saved model config and tokenizer class to /root/code/verl/recipe/char_count/models/sft/global_step_105/huggingface
+Saved dataloader state to: ./models/sft/global_step_105/data.pt
+Updated checkpoint tracker: ./models/sft/latest_checkpointed_iteration.txt
+Final validation metrics: {'val/loss': 0.058481086045503616}
+Epoch 3/3:  97%|████████████████████████████████████████████████████████████████████████████████▋  | 34/35 [08:01<00:14, 14.17s/it]
 ```
 We train SFT for 3 epochs. After 3 epochs, the validation score is around 0.12.
 
 合并FSDP训练后的模型
 ```
+cd models/sft/global_step_105/
+cp -a huggingface/* .
 python /workspace/verl/verl/scripts/legacy_model_merger.py merge \
     --backend fsdp \
     --local_dir models/sft/global_step_105 \

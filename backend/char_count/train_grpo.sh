@@ -35,7 +35,7 @@ python3 -m verl.trainer.main_ppo \
     trainer.val_before_train=True \
     trainer.n_gpus_per_node=1 \
     trainer.nnodes=1 \
-    trainer.save_freq=-1 \
+    trainer.save_freq=1 \
     trainer.test_freq=1 \
     trainer.total_epochs=1 \
     trainer.default_local_dir=./checkpoint/smol135m_grpo \

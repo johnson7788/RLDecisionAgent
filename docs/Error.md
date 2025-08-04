@@ -462,3 +462,6 @@ me_per_step:30.030646292492747 - perf/throughput:619.4671875793262
 (TaskRunner pid=267532)  "'val-aux/char_count/reward/worst@3/mean': 0.0, "
 (TaskRunner pid=267532)  "'val-aux/char_count/reward/worst@3/std': 0.0}")
 (raylet) A worker died or was killed while executing a task by an unexpected system error. To troubleshoot the problem, check the logs for the dead worker. RayTask ID: ffffffffffffffffc90bbe1574830f10a33b147c01000000 Worker ID: f7ea96b1e8e804f578390a97c97d6bf28b5bc9fed13f0ef433e444c7 Node ID: cc69c4cc97291a2847bc91bcfbd1f19c419b6e6fbe86aad345f2f665 Worker IP address: 192.168.100.8 Worker port: 41497 Worker PID: 269812 Worker exit type: SYSTEM_ERROR Worker exit detail: Worker exits unexpectedly by a signal. SystemExit is raised (sys.exit is called). Exit code: 1. The process receives a SIGTERM.
+
+# 16. PPO训练后的模型没有保存，修改save_freq为1，默认保存到当前的checkpoints/verl_example/smol135m_grpo目录下
+trainer.save_freq=1
