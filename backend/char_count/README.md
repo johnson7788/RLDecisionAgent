@@ -26,6 +26,267 @@ To create the dataset, run
 ```bash
 python3 create_dataset.py
 保存数据到当前目录下char_count
+输出:
+📄 SFT 训练集样本（前 3 条）：
+[样本 1]
+Prompt: How many t are there in word t-t-r-t-w-g-k-p-t-k-g-l-g?
+Response:
+ t = t.
+t = t.
+r != t.
+t = t.
+w != t.
+g != t.
+k != t.
+p != t.
+t = t.
+k != t.
+g != t.
+l != t.
+g != t.
+\boxed{4} t in t-t-r-t-w-g-k-p-t-k-g-l-g.
+--------------------------------------------------
+[样本 2]
+Prompt: How many q are there in word q-q-q-q-q-q-q-q-l-q-q-q-z-q-q?
+Response:
+ q = q.
+q = q.
+q = q.
+q = q.
+q = q.
+q = q.
+q = q.
+q = q.
+l != q.
+q = q.
+q = q.
+q = q.
+z != q.
+q = q.
+q = q.
+\boxed{13} q in q-q-q-q-q-q-q-q-l-q-q-q-z-q-q.
+--------------------------------------------------
+[样本 3]
+Prompt: How many s are there in word k-m-h-t-b-s-v-g-x-z-s-g-h-n-t-e-d-k-y?
+Response:
+ k != s.
+m != s.
+h != s.
+t != s.
+b != s.
+s = s.
+v != s.
+g != s.
+x != s.
+z != s.
+s = s.
+g != s.
+h != s.
+n != s.
+t != s.
+e != s.
+d != s.
+k != s.
+y != s.
+\boxed{2} s in k-m-h-t-b-s-v-g-x-z-s-g-h-n-t-e-d-k-y.
+--------------------------------------------------
+
+📄 SFT 测试集样本（前 3 条）：
+[样本 1]
+Prompt: How many g are there in word b-p-d-n-y-z-g-t-n-i-t-q-n-e-c-f?
+Response:
+ b != g.
+p != g.
+d != g.
+n != g.
+y != g.
+z != g.
+g = g.
+t != g.
+n != g.
+i != g.
+t != g.
+q != g.
+n != g.
+e != g.
+c != g.
+f != g.
+\boxed{1} g in b-p-d-n-y-z-g-t-n-i-t-q-n-e-c-f.
+--------------------------------------------------
+[样本 2]
+Prompt: How many v are there in word v-v-v-x-f-v-v-v-v-z-v?
+Response:
+ v = v.
+v = v.
+v = v.
+x != v.
+f != v.
+v = v.
+v = v.
+v = v.
+v = v.
+z != v.
+v = v.
+\boxed{8} v in v-v-v-x-f-v-v-v-v-z-v.
+--------------------------------------------------
+[样本 3]
+Prompt: How many p are there in word p-n-a-p-x-r-c-t-p-a-t-p-d-x-p-r-y-p-y?
+Response:
+ p = p.
+n != p.
+a != p.
+p = p.
+x != p.
+r != p.
+c != p.
+t != p.
+p = p.
+a != p.
+t != p.
+p = p.
+d != p.
+x != p.
+p = p.
+r != p.
+y != p.
+p = p.
+y != p.
+\boxed{6} p in p-n-a-p-x-r-c-t-p-a-t-p-d-x-p-r-y-p-y.
+--------------------------------------------------
+
+📄 RL 训练集样本（前 3 条）：
+[样本 1]
+Prompt: [{'role': 'user', 'content': 'How many t are there in word t-t-r-t-w-g-k-p-t-k-g-l-g?'}]
+Reward model: {'style': 'rule', 'ground_truth': '4'}
+Extra info (response):
+ t = t.
+t = t.
+r != t.
+t = t.
+w != t.
+g != t.
+k != t.
+p != t.
+t = t.
+k != t.
+g != t.
+l != t.
+g != t.
+\boxed{4} t in t-t-r-t-w-g-k-p-t-k-g-l-g.
+--------------------------------------------------
+[样本 2]
+Prompt: [{'role': 'user', 'content': 'How many q are there in word q-q-q-q-q-q-q-q-l-q-q-q-z-q-q?'}]
+Reward model: {'style': 'rule', 'ground_truth': '13'}
+Extra info (response):
+ q = q.
+q = q.
+q = q.
+q = q.
+q = q.
+q = q.
+q = q.
+q = q.
+l != q.
+q = q.
+q = q.
+q = q.
+z != q.
+q = q.
+q = q.
+\boxed{13} q in q-q-q-q-q-q-q-q-l-q-q-q-z-q-q.
+--------------------------------------------------
+[样本 3]
+Prompt: [{'role': 'user', 'content': 'How many s are there in word k-m-h-t-b-s-v-g-x-z-s-g-h-n-t-e-d-k-y?'}]
+Reward model: {'style': 'rule', 'ground_truth': '2'}
+Extra info (response):
+ k != s.
+m != s.
+h != s.
+t != s.
+b != s.
+s = s.
+v != s.
+g != s.
+x != s.
+z != s.
+s = s.
+g != s.
+h != s.
+n != s.
+t != s.
+e != s.
+d != s.
+k != s.
+y != s.
+\boxed{2} s in k-m-h-t-b-s-v-g-x-z-s-g-h-n-t-e-d-k-y.
+--------------------------------------------------
+
+📄 RL 测试集样本（前 3 条）：
+[样本 1]
+Prompt: [{'role': 'user', 'content': 'How many g are there in word b-p-d-n-y-z-g-t-n-i-t-q-n-e-c-f?'}]
+Reward model: {'style': 'rule', 'ground_truth': '1'}
+Extra info (response):
+ b != g.
+p != g.
+d != g.
+n != g.
+y != g.
+z != g.
+g = g.
+t != g.
+n != g.
+i != g.
+t != g.
+q != g.
+n != g.
+e != g.
+c != g.
+f != g.
+\boxed{1} g in b-p-d-n-y-z-g-t-n-i-t-q-n-e-c-f.
+--------------------------------------------------
+[样本 2]
+Prompt: [{'role': 'user', 'content': 'How many v are there in word v-v-v-x-f-v-v-v-v-z-v?'}]
+Reward model: {'style': 'rule', 'ground_truth': '8'}
+Extra info (response):
+ v = v.
+v = v.
+v = v.
+x != v.
+f != v.
+v = v.
+v = v.
+v = v.
+v = v.
+z != v.
+v = v.
+\boxed{8} v in v-v-v-x-f-v-v-v-v-z-v.
+--------------------------------------------------
+[样本 3]
+Prompt: [{'role': 'user', 'content': 'How many p are there in word p-n-a-p-x-r-c-t-p-a-t-p-d-x-p-r-y-p-y?'}]
+Reward model: {'style': 'rule', 'ground_truth': '6'}
+Extra info (response):
+ p = p.
+n != p.
+a != p.
+p = p.
+x != p.
+r != p.
+c != p.
+t != p.
+p = p.
+a != p.
+t != p.
+p = p.
+d != p.
+x != p.
+p = p.
+r != p.
+y != p.
+p = p.
+y != p.
+\boxed{6} p in p-n-a-p-x-r-c-t-p-a-t-p-d-x-p-r-y-p-y.
+--------------------------------------------------
+
 ```
 We create a train set and a val set. Both of them are used of SFT and RL. You can specify the total number of data, min/max length and data path.
 
