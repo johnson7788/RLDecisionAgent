@@ -555,3 +555,19 @@ Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
 (AsyncvLLMServer pid=588113) instance_id: 6b1f20db-4134-41d9-a084-253ff6bd41a1:MT87lQ:2:0 initializes with external actors: ['MT87lQWorkerDict_0:0']
 (AsyncvLLMServer pid=588113) VERL_VLLM_ZMQ_ADDRESSES: ['ipc:///tmp/verl_vllm_zmq_587568_root.ipc']
 (AsyncvLLMServer pid=588113) Using blocking ray.get inside async actor. This blocks the event loop. Please use `await` on object ref with asyncio.gather if you want to yield execution to the event loop instead.
+
+# 17 DAPO训练报错,  /tmp/ray/的磁盘快满了，需要清理磁盘
+(AgentLoopWorker pid=597570) ERROR:2025-08-05 01:37:05,567:Failed to decode tool call: Invalid control character at: line 2 column 953 (char 953)
+(raylet) [2025-08-05 01:37:10,388 E 589154 589188] (raylet) file_system_monitor.cc:116: /tmp/ray/session_2025-08-05_01-34-17_202825_588398 is over 95% full, available space: 18.8293 GB; capacity: 438.051 GB. Object creation will fail if spilling is required.
+(AgentLoopWorker pid=597574) ERROR:2025-08-05 01:37:15,629:Failed to decode tool call: Extra data: line 3 column 1 (char 737)
+(raylet) [2025-08-05 01:37:20,401 E 589154 589188] (raylet) file_system_monitor.cc:116: /tmp/ray/session_2025-08-05_01-34-17_202825_588398 is over 95% full, available space: 18.8288 GB; capacity: 438.051 GB. Object creation will fail if spilling is required.
+(raylet) [2025-08-05 01:37:30,413 E 589154 589188] (raylet) file_system_monitor.cc:116: /tmp/ray/session_2025-08-05_01-34-17_202825_588398 is over 95% full, available space: 18.8275 GB; capacity: 438.051 GB. Object creation will fail if spilling is required.
+(AgentLoopWorker pid=597571) ERROR:2025-08-05 01:37:37,260:Failed to decode tool call: Invalid \escape: line 2 column 437 (char 437)
+(raylet) [2025-08-05 01:37:40,426 E 589154 589188] (raylet) file_system_monitor.cc:116: /tmp/ray/session_2025-08-05_01-34-17_202825_588398 is over 95% full, available space: 18.827 GB; capacity: 438.051 GB. Object creation will fail if spilling is required.
+(AgentLoopWorker pid=597575) ERROR:2025-08-05 01:37:46,087:Error when executing tool: 'function'
+(AgentLoopWorker pid=597575) Traceback (most recent call last):
+(AgentLoopWorker pid=597575)   File "/workspace/verl/verl/verl/experimental/agent_loop/tool_agent_loop.py", line 144, in _call_tool
+(AgentLoopWorker pid=597575)     tool = self.tools[tool_name]
+(AgentLoopWorker pid=597575) KeyError: 'function'
+(AgentLoopWorker pid=597570) ERROR:2025-08-05 01:37:37,730:Failed to decode tool call: Invalid \escape: line 2 column 70 (char 70)
+(raylet) [2025-08-05 01:37:50,441 E 589154 589188] (raylet) file_system_monitor.cc:116: /tmp/ray/session_2025-08-05_01-34-17_202825_588398 is over 95% full, available space: 18.8265 GB; capacity: 438.051 GB. Object creation will fail if spilling is required.

@@ -2,6 +2,7 @@ set -x
 
 # 使用哪个显卡
 export CUDA_VISIBLE_DEVICES=1,2
+export VLLM_USE_V1=1
 
 # ================= data/model/tool =================
 HDFS_ROOT=${HDFS_ROOT:-$PWD}
