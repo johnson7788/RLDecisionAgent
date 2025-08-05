@@ -145,7 +145,9 @@ if __name__ == "__main__":
     from verl.utils.reward_score.math import last_boxed_only_string, remove_boxed
 
     for o in train_outputs:
+        # 问题
         prompt = o[0]
+        #答案
         response = o[1]
         prompt_with_template = [
             {
