@@ -9,13 +9,13 @@ DATA_ROOT=${DATA_ROOT:-$PWD}
 
 dapo_math_17k=$DATA_ROOT/dataset/BytedTsinghua/train
 aime_2024=$DATA_ROOT/dataset/Maxwell/validation
-model_path=$HDFS_ROOT/checkpoint/multiturn-sft-Qwen2.5-0.5B-Instruct/global_step_250/huggingface
+model_path=./models/merged_sft_model
 
 train_files="['$dapo_math_17k']"
 test_files="['$aime_2024']"
 
 # tool
-tool_config_path=recipe/retool/sandbox_fusion_tool_config.yaml
+tool_config_path=./sandbox_fusion_tool_config.yaml
 
 # wandb
 project_name=wuxibin_retool
@@ -101,7 +101,7 @@ python3 -m verl.trainer.main_ppo \
     trainer.val_before_train=True \
     trainer.log_val_generations=100 \
     trainer.nnodes=1 \
-    trainer.save_freq=30 \
+    trainer.save_freq=1 \
     trainer.default_local_dir=$default_local_dir \
     trainer.test_freq=5 \
     trainer.total_epochs=1 $@

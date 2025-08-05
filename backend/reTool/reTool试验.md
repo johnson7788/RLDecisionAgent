@@ -263,7 +263,7 @@ wuxibin/ReTool-SFT/data/train-00000-of-00001.parquet
 }
 ```
 
-### 2. 启动训练脚本， 共用了约 12 分钟多时间。
+### 2. 启动SFT训练脚本， 共用了约 12 分钟多时间。
 
 ```bash
 注意设置使用哪个显卡
@@ -390,6 +390,21 @@ val-aux/num_turns/mean: 7.2
 * `num_turns/mean`: 推理中平均轮数（每道题中模型调用工具的平均次数为 7.2）。
 
 ---
+
+## 合并模型为huggingface格式
+```
+cd checkpoint/multiturn-sft-Qwen2.5-0.5B-Instruct/global_step_250/
+cp -a huggingface/* .
+cd -
+python /workspace/verl/verl/scripts/legacy_model_merger.py merge \
+    --backend fsdp \
+    --local_dir checkpoint/multiturn-sft-Qwen2.5-0.5B-Instruct/global_step_250 \
+    --target_dir models/merged_sft_model
+    
+ls models/merged_sft_model
+added_tokens.json  generation_config.json  model.safetensors        tokenizer.json         vocab.json
+config.json        merges.txt              special_tokens_map.json  tokenizer_config.json
+```
 
 ## 🔁 强化学习阶段（RL）
 
