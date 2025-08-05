@@ -42,7 +42,7 @@ n_resp_per_prompt=16
 n_resp_per_prompt_val=30
 
 # ================= perfomance =================
-infer_tp=4 # vllm
+infer_tp=1 # vllm, 代表 tensor parallel size，是用于推理的模型切分
 train_sp=2 # train
 offload=True
 

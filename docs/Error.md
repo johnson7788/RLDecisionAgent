@@ -465,3 +465,93 @@ me_per_step:30.030646292492747 - perf/throughput:619.4671875793262
 
 # 16. PPO训练后的模型没有保存，修改save_freq为1，默认保存到当前的checkpoints/verl_example/smol135m_grpo目录下
 trainer.save_freq=1
+
+# 17 Ray报错， 修改infer_tp=1, 降低 infer_tp 以匹配实际 GPU 数量,如果你当前只打算使用 2 张 GPU，直接将 infer_tp 改成 1 或 2：,infer_tp 代表 tensor parallel size，是用于推理的模型切分。
+Error executing job with overrides: ['algorithm.adv_estimator=grpo', 'algorithm.use_kl_in_reward=False', 'algorithm.kl_ctrl.kl_coef=0.0', "data.train_files=['/workspace/verl/backend/reTool/dataset/BytedTsinghua/train']", "data.val_files=['/workspace/verl/backend/reTool/dataset/Maxwell/validation']", 'data.return_raw_chat=True', 'data.train_batch_size=16', 'data.max_prompt_length=2048', 'data.max_response_length=16384', 'data.filter_overlong_prompts=True', 'data.truncation=error', 'data.custom_cls.path=retool.py', 'data.custom_cls.name=CustomRLHFDataset', 'custom_reward_function.path=retool.py', 'custom_reward_function.name=compute_score', 'actor_rollout_ref.model.path=./models/merged_sft_model', 'actor_rollout_ref.model.use_remove_padding=True', 'actor_rollout_ref.model.enable_gradient_checkpointing=True', 'actor_rollout_ref.actor.use_kl_loss=False', 'actor_rollout_ref.actor.kl_loss_coef=0.0', 'actor_rollout_ref.actor.clip_ratio_low=0.2', 'actor_rollout_ref.actor.clip_ratio_high=0.28', 'actor_rollout_ref.actor.clip_ratio_c=10.0', 'actor_rollout_ref.actor.optim.lr=1e-6', 'actor_rollout_ref.actor.use_dynamic_bsz=True', 'actor_rollout_ref.actor.ppo_mini_batch_size=8', 'actor_rollout_ref.actor.ppo_max_token_len_per_gpu=18432', 'actor_rollout_ref.actor.ulysses_sequence_parallel_size=2', 'actor_rollout_ref.actor.fsdp_config.param_offload=True', 'actor_rollout_ref.actor.fsdp_config.optimizer_offload=True', 'actor_rollout_ref.ref.log_prob_max_token_len_per_gpu=73728', 'actor_rollout_ref.rollout.name=vllm', 'actor_rollout_ref.rollout.mode=async', 'actor_rollout_ref.rollout.tensor_model_parallel_size=4', 'actor_rollout_ref.rollout.multi_turn.enable=True', 'actor_rollout_ref.rollout.multi_turn.max_user_turns=8', 'actor_rollout_ref.rollout.multi_turn.max_assistant_turns=8', 'actor_rollout_ref.rollout.multi_turn.tool_config_path=./sandbox_fusion_tool_config.yaml', 'actor_rollout_ref.rollout.multi_turn.format=hermes', 'actor_rollout_ref.rollout.gpu_memory_utilization=0.9', 'actor_rollout_ref.rollout.n=16', 'actor_rollout_ref.rollout.val_kwargs.top_p=0.6', 'actor_rollout_ref.rollout.val_kwargs.temperature=1.0', 'actor_rollout_ref.rollout.val_kwargs.n=30', 'trainer.logger=[console]', 'trainer.project_name=wuxibin_retool', 'trainer.experiment_name=qwen2.5-05b_dapo', 'trainer.n_gpus_per_node=2', 'trainer.val_before_train=True', 'trainer.log_val_generations=100', 'trainer.nnodes=1', 'trainer.save_freq=1', 'trainer.default_local_dir=/workspace/verl/backend/reTool/checkpoint/qwen2.5-05b_dapo', 'trainer.test_freq=5', 'trainer.total_epochs=1']
+Traceback (most recent call last):
+  File "/workspace/verl/verl/verl/trainer/main_ppo.py", line 40, in main
+    run_ppo(config)
+  File "/workspace/verl/verl/verl/trainer/main_ppo.py", line 77, in run_ppo
+    ray.get(runner.run.remote(config))
+  File "/usr/local/lib/python3.10/dist-packages/ray/_private/auto_init_hook.py", line 21, in auto_init_wrapper
+    return fn(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/ray/_private/client_mode_hook.py", line 103, in wrapper
+    return func(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/ray/_private/worker.py", line 2822, in get
+    values, debugger_breakpoint = worker.get_objects(object_refs, timeout=timeout)
+  File "/usr/local/lib/python3.10/dist-packages/ray/_private/worker.py", line 930, in get_objects
+    raise value.as_instanceof_cause()
+ray.exceptions.RayTaskError(AssertionError): ray::TaskRunner.run() (pid=576436, ip=192.168.100.8, actor_id=90aa9fb96c4861d1b90e76ee01000000, repr=<main_ppo.TaskRunner object at 0x72c1a8134940>)
+  File "/workspace/verl/verl/verl/trainer/main_ppo.py", line 242, in run
+    trainer.init_workers()
+  File "/workspace/verl/verl/verl/trainer/ppo/ray_trainer.py", line 866, in init_workers
+    self.actor_rollout_wg.init_model()
+  File "/workspace/verl/verl/verl/single_controller/ray/base.py", line 50, in __call__
+    output = ray.get(output)
+ray.exceptions.RayTaskError(AssertionError): ray::WorkerDict.actor_rollout_init_model() (pid=578871, ip=192.168.100.8, actor_id=6af2d7d16b4888d85e0ac3fa01000000, repr=<verl.single_controller.ray.base.WorkerDict object at 0x7a0ebad44c10>)
+  File "/usr/lib/python3.10/concurrent/futures/_base.py", line 451, in result
+    return self.__get_result()
+  File "/usr/lib/python3.10/concurrent/futures/_base.py", line 403, in __get_result
+    raise self._exception
+  File "/workspace/verl/verl/verl/single_controller/ray/base.py", line 720, in func
+    return getattr(self.worker_dict[key], name)(*args, **kwargs)
+  File "/workspace/verl/verl/verl/single_controller/base/decorator.py", line 514, in inner
+    return func(*args, **kwargs)
+  File "/workspace/verl/verl/verl/workers/fsdp_workers.py", line 628, in init_model
+    self.rollout, self.rollout_sharding_manager = self._build_rollout(
+  File "/workspace/verl/verl/verl/workers/fsdp_workers.py", line 1654, in _build_rollout
+    rollout, rollout_sharding_manager = super()._build_rollout(trust_remote_code)
+  File "/workspace/verl/verl/verl/workers/fsdp_workers.py", line 471, in _build_rollout
+    assert self.world_size % infer_tp == 0, (
+AssertionError: rollout world_size: 2 is not divisible by infer_tp: 4
+
+# 16.  export VLLM_USE_V1=1, 调用了 AsyncLLM.from_vllm_config()，它默认使用 V1 引擎逻辑。但当前环境变量 VLLM_USE_V1 被设置为 False（也可能是没设，默认就是 False），导致逻辑冲突，vLLM 库抛出了异常。
+]
+Traceback (most recent call last):
+  File "/workspace/verl/verl/verl/trainer/main_ppo.py", line 40, in main
+    run_ppo(config)
+  File "/workspace/verl/verl/verl/trainer/main_ppo.py", line 77, in run_ppo
+    ray.get(runner.run.remote(config))
+  File "/usr/local/lib/python3.10/dist-packages/ray/_private/auto_init_hook.py", line 21, in auto_init_wrapper
+    return fn(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/ray/_private/client_mode_hook.py", line 103, in wrapper
+    return func(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/ray/_private/worker.py", line 2822, in get
+    values, debugger_breakpoint = worker.get_objects(object_refs, timeout=timeout)
+  File "/usr/local/lib/python3.10/dist-packages/ray/_private/worker.py", line 930, in get_objects
+    raise value.as_instanceof_cause()
+ray.exceptions.RayTaskError(ValueError): ray::TaskRunner.run() (pid=585134, ip=192.168.100.8, actor_id=2b9e243534fd3aaadd6bf62801000000, repr=<main_ppo.TaskRunner object at 0x727cd793c9a0>)
+  File "/workspace/verl/verl/verl/trainer/main_ppo.py", line 242, in run
+    trainer.init_workers()
+  File "/workspace/verl/verl/verl/trainer/ppo/ray_trainer.py", line 874, in init_workers
+    self.async_rollout_manager = AgentLoopManager(
+  File "/workspace/verl/verl/verl/experimental/agent_loop/agent_loop.py", line 461, in __init__
+    self._initialize_llm_servers()
+  File "/workspace/verl/verl/verl/experimental/agent_loop/agent_loop.py", line 513, in _initialize_llm_servers
+    ray.get([server.init_engine.remote() for server in self.async_llm_servers])
+ray.exceptions.RayTaskError(ValueError): ray::AsyncvLLMServer.init_engine() (pid=588112, ip=192.168.100.8, actor_id=adae42d67fca8af1305046a501000000, repr=<verl.workers.rollout.vllm_rollout.vllm_async_server.AsyncvLLMServer object at 0x71ab37a45f30>)
+  File "/usr/lib/python3.10/concurrent/futures/_base.py", line 451, in result
+    return self.__get_result()
+  File "/usr/lib/python3.10/concurrent/futures/_base.py", line 403, in __get_result
+    raise self._exception
+  File "/workspace/verl/verl/verl/workers/rollout/vllm_rollout/vllm_async_server.py", line 267, in init_engine
+    self.engine = AsyncLLM.from_vllm_config(vllm_config)
+  File "/usr/local/lib/python3.10/dist-packages/vllm/v1/engine/async_llm.py", line 143, in from_vllm_config
+    raise ValueError(
+ValueError: Using V1 AsyncLLMEngine, but envs.VLLM_USE_V1=False. This should not happen. As a workaround, try using AsyncLLMEngine.from_vllm_config(...) or explicitly set VLLM_USE_V1=0 or 1 and report this issue on Github.
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+(TaskRunner pid=585134) Unhandled error (suppress with 'RAY_IGNORE_UNHANDLED_ERRORS=1'): ray::AsyncvLLMServer.init_engine() (pid=588113, ip=192.168.100.8, actor_id=25b097a4fc28b46f978580db01000000, repr=<verl.workers.rollout.vllm_rollout.vllm_async_server.AsyncvLLMServer object at 0x72475454df30>)
+(TaskRunner pid=585134)   File "/usr/lib/python3.10/concurrent/futures/_base.py", line 451, in result
+(TaskRunner pid=585134)     return self.__get_result()
+(TaskRunner pid=585134)   File "/usr/lib/python3.10/concurrent/futures/_base.py", line 403, in __get_result
+(TaskRunner pid=585134)     raise self._exception
+(TaskRunner pid=585134)   File "/workspace/verl/verl/verl/workers/rollout/vllm_rollout/vllm_async_server.py", line 267, in init_engine
+(TaskRunner pid=585134)     self.engine = AsyncLLM.from_vllm_config(vllm_config)
+(TaskRunner pid=585134)   File "/usr/local/lib/python3.10/dist-packages/vllm/v1/engine/async_llm.py", line 143, in from_vllm_config
+(TaskRunner pid=585134)     raise ValueError(
+(TaskRunner pid=585134) ValueError: Using V1 AsyncLLMEngine, but envs.VLLM_USE_V1=False. This should not happen. As a workaround, try using AsyncLLMEngine.from_vllm_config(...) or explicitly set VLLM_USE_V1=0 or 1 and report this issue on Github.
+(AsyncvLLMServer pid=588113) WARNING 08-05 01:28:55 [cuda.py:93] To see benefits of async output processing, enable CUDA graph. Since, enforce-eager is enabled, async output processor cannot be used
+(AsyncvLLMServer pid=588113) instance_id: 6b1f20db-4134-41d9-a084-253ff6bd41a1:MT87lQ:2:0 initializes with external actors: ['MT87lQWorkerDict_0:0']
+(AsyncvLLMServer pid=588113) VERL_VLLM_ZMQ_ADDRESSES: ['ipc:///tmp/verl_vllm_zmq_587568_root.ipc']
+(AsyncvLLMServer pid=588113) Using blocking ray.get inside async actor. This blocks the event loop. Please use `await` on object ref with asyncio.gather if you want to yield execution to the event loop instead.
