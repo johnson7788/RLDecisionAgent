@@ -2,12 +2,18 @@
 ## 开发中(developing)
 
 ## Docker镜像
+```
 docker pull vemlp-boe-cn-beijing.cr.volces.com/preset-images/verl:v0.4.1
+```
 
 ## 创建docker镜像
-docker create --runtime=nvidia --gpus all --net=host --shm-size="10g" --cap-add=SYS_ADMIN -v .:/workspace/verl --name verl vemlp-boe-cn-beijing.cr.volces.com/preset-images/verl:v0.4.1 sleep infinity
+```
+#docker create --runtime=nvidia --gpus all --net=host --shm-size="10g" --cap-add=SYS_ADMIN -v .:/workspace/verl --name verl vemlp-boe-cn-beijing.cr.volces.com/preset-images/verl:v0.4.1 sleep infinity
+挂载时区
+docker create --runtime=nvidia --gpus all --net=host --shm-size="10g" --cap-add=SYS_ADMIN -v .:/workspace/verl -v /etc/localtime:/etc/localtime:ro -v /etc/timezone:/etc/timezone:ro --name verl vemlp-boe-cn-beijing.cr.volces.com/preset-images/verl:v0.4.1 sleep infinity
 docker start verl
 docker exec -it verl bash
+```
 
 | 参数                     | 含义                                                    |
 | ---------------------- | ----------------------------------------------------- |
@@ -26,8 +32,10 @@ docker start verl
 启动名为 verl 的容器（前面已经创建了，但还未运行）。
 
 ## 安装一些依赖
+```
 cd /workspace/verl
 pip3 install --no-deps -e .
+
 镜像中已经安装sglang和vllm
 # pip freeze | grep sglang
 sglang==0.4.6.post5
@@ -37,6 +45,7 @@ vllm==0.8.5.post1
 不用再次安装这些依赖
 pip3 install -e .[vllm]
 pip3 install -e .[sglang]
+```
 
 | 命令                           | 是否安装依赖 | 是否可选安装         | 开发模式 | 典型场景              |
 | ---------------------------- | ------ | -------------- | ---- | ----------------- |
@@ -107,6 +116,8 @@ trainer.logger=console
 
 
 # Document
+```
 nproc_per_node=8  # 单个机器的卡数量
 trainer:
   default_local_dir: verl_sft/Qwen25_7b_sft  # 训练后的模型的保存路径
+```

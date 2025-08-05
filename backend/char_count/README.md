@@ -536,3 +536,27 @@ Training Progress:   1%|          | 1/140 [00:49<1:53:43, 49.09s/it]
 (TaskRunner pid=247607) step:1 - global_seqlen/min:159906 - global_seqlen/max:159906 - global_seqlen/minmax_diff:0 - global_seqlen/balanced_min:159906 - global_seqlen/balanced_max:159906 - global_seqlen/mean:159906.0 - actor/entropy:0.09767807275056839 - actor/pg_loss:-0.0036091046008680547 - actor/pg_clipfrac:0.0012726205209868827 - actor/ppo_kl:0.00015248422758824226 - actor/pg_clipfrac_lower:0.0 - actor/grad_norm:0.2057906948029995 - perf/mfu/actor:0.0 - perf/max_memory_allocated_gb:18.921902179718018 - perf/max_memory_reserved_gb:23.166015625 - perf/cpu_memory_used_gb:36.80875778198242 - actor/lr:1e-06 - training/global_step:1 - training/epoch:0 - critic/score/mean:0.0888671875 - critic/score/max:1.0 - critic/score/min:0.0 - critic/rewards/mean:0.0888671875 - critic/rewards/max:1.0 - critic/rewards/min:0.0 - critic/advantages/mean:0.003788670524954796 - critic/advantages/max:2.4748666286468506 - critic/advantages/min:-1.20761239528656 - critic/returns/mean:0.003788670524954796 - critic/returns/max:2.4748666286468506 - critic/returns/min:-1.20761239528656 - response_length/mean:93.126953125 - response_length/max:128.0 - response_length/min:5.0 - response_length/clip_ratio:0.19921875 - prompt_length/mean:63.03125 - prompt_length/max:77.0 - prompt_length/min:47.0 - prompt_length/clip_ratio:0.0 - timing_s/start_profile:0.0005959402769804001 - timing_s/generate_sequences:15.364402770996094 - timing_s/reshard:0.23392614722251892 - timing_s/gen:16.22749171219766 - timing_s/reward:0.42415859922766685 - timing_s/old_log_prob:10.275943230837584 - timing_s/adv:0.07341944053769112 - timing_s/update_actor:21.522068275138736 - timing_s/step:48.7025266494602 - timing_s/stop_profile:0.00015546195209026337 - timing_per_token_ms/adv:0.0004591412488442655 - timing_per_token_ms/gen:0.1701672753528414 - timing_per_token_ms/update_actor:0.1345919995193347 - perf/total_num_tokens:159906 - perf/time_per_step:48.7025266494602 - perf/throughput:3283.320414789452
 
 ```
+
+
+合并FSDP训练后的actor模型
+```
+cd checkpoint/smol135m_grpo/global_step_360/actor/
+cp -a huggingface/* .
+cd - 
+python /workspace/verl/verl/scripts/legacy_model_merger.py merge \
+    --backend fsdp \
+    --local_dir checkpoint/smol135m_grpo/global_step_360/actor/ \
+    --target_dir checkpoint/merged_hf_model
+ls -alht checkpoint/merged_hf_model
+total 316M
+drwxr-xr-x 2 root root 4.0K Aug  5 00:46 .
+-rw-r--r-- 1 root root 3.4M Aug  5 00:46 tokenizer.json
+-rw-r--r-- 1 root root 456K Aug  5 00:46 merges.txt
+-rw-r--r-- 1 root root 782K Aug  5 00:46 vocab.json
+-rw-r--r-- 1 root root  655 Aug  5 00:46 special_tokens_map.json
+-rw-r--r-- 1 root root 3.8K Aug  5 00:46 tokenizer_config.json
+-rw-r--r-- 1 root root 311M Aug  5 00:46 model.safetensors
+-rw-r--r-- 1 root root  879 Aug  5 00:46 config.json
+-rw-r--r-- 1 root root  132 Aug  5 00:46 generation_config.json
+drwxr-xr-x 4 root root 4.0K Aug  5 00:46 ..
+```
