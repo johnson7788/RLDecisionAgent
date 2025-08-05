@@ -430,8 +430,19 @@ bash run_qwen2-05b_dapo.sh
 
 ```bash
 bash recipe/retool/run_qwen2-05b_ppo.sh
-```
 
+```
+查看sandbox日记，发现在调用工具
+```
+ running command python /tmp/tmph92m_9v6/tmpngrsk30o.py [sandbox.runners.base]
+2025-08-05 05:22:27 [debug    ] stop running command python /tmp/tmph92m_9v6/tmpngrsk30o.py [sandbox.runners.base]
+2025-08-05 05:22:28 [debug    ] start processing python request with code ```
+# Testing zero value for discriminant
+result = -a_over_b * (sum(r1_plus_r2_plus_r3) + c1 * (-s2))
+pr
+``` and files []... [sandbox.server.sandbox_api]
+
+``
 **评估结果（250步）**：
 
 * acc\@30: **0.55**

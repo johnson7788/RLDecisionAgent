@@ -571,3 +571,71 @@ Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
 (AgentLoopWorker pid=597575) KeyError: 'function'
 (AgentLoopWorker pid=597570) ERROR:2025-08-05 01:37:37,730:Failed to decode tool call: Invalid \escape: line 2 column 70 (char 70)
 (raylet) [2025-08-05 01:37:50,441 E 589154 589188] (raylet) file_system_monitor.cc:116: /tmp/ray/session_2025-08-05_01-34-17_202825_588398 is over 95% full, available space: 18.8265 GB; capacity: 438.051 GB. Object creation will fail if spilling is required.
+
+# 18. 报错, 数据集太小，检查数据处理后训练数据条数
+Traceback (most recent call last):
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/media/wac/backup/john/johnson/RLDecisionAgent/verl/verl/trainer/main_ppo.py", line 337, in <module>
+    main()
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/hydra/main.py", line 94, in decorated_main
+    _run_hydra(
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/hydra/_internal/utils.py", line 394, in _run_hydra
+    _run_app(
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/hydra/_internal/utils.py", line 457, in _run_app
+    run_and_report(
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/hydra/_internal/utils.py", line 223, in run_and_report
+    raise ex
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/hydra/_internal/utils.py", line 220, in run_and_report
+    return func()
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/hydra/_internal/utils.py", line 458, in <lambda>
+    lambda: hydra.run(
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/hydra/_internal/hydra.py", line 132, in run
+    _ = ret.return_value
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/hydra/core/utils.py", line 260, in return_value
+    raise self._return_value
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/hydra/core/utils.py", line 186, in run_job
+    ret.return_value = task_function(task_cfg)
+  File "/media/wac/backup/john/johnson/RLDecisionAgent/verl/verl/trainer/main_ppo.py", line 40, in main
+    run_ppo(config)
+  File "/media/wac/backup/john/johnson/RLDecisionAgent/verl/verl/trainer/main_ppo.py", line 74, in run_ppo
+    ray.get(runner.run.remote(config))
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/ray/_private/auto_init_hook.py", line 22, in auto_init_wrapper
+    return fn(*args, **kwargs)
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/ray/_private/client_mode_hook.py", line 104, in wrapper
+    return func(*args, **kwargs)
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/ray/_private/worker.py", line 2849, in get
+    values, debugger_breakpoint = worker.get_objects(object_refs, timeout=timeout)
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/ray/_private/worker.py", line 937, in get_objects
+    raise value.as_instanceof_cause()
+ray.exceptions.RayTaskError(StopIteration): ray::TaskRunner.run() (pid=1191877, ip=192.168.100.8, actor_id=380e5b91269cf8d397d76bc601000000, repr=<main_ppo.TaskRunner object at 0x7c8c7f6628c0>)
+  File "/media/wac/backup/john/johnson/RLDecisionAgent/verl/verl/trainer/main_ppo.py", line 241, in run
+    trainer.fit()
+  File "/media/wac/backup/john/johnson/RLDecisionAgent/verl/verl/trainer/ppo/ray_trainer.py", line 1123, in fit
+    for batch_dict in self.train_dataloader:
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/torchdata/stateful_dataloader/stateful_dataloader.py", line 406, in __iter__
+    self._iterator = self._get_iterator()
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/torchdata/stateful_dataloader/stateful_dataloader.py", line 387, in _get_iterator
+    it = _StatefulMultiProcessingDataLoaderIter(self, self.next_iter_state)
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/torchdata/stateful_dataloader/stateful_dataloader.py", line 1053, in __init__
+    self._restore_main_state(next_iter_state[self._SNAPSHOT][self._MAIN_SNAPSHOT])
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/torchdata/stateful_dataloader/stateful_dataloader.py", line 1477, in _restore_main_state
+    self._sampler_iter = try_to_deserialize(self._sampler_iter, state_dict[_SAMPLER_ITER_STATE])
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/torchdata/stateful_dataloader/worker.py", line 57, in try_to_deserialize
+    obj.load_state_dict(state_dict)
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/torchdata/stateful_dataloader/sampler.py", line 163, in load_state_dict
+    next(self.sampler_iter)
+StopIteration
+
+# 19. 报错
+tool_args {'code': 'group_size = 100\nm = group_size // 2 if group_size % 2 == 0 else group_size // 2 + 1\n\nresult = (m + 3) // 2  # Midpoint yielding largest m\nprint(f"m = {result}")'}
+(AgentLoopWorker pid=628137) tool_args {'code': 'print(m)'}
+(AgentLoopWorker pid=628137) tool_args {'code': 'print(group_size)'}
+(AgentLoopWorker pid=628137) ERROR:2025-08-05 05:23:03,116:Failed to decode tool call: Expecting ',' delimiter: line 3 column 1 (char 62)
+
+(AgentLoopWorker pid=628134) ERROR:2025-08-05 05:24:27,334:Failed to decode tool call: Invalid control character at: line 2 column 1504 (char 1504)
+(AgentLoopWorker pid=628137) ERROR:2025-08-05 05:24:29,332:Failed to decode tool call: Expecting ',' delimiter: line 2 column 3690 (char 3690)
+在./verl/experimental/agent_loop/tool_parser.py:100:                 logger.error(f"Failed to decode tool call: {e}")
+中加一些日志
