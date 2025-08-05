@@ -22,7 +22,7 @@ tool_config_path=./sandbox_fusion_tool_config.yaml
 
 # wandb
 project_name=wuxibin_retool
-experiment_name=qwen2.5-05b_dapo
+experiment_name=qwen2.5-05b_ppo
 default_local_dir=$DATA_ROOT/checkpoint/$experiment_name
 
 # ================= algorithm =================
