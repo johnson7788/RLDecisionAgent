@@ -55,6 +55,11 @@ sudo docker run --rm --gpus all nvidia/cuda:12.2-base-ubuntu22.04 nvidia-smi
 ## Docker镜像
 ```
 docker pull vemlp-boe-cn-beijing.cr.volces.com/preset-images/verl:v0.4.1
+挂载时区
+docker create --runtime=nvidia --gpus all --net=host --shm-size="10g" --cap-add=SYS_ADMIN -v .:/workspace/verl -v /etc/localtime:/etc/localtime:ro -v /etc/timezone:/etc/timezone:ro --name verl vemlp-boe-cn-beijing.cr.volces.com/preset-images/verl:v0.4.1 sleep infinity
+docker start verl
+docker exec -it verl bash
+
 ```
 
 ## 训练char_count
