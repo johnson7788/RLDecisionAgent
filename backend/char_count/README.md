@@ -537,6 +537,18 @@ Training Progress:   1%|          | 1/140 [00:49<1:53:43, 49.09s/it]
 
 ```
 
+# 查看训练的日志
+tensorboard --logdir tensorboard_log/verl_example/smol135m_grpo/ --bind_all --port 13383
+TensorFlow installation not found - running with reduced feature set.
+
+NOTE: Using experimental fast data loading logic. To disable, pass
+    "--load_fast=false" and report issues on GitHub. More details:
+    https://github.com/tensorflow/tensorboard/issues/4784
+
+TensorBoard 2.20.0 at http://xxxx:13383/ (Press CTRL+C to quit)
+
+![image_tensorboard.png](image_tensorboard.png)
+
 
 合并FSDP训练后的actor模型
 ```
