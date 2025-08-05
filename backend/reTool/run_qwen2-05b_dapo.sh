@@ -10,6 +10,7 @@ DATA_ROOT=${DATA_ROOT:-$PWD}
 
 dapo_math_17k=$DATA_ROOT/dataset/BytedTsinghua/train
 aime_2024=$DATA_ROOT/dataset/Maxwell/validation
+
 model_path=./models/merged_sft_model
 
 train_files="['$dapo_math_17k']"
@@ -47,6 +48,7 @@ n_resp_per_prompt_val=4
 # ================= perfomance =================
 infer_tp=1 # vllm, 代表 tensor parallel size，是用于推理的模型切分
 train_sp=2 # train
+
 offload=True
 
 actor_max_token_len_per_gpu=$(( (max_prompt_length + max_response_length) * 1 ))

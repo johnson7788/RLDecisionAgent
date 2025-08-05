@@ -1,24 +1,28 @@
 set -x
 
+# 使用哪个显卡
+export CUDA_VISIBLE_DEVICES=1,2
+export VLLM_USE_V1=1
+
 # ================= data/model/tool =================
 HDFS_ROOT=${HDFS_ROOT:-$PWD}
 DATA_ROOT=${DATA_ROOT:-$PWD}
 
-dapo_math_17k=$DATA_ROOT/dataset/BytedTsinghua-SIA/DAPO-Math-17k
-aime_2024=$DATA_ROOT/dataset/Maxwell-Jia/AIME_2024
-aime_2025=$DATA_ROOT/dataset/yentinglin/aime_2025
-actor_model_path=$HDFS_ROOT/checkpoint/multiturn-sft-qwen-2.5-32b-instruct/global_step_372
-critic_model_path=$actor_model_path
+dapo_math_17k=$DATA_ROOT/dataset/BytedTsinghua/train
+aime_2024=$DATA_ROOT/dataset/Maxwell/validation
+
+actor_model_path=./models/merged_sft_model
+critic_model_path=./models/merged_sft_model
 
 train_files="['$dapo_math_17k']"
-test_files="['$aime_2025']"
+test_files="['$aime_2024']"
 
 # tool
-tool_config_path=recipe/retool/sandbox_fusion_tool_config.yaml
+tool_config_path=./sandbox_fusion_tool_config.yaml
 
 # wandb
 project_name=wuxibin_retool
-experiment_name=qwen2.5-32b_ppo
+experiment_name=qwen2.5-05b_dapo
 default_local_dir=$DATA_ROOT/checkpoint/$experiment_name
 
 # ================= algorithm =================
@@ -34,7 +38,8 @@ clip_ratio_high=0.28
 
 max_turns=8
 max_prompt_length=2048
-max_response_length=16384
+# 最大回复长度16384改成4096
+max_response_length=4096
 actor_lr=1e-6
 critic_lr=2e-6
 gae_gamma=1.0
@@ -42,13 +47,13 @@ gae_lam=1.0
 
 critic_warmup=20
 
-train_batch_size=32
-ppo_mini_batch_size=16
-n_resp_per_prompt_val=30
+train_batch_size=16
+ppo_mini_batch_size=8
+n_resp_per_prompt_val=4
 
 # ================= perfomance =================
-infer_tp=4 # vllm
-train_sp=4 # train
+infer_tp=1 # vllm, 代表 tensor parallel size，是用于推理的模型切分
+train_sp=2 # train
 
 offload=True
 
@@ -70,9 +75,9 @@ python3 -m verl.trainer.main_ppo \
     data.max_response_length=$max_response_length \
     data.filter_overlong_prompts=True \
     data.truncation='error' \
-    data.custom_cls.path=recipe/retool/retool.py \
+    data.custom_cls.path=retool.py \
     data.custom_cls.name=CustomRLHFDataset \
-    custom_reward_function.path=recipe/retool/retool.py \
+    custom_reward_function.path=retool.py \
     custom_reward_function.name=compute_score \
     actor_rollout_ref.model.path=$actor_model_path \
     actor_rollout_ref.model.use_remove_padding=True \
@@ -113,11 +118,11 @@ python3 -m verl.trainer.main_ppo \
     trainer.logger=['console'] \
     trainer.project_name=$project_name \
     trainer.experiment_name=$experiment_name \
-    trainer.n_gpus_per_node=1 \
+    trainer.n_gpus_per_node=2 \
     trainer.val_before_train=True \
     trainer.log_val_generations=100 \
     trainer.nnodes=1 \
-    trainer.save_freq=30 \
+    trainer.save_freq=1 \
     trainer.default_local_dir=$default_local_dir \
     trainer.test_freq=5 \
     trainer.total_epochs=1 $@
