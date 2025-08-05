@@ -36,11 +36,13 @@ clip_ratio_high=0.28
 
 max_turns=8
 max_prompt_length=2048
-max_response_length=16384
+# 最大回复长度16384改成4096
+max_response_length=4096
 actor_lr=1e-6
 
-n_resp_per_prompt=16
-n_resp_per_prompt_val=30
+# 每次 rollout 生成 16 或 30 个 response，是显存的主要来源。
+n_resp_per_prompt=4
+n_resp_per_prompt_val=4
 
 # ================= perfomance =================
 infer_tp=1 # vllm, 代表 tensor parallel size，是用于推理的模型切分
@@ -57,7 +59,7 @@ python3 -m verl.trainer.main_ppo \
     data.train_files="$train_files" \
     data.val_files="$test_files" \
     data.return_raw_chat=True \
-    data.train_batch_size=16 \
+    data.train_batch_size=8 \
     data.max_prompt_length=$max_prompt_length \
     data.max_response_length=$max_response_length \
     data.filter_overlong_prompts=True \

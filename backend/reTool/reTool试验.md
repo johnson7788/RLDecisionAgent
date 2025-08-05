@@ -415,6 +415,8 @@ Retool 提供了两种 RL 策略：
 ```bash
 注意修改：model_path，即SFT的训练后的模型结果
 bash run_qwen2-05b_dapo.sh
+输出结果:
+
 ```
 
 **评估结果（150步）**：
