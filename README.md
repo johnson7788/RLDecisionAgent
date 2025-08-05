@@ -6,7 +6,7 @@
 docker pull vemlp-boe-cn-beijing.cr.volces.com/preset-images/verl:v0.4.1
 ```
 
-## 创建docker镜像
+## 创建docker镜像， 使用 --net=host 后，容器会共享宿主机的网络栈，不需要再次进行端口映射了。
 ```
 #docker create --runtime=nvidia --gpus all --net=host --shm-size="10g" --cap-add=SYS_ADMIN -v .:/workspace/verl --name verl vemlp-boe-cn-beijing.cr.volces.com/preset-images/verl:v0.4.1 sleep infinity
 挂载时区

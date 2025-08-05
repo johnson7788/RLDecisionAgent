@@ -415,8 +415,44 @@ Retool 提供了两种 RL 策略：
 ```bash
 注意修改：model_path，即SFT的训练后的模型结果
 bash run_qwen2-05b_dapo.sh
-输出结果:
+```
 
+
+
+合并FSDP训练后的actor模型
+```
+检查最后一个step输出模型:
+ls 
+checkpoint/qwen2.5-05b_dapo/global_step_111
+
+cd checkpoint/qwen2.5-05b_dapo/global_step_111/actor/
+cp -a huggingface/* .
+cd - 
+python /workspace/verl/verl/scripts/legacy_model_merger.py merge \
+    --backend fsdp \
+    --local_dir checkpoint/qwen2.5-05b_dapo/global_step_111/actor/ \
+    --target_dir checkpoint/merged_dapo_model
+输出:
+Got device mesh tensor([0, 1], dtype=torch.int32), mesh_dim_names ('fsdp',)
+Processing model shards with 2 (2,) in total
+Loading 2 FSDP shards: 100%|█████████████████████████████████████████████████████████████████████████████| 2/2 [00:00<00:00,  2.29it/s]
+Sliding Window Attention is enabled but not implemented for `eager`; unexpected results may be encountered.
+Saving model to checkpoint/merged_dapo_model
+Saving tokenizer to checkpoint/merged_dapo_model
+
+ls -alht checkpoint/merged_dapo_model
+total 1.2G
+drwxr-xr-x 2 root root 4.0K Aug  5 11:50 .
+-rw-r--r-- 1 root root  11M Aug  5 11:50 tokenizer.json
+-rw-r--r-- 1 root root 1.6M Aug  5 11:50 merges.txt
+-rw-r--r-- 1 root root 2.7M Aug  5 11:50 vocab.json
+-rw-r--r-- 1 root root  605 Aug  5 11:50 added_tokens.json
+-rw-r--r-- 1 root root  613 Aug  5 11:50 special_tokens_map.json
+-rw-r--r-- 1 root root 7.2K Aug  5 11:50 tokenizer_config.json
+-rw-r--r-- 1 root root 1.2G Aug  5 11:50 model.safetensors
+-rw-r--r-- 1 root root  683 Aug  5 11:50 config.json
+-rw-r--r-- 1 root root  242 Aug  5 11:50 generation_config.json
+drwxr-xr-x 5 root root 4.0K Aug  5 11:50 ..
 ```
 
 **评估结果（150步）**：
@@ -426,6 +462,28 @@ bash run_qwen2-05b_dapo.sh
 
 说明 RL 后模型能更灵活使用工具，提升了准确率。
 
+# 推理训练后的模型
+```
+# 使用哪个模型
+export CUDA_VISIBLE_DEVICES=1
+export HF_ENDPOINT=https://hf-mirror.com
+ls checkpoint/merged_dapo_model
+vllm serve checkpoint/merged_dapo_model --host 0.0.0.0 --port 5306
+输出：
+
+测试是否获取模型成功
+# curl http://localhost:5306/v1/models
+
+# 测试一条数据
+curl http://localhost:5306/v1/chat/completions \
+    -H "Content-Type: application/json" \
+    -d '{
+        "model": "checkpoint/merged_dapo_model",
+        "messages": [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": "How many n are there in n-i-n-e?"}
+        ]
+    }'
 ---
 
 ### 🤖 PPO（Proximal Policy Optimization）
