@@ -29,11 +29,11 @@ python3 create_dataset.py
 ```
 We create a train set and a val set. Both of them are used of SFT and RL. You can specify the total number of data, min/max length and data path.
 
-To run the SFT
+SFT训练
 ```bash
 export HF_ENDPOINT=https://hf-mirror.com
 bash train_sft.sh
-bash train_sft.sh
+输出:
 + nproc_per_node=1
 + save_path=./models/sft
 + torchrun --standalone --nnodes=1 --nproc_per_node=1 -m verl.trainer.fsdp_sft_trainer data.train_files=/root/data/char_count/sft/train.parquet data.val_files=/root/data/char_count/sft/test.parquet data.prompt_key=prompt data.response_key=response data.micro_batch_size_per_gpu=8 data.max_length=256 data.train_batch_size=256 use_remove_padding=True model.partial_pretrain=HuggingFaceTB/SmolLM2-135M-Instruct trainer.default_local_dir=./models/sft trainer.project_name=char_count-sft trainer.experiment_name=char_count-sft-SmolLM2-135M-Instruct trainer.total_epochs=3 'trainer.logger=[console]' trainer.default_hdfs_dir=null
