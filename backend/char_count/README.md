@@ -560,3 +560,82 @@ drwxr-xr-x 2 root root 4.0K Aug  5 00:46 .
 -rw-r--r-- 1 root root  132 Aug  5 00:46 generation_config.json
 drwxr-xr-x 4 root root 4.0K Aug  5 00:46 ..
 ```
+
+# 推理训练后的模型
+```
+# 使用哪个模型
+export CUDA_VISIBLE_DEVICES=1
+export HF_ENDPOINT=https://hf-mirror.com
+ls checkpoint/merged_hf_model
+vllm serve checkpoint/merged_hf_model --host 0.0.0.0 --port 5306
+输出：
+INFO 08-05 09:08:22 [__init__.py:239] Automatically detected platform cuda.
+INFO 08-05 09:08:28 [api_server.py:1043] vLLM API server version 0.8.5.post1
+INFO 08-05 09:08:28 [api_server.py:1044] args: Namespace(subparser='serve', model_tag='checkpoint/merged_hf_model', config='', host='0.0.0.0', port=5306, uvicorn_log_level='info', disable_uvicorn_access_log=False, allow_credentials=False, allowed_origins=['*'], allowed_methods=['*'], allowed_headers=['*'], api_key=None, lora_modules=None, prompt_adapters=None, chat_template=None, chat_template_content_format='auto', response_role='assistant', ssl_keyfile=None, ssl_certfile=None, ssl_ca_certs=None, enable_ssl_refresh=False, ssl_cert_reqs=0, root_path=None, middleware=[], return_tokens_as_token_ids=False, disable_frontend_multiprocessing=False, enable_request_id_headers=False, enable_auto_tool_choice=False, tool_call_parser=None, tool_parser_plugin='', model='checkpoint/merged_hf_model', task='auto', tokenizer=None, hf_config_path=None, skip_tokenizer_init=False, revision=None, code_revision=None, tokenizer_revision=None, tokenizer_mode='auto', trust_remote_code=False, allowed_local_media_path=None, load_format='auto', download_dir=None, model_loader_extra_config={}, use_tqdm_on_load=True, config_format=<ConfigFormat.AUTO: 'auto'>, dtype='auto', max_model_len=None, guided_decoding_backend='auto', reasoning_parser=None, logits_processor_pattern=None, model_impl='auto', distributed_executor_backend=None, pipeline_parallel_size=1, tensor_parallel_size=1, data_parallel_size=1, enable_expert_parallel=False, max_parallel_loading_workers=None, ray_workers_use_nsight=False, disable_custom_all_reduce=False, block_size=None, gpu_memory_utilization=0.9, swap_space=4, kv_cache_dtype='auto', num_gpu_blocks_override=None, enable_prefix_caching=None, prefix_caching_hash_algo='builtin', cpu_offload_gb=0, calculate_kv_scales=False, disable_sliding_window=False, use_v2_block_manager=True, seed=None, max_logprobs=20, disable_log_stats=False, quantization=None, rope_scaling=None, rope_theta=None, hf_token=None, hf_overrides=None, enforce_eager=False, max_seq_len_to_capture=8192, tokenizer_pool_size=0, tokenizer_pool_type='ray', tokenizer_pool_extra_config={}, limit_mm_per_prompt={}, mm_processor_kwargs=None, disable_mm_preprocessor_cache=False, enable_lora=None, enable_lora_bias=False, max_loras=1, max_lora_rank=16, lora_extra_vocab_size=256, lora_dtype='auto', long_lora_scaling_factors=None, max_cpu_loras=None, fully_sharded_loras=False, enable_prompt_adapter=None, max_prompt_adapters=1, max_prompt_adapter_token=0, device='auto', speculative_config=None, ignore_patterns=[], served_model_name=None, qlora_adapter_name_or_path=None, show_hidden_metrics_for_version=None, otlp_traces_endpoint=None, collect_detailed_traces=None, disable_async_output_proc=False, max_num_batched_tokens=None, max_num_seqs=None, max_num_partial_prefills=1, max_long_partial_prefills=1, long_prefill_token_threshold=0, num_lookahead_slots=0, scheduler_delay_factor=0.0, preemption_mode=None, num_scheduler_steps=1, multi_step_stream_outputs=True, scheduling_policy='fcfs', enable_chunked_prefill=None, disable_chunked_mm_input=False, scheduler_cls='vllm.core.scheduler.Scheduler', override_neuron_config=None, override_pooler_config=None, compilation_config=None, kv_transfer_config=None, worker_cls='auto', worker_extension_cls='', generation_config='auto', override_generation_config=None, enable_sleep_mode=False, additional_config=None, enable_reasoning=False, disable_cascade_attn=False, disable_log_requests=False, max_log_len=None, disable_fastapi_docs=False, enable_prompt_tokens_details=False, enable_server_load_tracking=False, dispatch_function=<function ServeSubcommand.cmd at 0x7fdc5b08bf40>)
+INFO 08-05 09:08:37 [config.py:717] This model supports multiple tasks: {'embed', 'generate', 'classify', 'reward', 'score'}. Defaulting to 'generate'.
+INFO 08-05 09:08:37 [config.py:2003] Chunked prefill is enabled with max_num_batched_tokens=2048.
+INFO 08-05 09:08:41 [__init__.py:239] Automatically detected platform cuda.
+INFO 08-05 09:08:45 [core.py:58] Initializing a V1 LLM engine (v0.8.5.post1) with config: model='checkpoint/merged_hf_model', speculative_config=None, tokenizer='checkpoint/merged_hf_model', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, override_neuron_config=None, tokenizer_revision=None, trust_remote_code=False, dtype=torch.bfloat16, max_seq_len=8192, download_dir=None, load_format=auto, tensor_parallel_size=1, pipeline_parallel_size=1, disable_custom_all_reduce=False, quantization=None, enforce_eager=False, kv_cache_dtype=auto,  device_config=cuda, decoding_config=DecodingConfig(guided_decoding_backend='auto', reasoning_backend=None), observability_config=ObservabilityConfig(show_hidden_metrics=False, otlp_traces_endpoint=None, collect_model_forward_time=False, collect_model_execute_time=False), seed=None, served_model_name=checkpoint/merged_hf_model, num_scheduler_steps=1, multi_step_stream_outputs=True, enable_prefix_caching=True, chunked_prefill_enabled=True, use_async_output_proc=True, disable_mm_preprocessor_cache=False, mm_processor_kwargs=None, pooler_config=None, compilation_config={"level":3,"custom_ops":["none"],"splitting_ops":["vllm.unified_attention","vllm.unified_attention_with_output"],"use_inductor":true,"compile_sizes":[],"use_cudagraph":true,"cudagraph_num_of_warmups":1,"cudagraph_capture_sizes":[512,504,496,488,480,472,464,456,448,440,432,424,416,408,400,392,384,376,368,360,352,344,336,328,320,312,304,296,288,280,272,264,256,248,240,232,224,216,208,200,192,184,176,168,160,152,144,136,128,120,112,104,96,88,80,72,64,56,48,40,32,24,16,8,4,2,1],"max_capture_size":512}
+WARNING 08-05 09:08:45 [utils.py:2522] Methods determine_num_available_blocks,device_config,get_cache_block_size_bytes,initialize_cache not implemented in <vllm.v1.worker.gpu_worker.Worker object at 0x70481d3f0670>
+INFO 08-05 09:08:46 [parallel_state.py:1004] rank 0 in world size 1 is assigned as DP rank 0, PP rank 0, TP rank 0
+INFO 08-05 09:08:46 [cuda.py:221] Using Flash Attention backend on V1 engine.
+INFO 08-05 09:08:46 [topk_topp_sampler.py:59] Using FlashInfer for top-p & top-k sampling.
+INFO 08-05 09:08:46 [gpu_model_runner.py:1329] Starting to load model checkpoint/merged_hf_model...
+Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:00<?, ?it/s]
+Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00, 10.97it/s]
+
+INFO 08-05 09:08:46 [loader.py:458] Loading weights took 0.10 seconds
+INFO 08-05 09:08:46 [gpu_model_runner.py:1347] Model loading took 0.2540 GiB and 0.292183 seconds
+INFO 08-05 09:08:56 [backends.py:420] Using cache directory: /home/wac/johnson/.cache/vllm/torch_compile_cache/f1630b6b52/rank_0_0 for vLLM's torch.compile
+INFO 08-05 09:08:56 [backends.py:430] Dynamo bytecode transform time: 9.22 s
+INFO 08-05 09:09:02 [backends.py:118] Directly load the compiled graph(s) for shape None from the cache, took 6.089 s
+INFO 08-05 09:09:04 [monitor.py:33] torch.compile takes 9.22 s in total
+INFO 08-05 09:09:04 [kv_cache_utils.py:634] GPU KV cache size: 946,384 tokens
+INFO 08-05 09:09:04 [kv_cache_utils.py:637] Maximum concurrency for 8,192 tokens per request: 115.53x
+INFO 08-05 09:09:26 [gpu_model_runner.py:1686] Graph capturing finished in 22 secs, took 0.45 GiB
+INFO 08-05 09:09:26 [core.py:159] init engine (profile, create kv cache, warmup model) took 40.02 seconds
+INFO 08-05 09:09:26 [core_client.py:439] Core engine process 0 ready.
+INFO 08-05 09:09:26 [api_server.py:1090] Starting vLLM API server on http://0.0.0.0:5306
+INFO 08-05 09:09:26 [launcher.py:28] Available routes are:
+INFO 08-05 09:09:26 [launcher.py:36] Route: /openapi.json, Methods: HEAD, GET
+INFO 08-05 09:09:26 [launcher.py:36] Route: /docs, Methods: HEAD, GET
+INFO 08-05 09:09:26 [launcher.py:36] Route: /docs/oauth2-redirect, Methods: HEAD, GET
+INFO 08-05 09:09:26 [launcher.py:36] Route: /redoc, Methods: HEAD, GET
+INFO 08-05 09:09:26 [launcher.py:36] Route: /health, Methods: GET
+INFO 08-05 09:09:26 [launcher.py:36] Route: /load, Methods: GET
+INFO 08-05 09:09:26 [launcher.py:36] Route: /ping, Methods: POST, GET
+INFO 08-05 09:09:26 [launcher.py:36] Route: /tokenize, Methods: POST
+INFO 08-05 09:09:26 [launcher.py:36] Route: /detokenize, Methods: POST
+INFO 08-05 09:09:26 [launcher.py:36] Route: /v1/models, Methods: GET
+INFO 08-05 09:09:26 [launcher.py:36] Route: /version, Methods: GET
+INFO 08-05 09:09:26 [launcher.py:36] Route: /v1/chat/completions, Methods: POST
+INFO 08-05 09:09:26 [launcher.py:36] Route: /v1/completions, Methods: POST
+INFO 08-05 09:09:26 [launcher.py:36] Route: /v1/embeddings, Methods: POST
+INFO 08-05 09:09:26 [launcher.py:36] Route: /pooling, Methods: POST
+INFO 08-05 09:09:26 [launcher.py:36] Route: /score, Methods: POST
+INFO 08-05 09:09:26 [launcher.py:36] Route: /v1/score, Methods: POST
+INFO 08-05 09:09:26 [launcher.py:36] Route: /v1/audio/transcriptions, Methods: POST
+INFO 08-05 09:09:26 [launcher.py:36] Route: /rerank, Methods: POST
+INFO 08-05 09:09:26 [launcher.py:36] Route: /v1/rerank, Methods: POST
+INFO 08-05 09:09:26 [launcher.py:36] Route: /v2/rerank, Methods: POST
+INFO 08-05 09:09:26 [launcher.py:36] Route: /invocations, Methods: POST
+INFO 08-05 09:09:26 [launcher.py:36] Route: /metrics, Methods: GET
+INFO:     Started server process [1387984]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete
+
+测试是否获取模型成功
+# curl http://localhost:5306/v1/models
+{"object":"list","data":[{"id":"checkpoint/merged_hf_model","object":"model","created":1754356232,"owned_by":"vllm","root":"checkpoint/merged_hf_model","parent":null,"max_model_len":8192,"permission":[{"id":"modelperm-7623dc28727446089ab74b040f63c579","object":"model_permission","created":1754356232,"allow_create_engine":false,"allow_sampling":true,"allow_logprobs":true,"allow_search_indices":false,"allow_view":true,"allow_fine_tuning":false,"organization":"*","group":null,"is_blocking":false}]}]}
+# 测试一条数据
+curl http://localhost:5306/v1/chat/completions \
+    -H "Content-Type: application/json" \
+    -d '{
+        "model": "checkpoint/merged_hf_model",
+        "messages": [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": "How many n are there in n-i-n-e?"}
+        ]
+    }'
+
+```
