@@ -470,20 +470,63 @@ export HF_ENDPOINT=https://hf-mirror.com
 ls checkpoint/merged_dapo_model
 vllm serve checkpoint/merged_dapo_model --host 0.0.0.0 --port 5306
 输出：
+WARNING 08-05 11:56:20 [utils.py:2522] Methods determine_num_available_blocks,device_config,get_cache_block_size_bytes,initialize_cache not implemented in <vllm.v1.worker.gpu_worker.Worker object at 0x7b1f5d572410>
+INFO 08-05 11:56:25 [parallel_state.py:1004] rank 0 in world size 1 is assigned as DP rank 0, PP rank 0, TP rank 0
+INFO 08-05 11:56:25 [cuda.py:221] Using Flash Attention backend on V1 engine.
+INFO 08-05 11:56:25 [topk_topp_sampler.py:44] Currently, FlashInfer top-p & top-k sampling sampler is disabled because FlashInfer>=v0.2.3 is not backward compatible. Falling back to the PyTorch-native implementation of top-p & top-k sampling.
+INFO 08-05 11:56:25 [gpu_model_runner.py:1329] Starting to load model checkpoint/merged_dapo_model...
+Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:00<?, ?it/s]
+Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  4.10it/s]
+Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  4.10it/s]
+
+INFO 08-05 11:56:26 [loader.py:458] Loading weights took 0.27 seconds
+INFO 08-05 11:56:26 [gpu_model_runner.py:1347] Model loading took 0.9271 GiB and 0.619115 seconds
+INFO 08-05 11:56:36 [backends.py:420] Using cache directory: /root/.cache/vllm/torch_compile_cache/034dfb9f57/rank_0_0 for vLLM's torch.compile
+INFO 08-05 11:56:36 [backends.py:430] Dynamo bytecode transform time: 9.21 s
+INFO 08-05 11:56:39 [backends.py:136] Cache the graph of shape None for later use
+INFO 08-05 11:57:02 [backends.py:148] Compiling a graph for general shape takes 26.11 s
+INFO 08-05 11:57:10 [monitor.py:33] torch.compile takes 35.32 s in total
+INFO 08-05 11:57:11 [kv_cache_utils.py:634] GPU KV cache size: 1,606,496 tokens
+INFO 08-05 11:57:11 [kv_cache_utils.py:637] Maximum concurrency for 32,768 tokens per request: 49.03x
+WARNING 08-05 11:57:34 [config.py:1239] Default sampling parameters have been overridden by the model's Hugging Face generation config recommended from the model creator. If this is not intended, please relaunch vLLM instance with `--generation-config vllm`.
+INFO 08-05 11:57:34 [serving_chat.py:118] Using default chat sampling params from model: {'repetition_penalty': 1.1, 'temperature': 0.7, 'top_k': 20, 'top_p': 0.8}
+INFO 08-05 11:57:34 [serving_completion.py:61] Using default completion sampling params from model: {'repetition_penalty': 1.1, 'temperature': 0.7, 'top_k': 20, 'top_p': 0.8}
+INFO 08-05 11:57:34 [api_server.py:1090] Starting vLLM API server on http://0.0.0.0:5306
+INFO 08-05 11:57:34 [launcher.py:28] Available routes are:
+INFO 08-05 11:57:34 [launcher.py:36] Route: /openapi.json, Methods: GET, HEAD
+INFO 08-05 11:57:34 [launcher.py:36] Route: /docs, Methods: GET, HEAD
+INFO 08-05 11:57:34 [launcher.py:36] Route: /docs/oauth2-redirect, Methods: GET, HEAD
+INFO 08-05 11:57:34 [launcher.py:36] Route: /redoc, Methods: GET, HEAD
+INFO 08-05 11:57:34 [launcher.py:36] Route: /health, Methods: GET
+INFO 08-05 11:57:34 [launcher.py:36] Route: /load, Methods: GET
+INFO 08-05 11:57:34 [launcher.py:36] Route: /ping, Methods: GET, POST
+INFO 08-05 11:57:34 [launcher.py:36] Route: /tokenize, Methods: POST
+INFO 08-05 11:57:34 [launcher.py:36] Route: /detokenize, Methods: POST
+INFO 08-05 11:57:34 [launcher.py:36] Route: /v1/models, Methods: GET
+INFO 08-05 11:57:34 [launcher.py:36] Route: /version, Methods: GET
+INFO 08-05 11:57:34 [launcher.py:36] Route: /v1/chat/completions, Methods: POST
+INFO 08-05 11:57:34 [launcher.py:36] Route: /v1/completions, Methods: POST
+INFO 08-05 11:57:34 [launcher.py:36] Route: /v1/embeddings, Methods: POST
+INFO 08-05 11:57:34 [launcher.py:36] Route: /pooling, Methods: POST
+INFO 08-05 11:57:34 [launcher.py:36] Route: /score, Methods: POST
+INFO 08-05 11:57:34 [launcher.py:36] Route: /v1/score, Methods: POST
+INFO 08-05 11:57:34 [launcher.py:36] Route: /v1/audio/transcriptions, Methods: POST
+INFO 08-05 11:57:34 [launcher.py:36] Route: /rerank, Methods: POST
+INFO 08-05 11:57:34 [launcher.py:36] Route: /v1/rerank, Methods: POST
+INFO 08-05 11:57:34 [launcher.py:36] Route: /v2/rerank, Methods: POST
+INFO 08-05 11:57:34 [launcher.py:36] Route: /invocations, Methods: POST
+INFO 08-05 11:57:34 [launcher.py:36] Route: /metrics, Methods: GET
+INFO:     Started server process [680514]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
 
 测试是否获取模型成功
 # curl http://localhost:5306/v1/models
 
 # 测试一条数据
 curl http://localhost:5306/v1/chat/completions \
-    -H "Content-Type: application/json" \
-    -d '{
-        "model": "checkpoint/merged_dapo_model",
-        "messages": [
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": "How many n are there in n-i-n-e?"}
-        ]
-    }'
+  -H "Content-Type: application/json" \
+  -d '{"model":"checkpoint/merged_dapo_model","messages":[{"role":"system","content":"You are a helpful assistant."},{"role":"user","content":"Solve the following math problem step by step. The last line of your response should be of the form Answer: $Answer (without quotes) where $Answer is the answer to the problem.\n\nIn triangle $ABC$, $\\sin \\angle A = \\frac{4}{5}$ and $\\angle A < 90^\\circ$. Let $D$ be a point outside triangle $ABC$ such that $\\angle BAD = \\angle DAC$ and $\\angle BDC = 90^\\circ$. Suppose that $AD = 1$ and that $\\frac{BD}{CD} = \\frac{3}{2}$. If $AB + AC$ can be expressed in the form $\\frac{a\\sqrt{b}}{c}$ where $a, b, c$ are pairwise relatively prime integers, find $a + b + c$.\n\nRemember to put your answer on its own line after \"Answer:\""}]}'
 ---
 
 ### 🤖 PPO（Proximal Policy Optimization）
