@@ -56,3 +56,8 @@ sudo docker run --rm --gpus all nvidia/cuda:12.2-base-ubuntu22.04 nvidia-smi
 ```
 docker pull vemlp-boe-cn-beijing.cr.volces.com/preset-images/verl:v0.4.1
 ```
+
+## 训练char_count
+### SFT步骤
+
+### GRPO步骤
