@@ -1,4 +1,5 @@
 # SFT支持的参数
+
 verl/verl/verl/trainer# python fsdp_sft_trainer.py -h
 fsdp_sft_trainer is powered by Hydra.
 
@@ -97,3 +98,11 @@ trainer:
 
 Powered by Hydra (https://hydra.cc)
 Use --hydra-help to view Hydra specific help
+
+
+# 示例
+单显卡SFT训练
+[train_sft.sh](..%2Fbackend%2Fchar_count%2Ftrain_sft.sh)
+
+多显卡SFT训练
+[run_qwen2-05b_sft.sh](..%2Fbackend%2FreTool%2Frun_qwen2-05b_sft.sh)
