@@ -1,9 +1,13 @@
 # 错误收集
-## 1. 显卡
-Tesla V100-SXM2-32GB 不支持
+## 1. 显卡Tesla V100-SXM2-32GB 不支持, 仅支持 Ampere 架构及更新的 GPU（如 RTX 30xx、RTX 40xx、A100、H100 等）
 flash_attn_gpu.varlen_fwd(
-                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 RuntimeError: FlashAttention only supports Ampere GPUs or newer.
+  File "/usr/local/lib/python3.10/dist-packages/flash_attn/flash_attn_interface.py", line 170, in _flash_attn_varlen_forward
+    out, softmax_lse, S_dmask, rng_state = flash_attn_gpu.varlen_fwd(
+RuntimeError: FlashAttention only supports Ampere GPUs or newer.
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
 
 ## 2. 代理
 env_file配置代理，然后pycharm中的Paths to env加载env文件，即可使用代理
@@ -639,3 +643,4 @@ tool_args {'code': 'group_size = 100\nm = group_size // 2 if group_size % 2 == 0
 (AgentLoopWorker pid=628137) ERROR:2025-08-05 05:24:29,332:Failed to decode tool call: Expecting ',' delimiter: line 2 column 3690 (char 3690)
 在./verl/experimental/agent_loop/tool_parser.py:100:                 logger.error(f"Failed to decode tool call: {e}")
 中加一些日志
+
