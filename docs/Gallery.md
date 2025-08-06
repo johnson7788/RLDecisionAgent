@@ -159,3 +159,12 @@ Verl 在 rollout 阶段：
 用 start_interaction(ground_truth="The correct answer is 9.") 启动状态
 模型输出后，generate_response() 判断答题对错
 给出奖励和环境反馈（用于下一步训练或 sampling）
+
+
+# verl中的multiturn多轮对话是如何计算奖励的？
+多轮对话（multi‑turn dialogue）的奖励机制通常是基于 每个对话回合（turn-level） 或 整个对话轨迹（trajectory-level） 
+| 方法类别                      | 奖励时机           | 奖励来源                                   | 适用场景                          |
+| ------------------------- | -------------- | -------------------------------------- | ----------------------------- |
+| **回合级（turn-level）**       | 每个回合后          | tool 打分，如 correctness                  | GSM8K、QA 每步打分型对话              |
+| **轨迹级（trajectory-level）** | 对话结束后          | 最终是否正确、judge 模型输出                      | MGPO、ARTIST、agent agents 类 RL |
+| **混合模型**                  | 兼具回合内评分与最终轨迹奖励 | proxy 或 correctness + information gain | 信息稀疏、多回合推理任务                  |
