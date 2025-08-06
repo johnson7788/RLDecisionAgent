@@ -168,3 +168,45 @@ Verl 在 rollout 阶段：
 | **回合级（turn-level）**       | 每个回合后          | tool 打分，如 correctness                  | GSM8K、QA 每步打分型对话              |
 | **轨迹级（trajectory-level）** | 对话结束后          | 最终是否正确、judge 模型输出                      | MGPO、ARTIST、agent agents 类 RL |
 | **混合模型**                  | 兼具回合内评分与最终轨迹奖励 | proxy 或 correctness + information gain | 信息稀疏、多回合推理任务                  |
+
+# RL训练集中的agent_name字段
+RL 数据集中的 agent_name 字段主要用于指定训练时所使用的代理循环策略（agent loop）,在多轮交互（multi-turn conversation）和工具调用（tool calls）场景中，Tool Agent Loop 要求数据集里必须包含 "agent_name" 字段。系统会依据该字段值 决定使用 tool_agent_loop 还是 single_turn_agent（默认） 进行后续 rollout 处理
+| 文件 / 用例                                                | agent\_name 值         | 作用                           |
+| ------------------------------------------------------ | --------------------- | ---------------------------- |
+| GSM8K 工具调用训练脚本 (`gsm8k_tool_agent_loop.py`)            | `"tool_agent"`        | 使用工具代理循环，开启工具调用支持与计算奖励融合     |
+| Multi‑turn React Agent 测试 (`test_react_agent_loop.py`) | `"react_agent"`       | 测试带有多轮 React 行为的 agent loop  |
+| 单轮测试 (`test_basic_agent_loop.py`)                      | `"single_turn_agent"` | 使用单回合代理逻辑，无工具调用参与            |
+| 数学表达式数据生成 (`create_dataset.py`)                        | `"math_expression"`   | 自定义 agent loop 类型，用于特定数学表达任务 |
+
+tool_agent：用于 GSM8K 数学题 + 工具调用训练流程，会使用 ToolAgentLoop 类来支持 step‑by‑step 推理、调用 calc_gsm8k_reward 等工具逻辑。
+
+react_agent：在 React Agent（LangGraph 风格）中使用，用于 multi‑turn 工具调用 + 自反思推理类型流程。
+
+single_turn_agent：默认单轮响应 agent loop，无工具调用能力，适用于简单一次性回答流程。
+
+math_expression：自定义 agent loop，例如用于生成数学表达式任务的流程逻辑。
+
+cat ./verl/verl/experimental/agent_loop/__init__.py
+
+./verl/verl/experimental/agent_loop/tool_agent_loop.py
+verl 中的一个核心 agent loop runner 类型：ToolAgentLoop。它是一个基于工具调用的多轮对话 Agent，用于在强化学习训练或推理时，自动处理工具调用、生成响应、以及与环境交互。
+
+每轮循环包括：
+
+调用 LLM 生成响应（assistant 回合）。
+
+解析响应中是否包含工具调用。
+
+如果有工具调用，就执行工具并生成 tool response。
+
+将 tool response 拼接进 prompt，作为下一轮输入（user 回合）。
+
+直到达到这些终止条件之一：
+
+达到最大 token 限制（response_length）
+
+达到最大 assistant turn 或 user turn
+
+没有工具调用了
+
+工具调用异常（如报错
