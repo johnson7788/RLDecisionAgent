@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
     train_dataset = dataset["train"]
     test_dataset = dataset["test"]
-
+    
     instruction_following = 'Let\'s think step by step and output the final answer after "####".'
 
     # add a row to each data item that represents a unique id
@@ -67,6 +67,15 @@ if __name__ == "__main__":
 
     train_dataset = train_dataset.map(function=make_map_fn("train"), with_indices=True)
     test_dataset = test_dataset.map(function=make_map_fn("test"), with_indices=True)
+
+    # 打印数据集信息和前3条数据
+    print("Dataset Info:")
+    print(f"Train dataset size: {len(train_dataset)}")
+    print(f"Test dataset size: {len(test_dataset)}")
+    print("\nFirst 3 training examples:")
+    for i in range(3):
+        print(f"\nExample {i+1}:")
+        print(f"data: {train_dataset[i]}")
 
     local_dir = args.local_dir
     hdfs_dir = args.hdfs_dir
