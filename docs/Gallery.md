@@ -140,3 +140,22 @@ Maxwell-Jia/AIME_2024
 [ppo_megatron_trainer.yaml](..%2Fverl%2Fverl%2Ftrainer%2Fconfig%2Fppo_megatron_trainer.yaml)
 [ppo_trainer.yaml](..%2Fverl%2Fverl%2Ftrainer%2Fconfig%2Fppo_trainer.yaml)
 [sft_trainer.yaml](..%2Fverl%2Fverl%2Ftrainer%2Fconfig%2Fsft_trainer.yaml)
+
+# RL的数据集中的interaction_kwargs字段的意思
+https://verl.readthedocs.io/en/latest/sglang_multiturn/interaction_system.html?utm_source=chatgpt.com
+与特定样本对应的交互逻辑参数， Rollout 阶段（sglang_rollout.py） ，在实际 rollout 过程中，当请求状态为 INTERACTING 时，系统会读取 _req.interaction_kwargs 中的 "name" 字段来选择交互 agent：
+然后调用对应的交互类实例引导多轮对话、提供反馈、计算奖励等，verl 交互系统在强化学习训练期间支持动态、多轮对话反馈。该系统允许模型参与迭代问题解决场景，交互代理可以根据模型的响应提供纠正反馈、指导或评估。
+参考： verl/interactions/gsm8k_interaction.py
+Verl 框架中用于 GSM8K 任务的交互代理类 Gsm8kInteraction，它继承自 BaseInteraction，用于指导训练模型在 RLHF 或 DPO 过程中通过多轮交互方式提升数学题的解答能力。
+💡 interaction_kwargs 在哪体现？
+交互流程是围绕样本携带的 interaction_kwargs 来配置的，例如：
+{
+  "name": "gsm8k",
+  "query": "Samantha has 12 apples, eats 3...",
+  "ground_truth": "The correct answer is 9."
+}
+Verl 在 rollout 阶段：
+调用 interaction = interaction_map["gsm8k"]
+用 start_interaction(ground_truth="The correct answer is 9.") 启动状态
+模型输出后，generate_response() 判断答题对错
+给出奖励和环境反馈（用于下一步训练或 sampling）

@@ -13,7 +13,7 @@
 | `gsm8k_tool_agent_loop.py`         | ✅ 有                | ✅ 有       | ✅ 有             | 多轮 system+user prompt | 多了 `agent_name="tool_agent"`                                |
 
 
-# gsm8k.py
+## gsm8k.py
 ```
 GSM8K的原始数据:
 Example 1:
@@ -50,4 +50,25 @@ data: {'data_source': 'openai/gsm8k', 'prompt': [{'content': 'Weng earns $12 an 
 Example 3:
 data: {'data_source': 'openai/gsm8k', 'prompt': [{'content': 'Betty is saving money for a new wallet which costs $100. Betty has only half of the money she needs. Her parents decided to give her $15 for that purpose, and her grandparents twice as much as her parents. How much more money does Betty need to buy the wallet? Let\'s think step by step and output the final answer after "####".', 'role': 'user'}], 'ability': 'math', 'reward_model': {'ground_truth': '5', 'style': 'rule'}, 'extra_info': {'answer': "In the beginning, Betty has only 100 / 2 = $<<100/2=50>>50.\nBetty's grandparents gave her 15 * 2 = $<<15*2=30>>30.\nThis means, Betty needs 100 - 50 - 30 - 15 = $<<100-50-30-15=5>>5 more.\n#### 5", 'index': 2, 'question': 'Betty is saving money for a new wallet which costs $100. Betty has only half of the money she needs. Her parents decided to give her $15 for that purpose, and her grandparents twice as much as her parents. How much more money does Betty need to buy the wallet?', 'split': 'train'}}
 
+```
+
+## gsm8k_multiturn_w_interaction.py
+多了一个system的内容还有interaction_kwargs
+```
+Dataset Info:
+Train dataset size: 7473
+Test dataset size: 1319
+
+First 3 training examples:
+
+Example 1:
+data: {'data_source': 'openai/gsm8k', 'prompt': [{'content': 'You are a math expert. You are given a question and you need to solve it step by step. You should rethinking carefully if user point out your answer is wrong. Put your final answer in the format of `#### <answer>`.', 'role': 'system'}, {'content': "Natalia sold clips to 48 of her friends in April, and then she sold half as many clips in May. How many clips did Natalia sell altogether in April and May? Let's think step by step and output the final answer after `####`.", 'role': 'user'}], 'ability': 'math', 'reward_model': {'ground_truth': '72', 'style': 'rule'}, 'extra_info': {'answer': 'Natalia sold 48/2 = <<48/2=24>>24 clips in May.\nNatalia sold 48+24 = <<48+24=72>>72 clips altogether in April and May.\n#### 72', 'index': 0, 'interaction_kwargs': {'ground_truth': '72', 'name': 'gsm8k', 'query': "Natalia sold clips to 48 of her friends in April, and then she sold half as many clips in May. How many clips did Natalia sell altogether in April and May? Let's think step by step and output the final answer after `####`."}, 'question': 'Natalia sold clips to 48 of her friends in April, and then she sold half as many clips in May. How many clips did Natalia sell altogether in April and May?', 'split': 'train'}}
+
+Example 2:
+data: {'data_source': 'openai/gsm8k', 'prompt': [{'content': 'You are a math expert. You are given a question and you need to solve it step by step. You should rethinking carefully if user point out your answer is wrong. Put your final answer in the format of `#### <answer>`.', 'role': 'system'}, {'content': "Weng earns $12 an hour for babysitting. Yesterday, she just did 50 minutes of babysitting. How much did she earn? Let's think step by step and output the final answer after `####`.", 'role': 'user'}], 'ability': 'math', 'reward_model': {'ground_truth': '10', 'style': 'rule'}, 'extra_info': {'answer': 'Weng earns 12/60 = $<<12/60=0.2>>0.2 per minute.\nWorking 50 minutes, she earned 0.2 x 50 = $<<0.2*50=10>>10.\n#### 10', 'index': 1, 'interaction_kwargs': {'ground_truth': '10', 'name': 'gsm8k', 'query': "Weng earns $12 an hour for babysitting. Yesterday, she just did 50 minutes of babysitting. How much did she earn? Let's think step by step and output the final answer after `####`."}, 'question': 'Weng earns $12 an hour for babysitting. Yesterday, she just did 50 minutes of babysitting. How much did she earn?', 'split': 'train'}}
+
+Example 3:
+data: {'data_source': 'openai/gsm8k', 'prompt': [{'content': 'You are a math expert. You are given a question and you need to solve it step by step. You should rethinking carefully if user point out your answer is wrong. Put your final answer in the format of `#### <answer>`.', 'role': 'system'}, {'content': "Betty is saving money for a new wallet which costs $100. Betty has only half of the money she needs. Her parents decided to give her $15 for that purpose, and her grandparents twice as much as her parents. How much more money does Betty need to buy the wallet? Let's think step by step and output the final answer after `####`.", 'role': 'user'}], 'ability': 'math', 'reward_model': {'ground_truth': '5', 'style': 'rule'}, 'extra_info': {'answer': "In the beginning, Betty has only 100 / 2 = $<<100/2=50>>50.\nBetty's grandparents gave her 15 * 2 = $<<15*2=30>>30.\nThis means, Betty needs 100 - 50 - 30 - 15 = $<<100-50-30-15=5>>5 more.\n#### 5", 'index': 2, 'interaction_kwargs': {'ground_truth': '5', 'name': 'gsm8k', 'query': "Betty is saving money for a new wallet which costs $100. Betty has only half of the money she needs. Her parents decided to give her $15 for that purpose, and her grandparents twice as much as her parents. How much more money does Betty need to buy the wallet? Let's think step by step and output the final answer after `####`."}, 'question': 'Betty is saving money for a new wallet which costs $100. Betty has only half of the money she needs. Her parents decided to give her $15 for that purpose, and her grandparents twice as much as her parents. How much more money does Betty need to buy the wallet?', 'split': 'train'}}
+Creating parquet from Arrow format: 100%|████████| 8/8 [00:00<00:00, 185.08ba/s]
+Creating parquet from Arrow format: 100%|████████| 2/2 [00:00<00:00, 243.61ba/s]
 ```
