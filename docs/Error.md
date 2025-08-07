@@ -634,6 +634,8 @@ ray.exceptions.RayTaskError(StopIteration): ray::TaskRunner.run() (pid=1191877, 
 StopIteration
 
 # 19. 报错，应该是解析模型的调用工具时，模型生成的工具名称或者参数错误，导致错误，可以忽略
+https://verl.readthedocs.io/en/latest/start/agentic_rl.html#overview
+注意：在训练过程中，由于模型有时可能无法生成正确的工具调用标签，控制台会输出“解码工具调用失败”的错误信息，这并不表示训练中存在异常。
 tool_args {'code': 'group_size = 100\nm = group_size // 2 if group_size % 2 == 0 else group_size // 2 + 1\n\nresult = (m + 3) // 2  # Midpoint yielding largest m\nprint(f"m = {result}")'}
 (AgentLoopWorker pid=628137) tool_args {'code': 'print(m)'}
 (AgentLoopWorker pid=628137) tool_args {'code': 'print(group_size)'}
