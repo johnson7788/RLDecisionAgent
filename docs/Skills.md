@@ -1,4 +1,0 @@
-# 节省显存方法
-actor_rollout_ref.actor.ppo_micro_batch_size_per_gpu=1 
-critic.ppo_micro_batch_size_per_gpu=1 
-enable_gradient_checkpointing=true
