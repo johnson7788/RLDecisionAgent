@@ -16,3 +16,6 @@
 
 # SPMD(单程序，多数据)
 Single Program, Multiple Data
+
+# 共卡
+训推共卡（Training–Inference Co‑card）：同一计算卡同时承担训练与推理任务。这种方式可以提升资源利用率，降低训练/推理切换延迟。例如华为的 RLFusion 技术就支持该模式，能让同一张卡“一箭双雕”，即训练与推理并行进行，显著提升效率
