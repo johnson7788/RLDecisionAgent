@@ -7,3 +7,9 @@
 [submodule "AReaL"]
 	path = AReaL
 	url = https://github.com/inclusionAI/AReaL
+[submodule "ART"]
+	path = ART
+	url = https://github.com/OpenPipe/ART
+[submodule "agent-lightning"]
+	path = agent-lightning
+	url = https://github.com/microsoft/agent-lightning
