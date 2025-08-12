@@ -100,6 +100,7 @@ Generated 24 scenarios:
 
 ## Step2 开始训练
 ```
+wandb offline
 cd ART/examples/mcp-rl
 export CUDA_VISIBLE_DEVICES=1,2
 export ALL_PROXY=http://127.0.0.1:7890
