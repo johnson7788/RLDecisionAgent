@@ -89,3 +89,7 @@ ART 框架可以用 SkyPilot 作为其后端运行环境，这意味着：
 如果你要用 ART 在云上跑大规模训练，装上带 SkyPilot 支持的版本（`pip install openpipe-art[skypilot]`）就可以直接用 SkyPilot 来管理资源了。你还想了解 SkyPilot 怎么具体用或者怎么配置吗？
 
 
+# 运行训练前的环境检查
+ART/scripts/run_checks.sh
+# 安装art
+pip install -e . langchain-core tenacity "mcp>=1.11.0" "gql<4" aiohttp
