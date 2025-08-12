@@ -7,8 +7,8 @@ https_proxy=http://127.0.0.1:7890
 HF_ENDPOINT=https://hf-mirror.com
 
 # export ALL_PROXY=http://127.0.0.1:7890
-# exportHTTP_PROXY=http://127.0.0.1:7890
-# exportHTTPS_PROXY=http://127.0.0.1:7890
-# exporthttp_proxy=http://127.0.0.1:7890
-# exporthttps_proxy=http://127.0.0.1:7890
-# exportHF_ENDPOINT=https://hf-mirror.com
+# export HTTP_PROXY=http://127.0.0.1:7890
+# export HTTPS_PROXY=http://127.0.0.1:7890
+# export http_proxy=http://127.0.0.1:7890
+# export https_proxy=http://127.0.0.1:7890
+# export HF_ENDPOINT=https://hf-mirror.com

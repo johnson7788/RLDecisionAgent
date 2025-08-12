@@ -24,6 +24,9 @@ cd ART/examples/mcp-rl
 OPENAI_API_KEY=sk-proj-x-xxxx
 ALPHAVANTAGE_API_KEY=SGxxxx
 WANDB_API_KEY=c93xxx
+BALLDONTLIE_API_KEY=83xxx
+# 复制一份到mcp_rl中
+cp .env mcp_rl 
 
 准备数据(其实已经存在数据了，在每个servers/xxx/scenarios/train.jsonl和val.jsonl)
 python -m mcp_rl.scenario_generator servers/python/mcp_alphavantage/server_params.py
@@ -98,5 +101,24 @@ Generated 24 scenarios:
 ## Step2 开始训练
 ```
 cd ART/examples/mcp-rl
+export CUDA_VISIBLE_DEVICES=1
+python docs/ART/load_model.py
+pip install polars torchtune trl unsloth # 安装一个依赖包
+# 取消上传试验结果到s3
+│ ✔  Edit examples/mcp-rl/mcp_rl/train.py:         await backend._experim... =>         # await backend._exper...        │
+ │                                                                                                                        │
+ │    170           print("starting train")                                                                               │
+ │    171           await model.train(groups, config=art.TrainConfig(learning_rate=learning_rate))                        │
+ │    172                                                                                                                 │
+ │    173 -         await backend._experimental_push_to_s3(                                                               │
+ │    174 -             model,                                                                                            │
+ │    175 -         )                                                                                                     │
+ │    173 +         # await backend._experimental_push_to_s3(                                                             │
+ │    174 +         #     model,                                                                                          │
+ │    175 +         # )                                                                                                   │
+ │    176                                                                                                                 │
+ │    177                                                                                                                 │
+ │    178   def main():
+
 python -m mcp_rl.train --models=mcp-14b-alpha-001
 ```
