@@ -101,7 +101,7 @@ Generated 24 scenarios:
 ## Step2 开始训练
 ```
 cd ART/examples/mcp-rl
-export CUDA_VISIBLE_DEVICES=1
+export CUDA_VISIBLE_DEVICES=1,2
 python docs/ART/load_model.py
 pip install polars torchtune trl unsloth # 安装一个依赖包
 # 取消上传试验结果到s3

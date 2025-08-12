@@ -1,4 +1,4 @@
-# 报错
+# 报错，huggingface的模型下载，重试
  File "/workspace/verl/ART/examples/mcp-rl/mcp_rl/train.py", line 107, in train_mcp_agent
     await model.register(backend)
   File "/workspace/verl/ART/src/art/model.py", line 308, in register
