@@ -102,6 +102,11 @@ Generated 24 scenarios:
 ```
 cd ART/examples/mcp-rl
 export CUDA_VISIBLE_DEVICES=1,2
+export ALL_PROXY=http://127.0.0.1:7890
+export HTTP_PROXY=http://127.0.0.1:7890
+export HTTPS_PROXY=http://127.0.0.1:7890
+export http_proxy=http://127.0.0.1:7890
+export https_proxy=http://127.0.0.1:7890
 python docs/ART/load_model.py
 pip install polars torchtune trl unsloth # 安装一个依赖包
 # 取消上传试验结果到s3
