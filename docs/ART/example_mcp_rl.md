@@ -18,6 +18,7 @@ SMITHERY_MCP_URL = "https://server.smithery.ai/exa/mcp?api_key=552ddb78-0e95-499
 # 运行
 ## Step1 数据准备
 ```
+pip install -e . langchain-core tenacity "mcp>=1.11.0" "gql<4" aiohttp polars torchtune trl unsloth -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
 cd ART/examples/mcp-rl
 创建.env文件
 # cat .env
@@ -100,7 +101,7 @@ Generated 24 scenarios:
 
 ## Step2 开始训练
 ```
-wandb offline
+wandb offline  # 关闭wandb上传
 cd ART/examples/mcp-rl
 export CUDA_VISIBLE_DEVICES=1,2
 export ALL_PROXY=http://127.0.0.1:7890
@@ -109,7 +110,7 @@ export HTTPS_PROXY=http://127.0.0.1:7890
 export http_proxy=http://127.0.0.1:7890
 export https_proxy=http://127.0.0.1:7890
 python docs/ART/load_model.py
-pip install polars torchtune trl unsloth # 安装一个依赖包
+pip install polars torchtune trl unsloth apscheduler vllm # 安装一个依赖包
 # 取消上传试验结果到s3
 │ ✔  Edit examples/mcp-rl/mcp_rl/train.py:         await backend._experim... =>         # await backend._exper...        │
  │                                                                                                                        │
@@ -127,4 +128,87 @@ pip install polars torchtune trl unsloth # 安装一个依赖包
  │    178   def main():
 
 python -m mcp_rl.train --models=mcp-14b-alpha-001
+输出:
+weave: wandb version 0.21.1 is available!  To upgrade, please run:
+weave:  $ pip install wandb --upgrade
+weave: Logged in as Weights & Biases user: johnson-.
+weave: View Weave data at https://wandb.ai/johnson-/mcp-agent-training/weave
+Initializing Weave
+Using model configuration: mcp-14b-alpha-001 (mcp-14b-alpha-001)
+Starting MCP agent training..., use_skypilot: False
+Loaded 16 training scenarios
+Loaded 8 validation scenarios
+Using config: max_turns=5, trajectories_per_group=7, groups_per_step=4, num_epochs=300, learning_rate=1e-06
+wandb: Currently logged in as: johnson- to https://api.wandb.ai. Use `wandb login --relogin` to force relogin
+Task was destroyed but it is pending!
+task: <Task cancelling name='Task-3' coro=<Event.wait() running at /usr/lib/python3.12/asyncio/locks.py:212> wait_for=<Future cancelled>>
+wandb: Tracking run with wandb version 0.21.0
+wandb: Run data is saved locally in /workspace/verl/RLDecisionAgent/ART/examples/mcp-rl/wandb/run-20250812_223105-mcp-14b-alpha-001
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Resuming run mcp-14b-alpha-001
+wandb: ⭐️ View project at https://wandb.ai/johnson-/mcp_alphavantage
+wandb: 🚀 View run at https://wandb.ai/johnson-/mcp_alphavantage/runs/mcp-14b-alpha-001
+
+weave: wandb version 0.21.1 is available!  To upgrade, please run:
+weave:  $ pip install wandb --upgrade
+weave: Logged in as Weights & Biases user: johnson-.
+weave: View Weave data at https://wandb.ai/johnson-/mcp_alphavantage/weave
+INFO 08-12 22:31:18 [__init__.py:235] Automatically detected platform cuda.
+/workspace/verl/RLDecisionAgent/ART/src/art/__init__.py:10: UserWarning: WARNING: Unsloth should be imported before transformers, peft to ensure all optimizations are applied. Your code may run slower or encounter memory issues without these optimizations.
+
+Please restructure your imports with 'import unsloth' at the top of your file.
+  import unsloth  # type: ignore # noqa: F401
+🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning.
+🦥 Unsloth Zoo will now patch everything to make training faster!
+INFO 08-12 22:31:31 [__init__.py:235] Automatically detected platform cuda.
+Initializing Weave
+Unsloth: Patching vLLM v1 graph capture
+Unsloth: Patching vLLM v0 graph capture
+==((====))==  Unsloth 2025.8.4: Fast Qwen2 patching. Transformers: 4.55.0. vLLM: 0.10.0.
+   \\   /|    NVIDIA GeForce RTX 4090. Num GPUs = 1. Max memory: 47.499 GB. Platform: Linux.
+O^O/ \_/ \    Torch: 2.7.1+cu126. CUDA: 8.9. CUDA Toolkit: 12.6. Triton: 3.3.1
+\        /    Bfloat16 = TRUE. FA [Xformers = 0.0.31. FA2 = True]
+ "-____-"     Free license: http://github.com/unslothai/unsloth
+Unsloth: Fast downloading is enabled - ignore downloading bars which are red colored!
+Unsloth: vLLM loading unsloth/qwen2.5-0.5b-instruct-unsloth-bnb-4bit with actual GPU utilization = 78.28%
+Unsloth: Your GPU has CUDA compute capability 8.9 with VRAM = 47.5 GB.
+Unsloth: Using conservativeness = 1.0. Chunked prefill tokens = 32768. Num Sequences = 320.
+Unsloth: vLLM's KV Cache can use up to 36.71 GB. Also swap space = 0 GB.
+Unsloth: Not an error, but `device` is not supported in vLLM. Skipping.
+INFO 08-12 22:32:00 [config.py:1604] Using max model len 32768
+Unsloth: vLLM Bitsandbytes config using kwargs = {'load_in_8bit': False, 'load_in_4bit': True, 'bnb_4bit_compute_dtype': 'bfloat16', 'bnb_4bit_quant_storage': 'uint8', 'bnb_4bit_quant_type': 'nf4', 'bnb_4bit_use_double_quant': True, 'llm_int8_enable_fp32_cpu_offload': False, 'llm_int8_has_fp16_weight': False, 'llm_int8_skip_modules': ['lm_head', 'multi_modal_projector', 'merger', 'modality_projection', 'model.layers.0.self_attn', 'model.layers.0.mlp', 'model.layers.2.mlp', 'model.layers.3.mlp', 'model.layers.21.mlp', 'model.layers.0.self_attn.q_proj'], 'llm_int8_threshold': 6.0}
+INFO 08-12 22:32:01 [llm_engine.py:228] Initializing a V0 LLM engine (v0.10.0) with config: model='unsloth/qwen2.5-0.5b-instruct-unsloth-bnb-4bit', speculative_config=None, tokenizer='unsloth/qwen2.5-0.5b-instruct-unsloth-bnb-4bit', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, override_neuron_config={}, tokenizer_revision=None, trust_remote_code=False, dtype=torch.bfloat16, max_seq_len=32768, download_dir=None, load_format=LoadFormat.BITSANDBYTES, tensor_parallel_size=1, pipeline_parallel_size=1, disable_custom_all_reduce=False, quantization=bitsandbytes, enforce_eager=False, kv_cache_dtype=auto,  device_config=cuda, decoding_config=DecodingConfig(backend='auto', disable_fallback=False, disable_any_whitespace=False, disable_additional_properties=False, reasoning_backend=''), observability_config=ObservabilityConfig(show_hidden_metrics_for_version=None, otlp_traces_endpoint=None, collect_detailed_traces=None), seed=0, served_model_name=unsloth/qwen2.5-0.5b-instruct-unsloth-bnb-4bit, num_scheduler_steps=16, multi_step_stream_outputs=True, enable_prefix_caching=True, chunked_prefill_enabled=False, use_async_output_proc=True, pooler_config=None, compilation_config={"level":0,"debug_dump_path":"","cache_dir":"","backend":"inductor","custom_ops":[],"splitting_ops":[],"use_inductor":true,"compile_sizes":[],"inductor_compile_config":{"epilogue_fusion":true,"max_autotune":false,"shape_padding":true,"trace.enabled":false,"triton.cudagraphs":true,"debug":false,"dce":true,"memory_planning":true,"coordinate_descent_tuning":true,"trace.graph_diagram":false,"compile_threads":8,"group_fusion":true,"disable_progress":false,"verbose_progress":true,"triton.multi_kernel":0,"triton.use_block_ptr":true,"triton.enable_persistent_tma_matmul":true,"triton.autotune_at_compile_time":false,"triton.cooperative_reductions":false,"cuda.compile_opt_level":"-O2","cuda.enable_cuda_lto":true,"combo_kernels":false,"benchmark_combo_kernel":true,"combo_kernel_foreach_dynamic_shapes":true,"enable_auto_functionalized_v2":false},"inductor_passes":{},"use_cudagraph":true,"cudagraph_num_of_warmups":1,"cudagraph_capture_sizes":[320,312,304,296,288,280,272,264,256,248,240,232,224,216,208,200,192,184,176,168,160,152,144,136,128,120,112,104,96,88,80,72,64,56,48,40,32,24,16,8,4,2,1],"cudagraph_copy_inputs":false,"full_cuda_graph":false,"max_capture_size":320,"local_cache_dir":null}, use_cached_outputs=False,
+INFO 08-12 22:32:03 [cuda.py:398] Using Flash Attention backend.
+INFO 08-12 22:32:04 [parallel_state.py:1102] rank 0 in world size 1 is assigned as DP rank 0, PP rank 0, TP rank 0, EP rank 0
+INFO 08-12 22:32:04 [model_runner.py:1083] Starting to load model unsloth/qwen2.5-0.5b-instruct-unsloth-bnb-4bit...
+INFO 08-12 22:32:04 [bitsandbytes_loader.py:733] Loading weights with BitsAndBytes quantization. May take a while ...
+INFO 08-12 22:32:06 [weight_utils.py:296] Using model weights format ['*.safetensors']
+INFO 08-12 22:32:07 [weight_utils.py:312] Time spent downloading weights for unsloth/qwen2.5-0.5b-instruct-unsloth-bnb-4bit: 0.581658 seconds
+INFO 08-12 22:32:07 [weight_utils.py:349] No model.safetensors.index.json found in remote.
+Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:00<?, ?it/s]
+Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00, 40.98it/s]
+
+Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:00<?, ?it/s]
+Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  2.59it/s]
+Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  2.59it/s]
+
+INFO 08-12 22:32:08 [punica_selector.py:19] Using PunicaWrapperGPU.
+INFO 08-12 22:32:09 [model_runner.py:1115] Model loading took 0.5151 GiB and 3.479114 seconds
+INFO 08-12 22:32:11 [worker.py:295] Memory profiling takes 1.73 seconds
+INFO 08-12 22:32:11 [worker.py:295] the current vLLM instance can use total_gpu_memory (47.50GiB) x gpu_memory_utilization (0.78) = 37.18GiB
+INFO 08-12 22:32:11 [worker.py:295] model weights take 0.52GiB; non_torch_memory takes 0.08GiB; PyTorch activation peak memory takes 1.78GiB; the rest of the memory reserved for KV Cache is 34.81GiB.
+INFO 08-12 22:32:11 [executor_base.py:113] # cuda blocks: 190100, # CPU blocks: 0
+INFO 08-12 22:32:11 [executor_base.py:118] Maximum concurrency for 32768 tokens per request: 92.82x
+INFO 08-12 22:32:11 [vllm_utils.py:669] Unsloth: Running patched vLLM v0 `capture_model`.
+INFO 08-12 22:32:11 [model_runner.py:1385] Capturing cudagraphs for decoding. This may lead to unexpected consequences if the model is not static. To run the model in eager mode, set 'enforce_eager=True' or use '--enforce-eager' in the CLI. If out-of-memory error occurs during cudagraph capture, consider decreasing `gpu_memory_utilization` or switching to eager mode. You can also reduce the `max_num_seqs` as needed to decrease memory usage.
+Capturing CUDA graph shapes: 100%|████████████████████████████████████████████████████████████████████████████| 43/43 [00:07<00:00,  5.55it/s]
+INFO 08-12 22:32:19 [model_runner.py:1537] Graph capturing finished in 8 secs, took 0.60 GiB
+INFO 08-12 22:32:19 [vllm_utils.py:676] Unsloth: Patched vLLM v0 graph capture finished in 8 secs.
+INFO 08-12 22:32:20 [llm_engine.py:424] init engine (profile, create kv cache, warmup model) took 11.33 seconds
+Unsloth: Just some info: will skip parsing ['pre_feedforward_layernorm', 'k_norm', 'post_feedforward_layernorm', 'q_norm']
+Unsloth: Just some info: will skip parsing ['pre_feedforward_layernorm', 'k_norm', 'post_feedforward_layernorm', 'q_norm']
+Unsloth 2025.8.4 patched 24 layers with 24 QKV layers, 24 O layers and 24 MLP layers.
+[2025-08-12 22:32:44,519] [INFO] [real_accelerator.py:254:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+[2025-08-12 22:32:45,053] [INFO] [logging.py:107:log_dist] [Rank -1] [TorchCheckpointEngine] Initialized with serialization = False
+
 ```

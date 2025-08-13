@@ -24,3 +24,26 @@
   File "/usr/local/lib/python3.10/dist-packages/unsloth_zoo/vllm_utils.py", line 1525, in load_vllm
     raise RuntimeError(error)
 RuntimeError: Data processing error: CAS service error : Error : single flight error: Real call failed: ReqwestMiddlewareError(Reqwest(reqwest::Error { kind: Request, url: "https://transfer.xethub.hf.co/xorbs/default/f889b21bc4908258d2f65552c964b2ad449e66e1db5ba54010b79f7ab647c118?X-Xet-Signed-Range=bytes%3D0-57388423&Expires=1754996679&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly90cmFuc2Zlci54ZXRodWIuaGYuY28veG9yYnMvZGVmYXVsdC9mODg5YjIxYmM0OTA4MjU4ZDJmNjU1NTJjOTY0YjJhZDQ0OWU2NmUxZGI1YmE1NDAxMGI3OWY3YWI2NDdjMTE4P1gtWGV0LVNpZ25lZC1SYW5nZT1ieXRlcyUzRDAtNTczODg0MjMiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE3NTQ5OTY2Nzl9fX1dfQ__&Signature=ecjMJAhxUpgEtnc6XEGrMXw-n9bwNZLz1yZonxLjQnHr1FF2orqdB3U0xe9dEbT6vowDg5pxHCvquRYdcAng2F2~S7CbtwtB2UHTn0RNVjMYTUmqkaVt~Zsb4R4gopOLgt6ddwNe-UMGgwi7tbcgegXNPwOCODVh6tXmG8m~KbgdOAG~NAp5aZnK8PYj-IVOvhJNNkFmI3SQxdEaO~sTm~oXNNrVaycwgzB7Iekp35UbGqvCy-fVMNgHGZcGOGNWwE0EvQ6ERnY939U823GVoQTlzT9y9qhKD~eYIOpRjnxtmkeBYIfAucpTk~1ICl4cgfAuUbL~Id6ovMwzm9qBRQ__&Key-Pair-Id=K2L8F4GPSG1IFC", source: hyper_util::client::legacy::Error(Connect, Os { code: 104, kind: ConnectionReset, message: "Connection reset by peer" }) }))
+
+# 报错，rm -rf wandb
+  File "/usr/local/lib/python3.12/dist-packages/weave/trace/weave_init.py", line 122, in init_weave
+    weave_client.check_wandb_run_matches(wandb_run_id, entity_name, project_name)
+  File "/usr/local/lib/python3.12/dist-packages/weave/trace/weave_client.py", line 2391, in check_wandb_run_matches
+    raise ValueError(
+ValueError: Project Mismatch: weave and wandb must be initialized using the same project. Found wandb.init targeting project "/mcp_alphavantage" and weave.init targeting project "johnson-/mcp_alphavantage". To fix, please use the same project for both library initializations.
+
+# 报错， 查询VLLM报错原因： find -type f -name vllm.log 2>/dev/null | head -n 5
+  File "/workspace/verl/RLDecisionAgent/ART/src/art/local/backend.py", line 268, in _prepare_backend_for_training
+    await service.start_openai_server(config=config)
+  File "/workspace/verl/RLDecisionAgent/ART/src/mp_actors/traceback.py", line 26, in async_wrapper
+    raise e.with_traceback(streamlined_traceback())
+  File "/workspace/verl/RLDecisionAgent/ART/src/art/unsloth/service.py", line 58, in start_openai_server
+    self._openai_server_task = await openai_server_task(
+    ^^^^^^^^^^^^^^^^^
+  File "/workspace/verl/RLDecisionAgent/ART/src/art/vllm/server.py", line 82, in openai_server_task
+    raise TimeoutError(
+    ^^^^^^^^^^^^^^^^^
+TimeoutError: Unable to reach OpenAI-compatible server within 30.0 seconds. You can increase this timeout by setting the ART_SERVER_TIMEOUT environment variable.
+
+- 查看日志
+cat ./ART/.art/mcp_alphavantage/models/mcp-14b-alpha-001/logs/vllm.log

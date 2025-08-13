@@ -63,3 +63,7 @@ pip3 install -e .[sglang]
 | `pip install --no-deps -e .` | ❌ 不装依赖 | ❌ 不带扩展         | ✅ 是  | 你自己控制依赖，比如用 conda |
 | `pip install -e .[vllm]`     | ✅ 安装依赖 | ✅ 安装 vllm 扩展   | ✅ 是  | 你要使用 vllm 功能      |
 | `pip install -e .[sglang]`   | ✅ 安装依赖 | ✅ 安装 sglang 扩展 | ✅ 是  | 你要使用 sglang 的部分功能 |
+
+
+# Wechat
+![weichat.png](docs%2Fweichat.png)
