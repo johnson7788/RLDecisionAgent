@@ -109,6 +109,7 @@ export HTTP_PROXY=http://127.0.0.1:7890
 export HTTPS_PROXY=http://127.0.0.1:7890
 export http_proxy=http://127.0.0.1:7890
 export https_proxy=http://127.0.0.1:7890
+export HF_ENDPOINT=https://hf-mirror.com
 python docs/ART/load_model.py
 pip install polars torchtune trl unsloth apscheduler vllm # 安装一个依赖包
 # 取消上传试验结果到s3
