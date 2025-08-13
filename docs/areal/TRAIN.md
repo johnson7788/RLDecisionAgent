@@ -51,3 +51,7 @@ actor:
 max_tokens_per_mb ：用于内存控制的每个微批次的最大令牌数
 mem_fraction_static ：SGLang 的静态内存
 triton_attention_num_kv_splits ：注意内核优化
+
+
+# 训练
+python3 -m areal.launcher.local examples/lite/gsm8k_grpo.py --config examples/lite/configs/gsm8k_grpo.yaml
