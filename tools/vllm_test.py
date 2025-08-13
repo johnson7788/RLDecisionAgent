@@ -26,4 +26,5 @@ if __name__ == '__main__':
     # 输出结果
     for prompt, response in zip(prompts, responses):
         print(f"Prompt: {prompt}")
-        print(f"Response: {response['text']}\n")
+        print(response)
+        print(f"Response: {response.outputs[0].text}\n")
