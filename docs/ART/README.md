@@ -91,5 +91,11 @@ ART 框架可以用 SkyPilot 作为其后端运行环境，这意味着：
 
 # 运行训练前的环境检查
 ART/scripts/run_checks.sh
+
 # 安装art
 pip install -e . langchain-core tenacity "mcp>=1.11.0" "gql<4" aiohttp
+
+
+# 检查vllm是否正常
+cd tools
+python vllm_test.py

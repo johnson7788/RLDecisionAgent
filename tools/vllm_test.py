@@ -8,22 +8,22 @@
 
 from vllm import LLM, SamplingParams
 
-# 输入几个问题
-prompts = [
-    "你好",
-    "Hi，How Are you ",
-]
+if __name__ == '__main__':
+    # 输入几个问题
+    prompts = [
+        "你好",
+        "Hi，How Are you ",
+    ]
 
-# 设置初始化采样参数
-sampling_params = SamplingParams(temperature=0.8, top_p=0.95, max_tokens=100)
+    # 设置初始化采样参数
+    sampling_params = SamplingParams(temperature=0.8, top_p=0.95, max_tokens=100)
 
-# 加载模型，确保路径正确, arnir0/Tiny-LLM
-llm = LLM(model="Tiny-LLM", trust_remote_code=True, max_model_len=1024)
+    # 加载模型，确保路径正确, arnir0/Tiny-LLM
+    llm = LLM(model="./Tiny-LLM", trust_remote_code=True, max_model_len=1024)
 
-# 进行推理
-responses = llm.generate(prompts, sampling_params)
-
-# 输出结果
-for prompt, response in zip(prompts, responses):
-    print(f"Prompt: {prompt}")
-    print(f"Response: {response['text']}\n")
+    # 进行推理
+    responses = llm.generate(prompts, sampling_params)
+    # 输出结果
+    for prompt, response in zip(prompts, responses):
+        print(f"Prompt: {prompt}")
+        print(f"Response: {response['text']}\n")
