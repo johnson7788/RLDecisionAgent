@@ -120,3 +120,18 @@ Traceback (most recent call last):
     vllm_utils.patch_vllm_set_inductor_config()
     ^^^^^^^^^^^^^^^^^
 AttributeError: module 'unsloth_zoo.vllm_utils' has no attribute 'patch_vllm_set_inductor_config'
+
+# 代码报错，需要wandb offline
+  import unsloth  # type: ignore # noqa: F401
+🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning.
+🦥 Unsloth Zoo will now patch everything to make training faster!
+INFO 08-14 22:19:08 [importing.py:53] Triton module has been replaced with a placeholder.
+INFO 08-14 22:19:08 [__init__.py:239] Automatically detected platform cuda.
+Initializing Weave
+Traceback (most recent call last):
+  File "/home/vipuser/miniconda3/lib/python3.12/multiprocessing/queues.py", line 264, in _feed
+    obj = _ForkingPickler.dumps(obj)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/vipuser/miniconda3/lib/python3.12/multiprocessing/reduction.py", line 51, in dumps
+    cls(buf, protocol).dump(obj)
+TypeError: cannot pickle 'SSLContext' object
