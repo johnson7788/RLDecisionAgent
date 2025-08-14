@@ -64,7 +64,7 @@ async def calculate_beat_comp(
                 async def score_group(group_idx: int, trajectory_idx: int):
                     scored_group = await ruler_score_group(
                         group,
-                        judge_model="openai/o4-mini",
+                        judge_model="deepseek/deepseek-chat",
                         debug=True,
                     )
 

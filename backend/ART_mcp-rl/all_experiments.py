@@ -21,7 +21,7 @@ class McpPolicyConfig(BaseModel):
     training_dataset_size: int = 16
     num_epochs: int = 80
     # Model name to use for RULER rescoring (LLM-as-a-judge)
-    ruler_judge_model: str = "openrouter/openai/o4-mini"
+    ruler_judge_model: str = "deepseek/deepseek-chat"
     minimum_reward_std_dev: float = 0.0
     # Random seed to control which subset of the training data is sampled
     training_dataset_seed: int | None = None
