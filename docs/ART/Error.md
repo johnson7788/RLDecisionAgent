@@ -47,3 +47,6 @@ TimeoutError: Unable to reach OpenAI-compatible server within 30.0 seconds. You 
 
 - 查看日志
 cat ./ART/.art/mcp_alphavantage/models/mcp-14b-alpha-001/logs/vllm.log
+
+# 卡住， 然后kill掉
+ps aux | grep mcp_rl.train

@@ -174,7 +174,7 @@ async def rollout(
 
                                     if tool_call.function.name == "complete_task":
                                         traj.metrics["task_completed"] = True
-                                        traj.log(
+                                        print(
                                             f"Task completion attempted with summary: {tool_args['summary']}"
                                         )
                                         try:
@@ -183,7 +183,7 @@ async def rollout(
                                             ] = await check_successful(traj)
                                         except Exception as e:
                                             print(f"Error checking success: {e}")
-                                            traj.log(f"Error checking success: {e}")
+                                            print(f"Error checking success: {e}")
 
                                         task_completed = True
                                     else:
@@ -219,7 +219,7 @@ async def rollout(
                                         print(f"Tool call result: {content_text}")
 
                                 except Exception as e:
-                                    traj.log(f"Tool call error: {e}")
+                                    print(f"Tool call error: {e}")
 
                                     # Add error response
                                     traj.messages_and_choices.append(
@@ -234,11 +234,11 @@ async def rollout(
                             break
 
                     except Exception as e:
-                        traj.log(f"Error in turn {num_turns}: {e}")
+                        print(f"Error in turn {num_turns}: {e}")
                         break
 
     except Exception as e:
-        traj.log(f"MCP server error: {e}")
+        print(f"MCP server error: {e}")
     if not task_completed and num_turns == scenario.max_turns:
         traj.metrics["ran_out_of_turns"] = True
 
