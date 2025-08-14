@@ -4,8 +4,8 @@ https://colab.research.google.com/github/openpipe/art/blob/main/examples/mcp-rl/
 # colab的显卡
 Tesla T4 16GB
 
-# 安装
-!uv pip install -q openpipe-art==0.3.11.post5 langchain-core tenacity "mcp>=1.11.0" "gql<4" aiohttp --no-cache-dir
+# 安装, 不要安装==0.3.11.post5版本
+!uv pip install -q openpipe-art langchain-core tenacity "mcp>=1.11.0" "gql<4" aiohttp --no-cache-dir
 
 # 配置smithery
 https://smithery.ai/
@@ -112,7 +112,8 @@ export http_proxy=http://127.0.0.1:7890
 export https_proxy=http://127.0.0.1:7890
 export HF_ENDPOINT=https://hf-mirror.com
 python docs/ART/load_model.py
-pip install polars torchtune trl unsloth apscheduler vllm # 安装一个依赖包
+pip install polars torchtune trl unsloth apscheduler vllm fastapi-sso
+# 安装一个依赖包
 # 取消上传试验结果到s3
 │ ✔  Edit examples/mcp-rl/mcp_rl/train.py:         await backend._experim... =>         # await backend._exper...        │
  │                                                                                                                        │
@@ -129,6 +130,7 @@ pip install polars torchtune trl unsloth apscheduler vllm # 安装一个依赖�
  │    177                                                                                                                 │
  │    178   def main():
 
+# 运行命令
 python -m mcp_rl.train --models=mcp-14b-alpha-001
 输出:
 weave: wandb version 0.21.1 is available!  To upgrade, please run:
