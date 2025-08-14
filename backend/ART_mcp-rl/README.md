@@ -1,17 +1,12 @@
+# 文件信息
    * all_experiments.py: 定义了多个用于训练的机器学习模型配置。它使用 pydantic 和一个名为 art 的自定义库来设置不同模型（如
      mcp-7b-001, mcp-14b-001）的参数，包括基础模型、学习率、训练周期等。这些模型似乎是为与
      MCP（模型上下文协议）服务器交互而设计的。
-   * mcp-rl-alphavantage.ipynb: 这是一个 Jupyter Notebook，用于训练一个 AI 模型与 Alpha Vantage MCP
-     服务器进行交互。它包含了安装依赖、配置 API 密钥、生成训练数据、使用
-     RULER（一种自动评估方法）进行训练以及测试训练后模型的完整流程。
-   * mcp-rl.ipynb: 另一个 Jupyter Notebook，功能与上一个类似，但更通用。它旨在训练一个模型与任何 MCP 服务器（特别是 Smithery
-     托管的服务器）进行交互，同样包含了数据生成、训练和测试的步骤。
    * pyproject.toml: 项目的配置文件，使用 uv 作为包管理器。它定义了项目名称 (art-mcp)、依赖项（如 aiohttp, mcp, openai,
      openpipe-art 等）以及开发依赖项。
    * README.md: 项目的说明文件，可能包含项目的目标、设置说明和使用方法。（注意：文件内容为空）。
    * run_remote.py: 一个使用 sky (SkyPilot) 库在远程计算集群上运行训练任务的脚本。它负责设置远程环境、同步代码并执行指定的 Python
      模块（如训练或基准测试脚本）。
-   * uv.lock: uv 包管理器的锁文件，用于锁定项目依赖项的确切版本，以确保在不同环境中构建的一致性。
 
   mcp_rl/ 目录 (核心 RL 逻辑)
 
@@ -32,9 +27,6 @@
 
    * generate_benchmarks.py: 运行基准测试的脚本。它加载预定义的验证场景，针对多个不同的模型（包括训练的模型和基准模型如
      GPT-4o）运行 rollout，并使用 RULER 进行比较评估，最后记录结果。
-   * display_benchmarks/mcp_alphavantage.ipynb: 一个 Jupyter Notebook，用于可视化 mcp_alphavantage
-     项目的基准测试结果。它加载保存的轨迹数据，并生成比较不同模型性能的图表（如胜率和训练进度）。
-   * display_benchmarks/mcp_balldontlie.ipynb: 与上一个类似，但用于可视化 mcp_balldontlie 项目的基准测试结果。
 
   servers/ 目录 (MCP 服务器实现)
 
