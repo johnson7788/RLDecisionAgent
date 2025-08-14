@@ -18,7 +18,8 @@ SMITHERY_MCP_URL = "https://server.smithery.ai/exa/mcp?api_key=552ddb78-0e95-499
 # 运行
 ## Step1 数据准备
 ```
-pip install -e . langchain-core tenacity "mcp>=1.11.0" "gql<4" aiohttp polars torchtune trl unsloth -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
+pip install --no-deps -e . -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
+pip install bitsandbytes langchain-core tenacity "mcp>=1.11.0" "gql<4" polars torchtune trl unsloth apscheduler vllm -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
 cd ART/examples/mcp-rl
 创建.env文件
 # cat .env

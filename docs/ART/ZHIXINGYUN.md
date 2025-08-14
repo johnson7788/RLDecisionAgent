@@ -5,3 +5,6 @@ docker create --runtime=nvidia --gpus all --net=host --shm-size="10g" --cap-add=
 docker start areal
 docker exec -it areal bash
 
+## 尝试安装
+https://art.openpipe.ai/getting-started/installation-setup
+pip install openpipe-art openpipe-art[backend] -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
