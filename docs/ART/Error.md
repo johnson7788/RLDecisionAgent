@@ -135,3 +135,18 @@ Traceback (most recent call last):
   File "/home/vipuser/miniconda3/lib/python3.12/multiprocessing/reduction.py", line 51, in dumps
     cls(buf, protocol).dump(obj)
 TypeError: cannot pickle 'SSLContext' object
+
+
+# 训练报错，MCP的的请求受到频率限制
+Task completion attempted with summary: Attempted to fetch the daily Relative Strength Index (RSI) for Apple (AAPL) but encountered an error ('Technical Analysis: RSI'). Unable to proceed with the analysis due to the unavailability of the required data.
+Task completion attempted with summary: Retrieved the daily time series data for Tesla (TSLA). However, the API returned a demo limitation message, indicating the need for a full API key to access the complete data. No further analysis could be performed due to this restriction.
+Task completion attempted with summary: Retrieved the daily time series data for Tesla (TSLA). However, the API key provided is for demo purposes only, and the full data could not be accessed. To proceed with a thorough analysis and report, a valid API key is required.
+Task completion attempted with summary: Attempted to fetch the daily Relative Strength Index (RSI) for Apple (AAPL) but encountered an error ('Technical Analysis: RSI'). Unable to proceed with the analysis and report due to the error.
+Task completion attempted with summary: Retrieved the daily time series data for Tesla (TSLA). However, due to the use of a demo API key, the full data was not accessible. To proceed with a thorough analysis and report, a valid API key is required.
+Task completion attempted with summary: The task could not be completed due to API limitations. The demo API key provided does not allow access to the full functionality required to search for stock symbols matching 'Tesla' and analyze the top result. Please upgrade to a full API key to proceed with the task.
+Task completion attempted with summary: Attempted to fetch the daily Relative Strength Index (RSI) for Apple (AAPL) but encountered an error: 'Technical Analysis: RSI'. No further analysis or report could be generated due to this issue.
+Task completion attempted with summary: Retrieved the daily time series data for Tesla (TSLA). However, the API key used is for demo purposes only, and the full data could not be accessed. To proceed with a thorough analysis and report, a valid API key is required.
+Task completion attempted with summary: Attempted to perform a technical analysis for IBM by comparing the 30-day SMA and the 14-day RSI. However, encountered errors while retrieving the SMA and RSI data, indicating potential issues with the data source or API. No further analysis could be conducted.
+Task completion attempted with summary: Attempted to perform a technical analysis for IBM by comparing the 30-day SMA and the 14-day RSI. However, the tool encountered errors while retrieving the SMA and RSI data, preventing the completion of the analysis.
+Task completion attempted with summary: Attempted to perform a technical analysis for IBM by comparing the 30-day SMA and the 14-day RSI. However, encountered errors while retrieving the SMA and RSI data, preventing the completion of the analysis and report.
+gather gpt-4o:   6%| | 2/32 [00:21<04:25,  8.83s/it, reward=0, task_completed=1, success=0, ran_out_of_turns=0, llm_completion_duraTask completion attempted with summary: Attempted to calculate the 60-minute Simple Moving Average (SMA) for IBM and retrieve daily time series data. However, the API returned a demo limitation message, indicating the need for a full API key to access the required data. No further analysis could be performed due to this restriction.
