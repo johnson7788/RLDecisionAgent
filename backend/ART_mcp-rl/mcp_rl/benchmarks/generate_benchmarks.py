@@ -69,9 +69,11 @@ async def calculate_beat_comp(
 
                 async def score_group(group_idx: int, trajectory_idx: int):
                     print(f"正在评分组 {group_idx}, 轨迹 {trajectory_idx}")
+                    judge_model ="deepseek/deepseek-chat"
+                    print(f"使用的评判模型为 {judge_model}")
                     scored_group = await ruler_score_group(
                         group,
-                        judge_model="openai/o3-mini",
+                        judge_model= judge_model,
                         debug=True,
                     )
 
