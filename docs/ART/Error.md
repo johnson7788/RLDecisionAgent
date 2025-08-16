@@ -257,3 +257,18 @@ raceback (most recent call last):
   File "/usr/local/lib/python3.12/dist-packages/requests/adapters.py", line 694, in send
     raise ProxyError(e, request=request)
 requests.exceptions.ProxyError: HTTPSConnectionPool(host='api.wandb.ai', port=443): Max retries exceeded with url: /graphql (Caused by ProxyError('Unable to connect to proxy', NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x7f42003a7200>: Failed to establish a new connection: [Errno 111] Connection refused')))
+
+# weave和wandb不一致时
+  File "/usr/local/lib/python3.12/dist-packages/weave/trace/weave_init.py", line 122, in init_weave
+    weave_client.check_wandb_run_matches(wandb_run_id, entity_name, project_name)
+  File "/usr/local/lib/python3.12/dist-packages/weave/trace/weave_client.py", line 2391, in check_wandb_run_matches
+    raise ValueError(
+ValueError: Project Mismatch: weave and wandb must be initialized using the same project. Found wandb.init targeting project "johnson/mcp_alphavantage" and weave.init targeting project "johnson-/mcp_alphavantage". To fix, please use the same project for both library initializations.
+强制设置，让它们一致
+if os.getenv("WANDB_API_KEY"):
+    print("Initializing Weave 和 Wandb")
+    wandb.init(
+        project="mcp_alphavantage",
+        entity="johnson-"
+    )
+    weave.init("mcp_alphavantage")

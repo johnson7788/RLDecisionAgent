@@ -28,9 +28,9 @@ if os.getenv("WANDB_API_KEY"):
     print("Initializing Weave 和 Wandb")
     wandb.init(
         project="mcp_alphavantage",
-        entity="johnson"
+        entity="johnson-"
     )
-    weave.init("johnson/mcp_alphavantage")
+    weave.init("mcp_alphavantage")
 
 
 async def train_mcp_agent(model: art.TrainableModel, use_skypilot: bool = False):
