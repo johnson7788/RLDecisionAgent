@@ -5,7 +5,7 @@ import os
 import random
 from typing import List
 
-import weave
+# import weave
 from dotenv import load_dotenv
 from servers.python.mcp_alphavantage.server_params import (
     server_params as alphavantage_server_params,
@@ -150,8 +150,8 @@ async def run_benchmarks(server: str = "mcp_alphavantage"):
             f"不支持的服务器: {server}. 使用 'mcp_alphavantage' 或 'mcp_balldontlie'"
         )
 
-    weave.init(server)
-    print(f"使用项目初始化Weave: {server}")
+    # weave.init(server)
+    # print(f"使用项目初始化Weave: {server}")
 
     # comparison models
     gpt_4o_mini = art.Model(

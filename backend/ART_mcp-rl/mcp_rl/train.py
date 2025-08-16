@@ -30,7 +30,7 @@ if os.getenv("WANDB_API_KEY"):
         project="mcp_alphavantage",
         entity="johnson-"
     )
-    weave.init("mcp_alphavantage")
+    # weave.init("mcp_alphavantage")
 
 
 async def train_mcp_agent(model: art.TrainableModel, use_skypilot: bool = False):

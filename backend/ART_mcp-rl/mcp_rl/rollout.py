@@ -27,7 +27,7 @@ load_dotenv()
 logging.getLogger("weave.trace.op").setLevel(logging.WARNING)
 
 
-weave.init("mcp-agent-training")
+# weave.init("mcp-agent-training")
 
 
 @dataclass
@@ -39,7 +39,7 @@ class McpScenario:
     max_turns: int = 10
 
 
-@weave.op()
+# @weave.op()
 async def rollout(
     model: art.Model,
     scenario: McpScenario,
