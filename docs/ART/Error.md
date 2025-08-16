@@ -180,6 +180,9 @@ async def openai_server_task(
 pip freeze | grep openai
 openai==1.99.1
 
+根据官方vllm issue应该是取消，http的proxy环境变量才行，否则都会报错502
+https://github.com/vllm-project/vllm/issues/1519
+
 
 # 代码报错，需要wandb offline, 不是wandb offline，是有一定几率报错
   import unsloth  # type: ignore # noqa: F401
