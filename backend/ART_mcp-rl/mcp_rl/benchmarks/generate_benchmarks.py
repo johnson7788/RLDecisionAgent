@@ -233,9 +233,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="为MCP服务器生成基准测试")
     parser.add_argument(
         "--server",
-        choices=["mcp_alphavantage", "mcp_balldontlie"],
-        default="mcp_alphavantage",
-        help="要进行基准测试的MCP服务器 (默认: mcp_alphavantage)",
+        choices=["mcp_alphavantage", "mcp_balldontlie","mcp_caculator"],
+        default="mcp_caculator",
+        help="要进行基准测试的MCP服务器 (默认: mcp_caculator)",
     )
     args = parser.parse_args()
 
