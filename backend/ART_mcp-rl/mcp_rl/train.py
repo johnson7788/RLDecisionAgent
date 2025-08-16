@@ -35,8 +35,9 @@ if os.getenv("WANDB_API_KEY"):
 
 async def train_mcp_agent(model: art.TrainableModel, use_skypilot: bool = False):
     """Example training function that creates AlphaMcpServer and passes it in scenarios."""
-    print(f"开始进行train_mcp_agent的准备工作")
+    print(f"[INFO] 开始进行 train_mcp_agent 的准备工作")
     load_dotenv()
+    print(f"[INFO] 环境变量加载完成")
 
     gpt_4o = art.Model(
         name="gpt-4o",
@@ -45,12 +46,13 @@ async def train_mcp_agent(model: art.TrainableModel, use_skypilot: bool = False)
         inference_api_key=os.getenv("DEEPSEEK_API_KEY"),
         inference_base_url="https://api.deepseek.com/v1",
     )
+    print(f"[INFO] GPT-4o 模型实例创建完成: {gpt_4o}")
 
     # Get configuration from model config or use defaults
     config = getattr(model, "config", None)
-
     if config is None:
         raise ValueError("Model config is required")
+    print(f"[INFO] 模型配置加载成功")
 
     max_turns = config.max_turns
     trajectories_per_group = config.trajectories_per_group
@@ -61,15 +63,19 @@ async def train_mcp_agent(model: art.TrainableModel, use_skypilot: bool = False)
     ruler_judge_model = config.ruler_judge_model
     training_dataset_size = config.training_dataset_size
     mcp_server_name = config.mcp_server_name
-
+    print(f"[INFO] 配置参数: max_turns={max_turns}, trajectories_per_group={trajectories_per_group}, "
+          f"groups_per_step={groups_per_step}, num_epochs={num_epochs}, learning_rate={learning_rate}, "
+          f"eval_steps={eval_steps}, training_dataset_size={training_dataset_size}, mcp_server_name={mcp_server_name}")
 
     # Load server params dynamically based on config
     try:
+        print(f"[INFO] 尝试导入 MCP Server 配置: {mcp_server_name}")
         server_params_module = __import__(
             f"servers.python.{mcp_server_name}.server_params",
             fromlist=["server_params"],
         )
         server_params = server_params_module.server_params
+        print(f"[INFO] MCP Server 配置导入成功")
     except ImportError:
         raise ValueError(
             f"Could not import server_params for MCP server: {mcp_server_name}"
@@ -77,41 +83,41 @@ async def train_mcp_agent(model: art.TrainableModel, use_skypilot: bool = False)
 
     # Load pre-split scenarios from scenarios directory
     scenarios_dir = f"servers/python/{mcp_server_name}/scenarios"
+    print(f"[INFO] 加载训练和验证场景文件 from {scenarios_dir}")
 
     with open(f"{scenarios_dir}/train.jsonl") as f:
         raw_train_scenarios = [json.loads(line.strip()) for line in f if line.strip()]
+    print(f"[INFO] 已加载 {len(raw_train_scenarios)} 条训练场景")
 
     with open(f"{scenarios_dir}/val.jsonl") as f:
         raw_val_scenarios = [json.loads(line.strip()) for line in f if line.strip()]
+    print(f"[INFO] 已加载 {len(raw_val_scenarios)} 条验证场景")
 
     # Limit training dataset size if specified in config
     if training_dataset_size and training_dataset_size < len(raw_train_scenarios):
         raw_train_scenarios = raw_train_scenarios[:training_dataset_size]
+        print(f"[INFO] 限制训练数据集大小为 {training_dataset_size}")
 
-    print(f"Loaded {len(raw_train_scenarios)} training scenarios")
-    print(f"Loaded {len(raw_val_scenarios)} validation scenarios")
-    print(
-        f"Using config: max_turns={max_turns}, trajectories_per_group={trajectories_per_group}, groups_per_step={groups_per_step}, num_epochs={num_epochs}, learning_rate={learning_rate}"
-    )
-
+    # Backend initialization
     if use_skypilot:
-        print(f"使用远端服务区进行训练")
+        print(f"[INFO] 使用 Skypilot 远端服务进行训练")
         from art.skypilot.backend import SkyPilotBackend
 
         backend = await SkyPilotBackend().initialize_cluster(
             cluster_name="mcp-agent-training", gpu="H100-SXM"
         )
+        print(f"[INFO] Skypilot 集群初始化完成")
     else:
         from art.local.backend import LocalBackend
-        print(f"使用本地后台进行训练，启动Backend")
+        print(f"[INFO] 使用本地 Backend 进行训练")
         backend = LocalBackend()
 
-    # await backend._experimental_pull_from_s3(
-    #     model,
-    # )
-    print(f"开始进行模型的注册")
+    print(f"[INFO] 开始注册模型到 Backend")
     await model.register(backend)
-    print(f"模型注册成功，开始获取训练数据")
+    print(f"[INFO] 模型注册成功")
+
+    # Create McpScenario objects for training and validation
+    print(f"[INFO] 开始生成训练场景对象")
     train_scenarios = [
         McpScenario(
             task_description=scenario["task"],
@@ -120,8 +126,9 @@ async def train_mcp_agent(model: art.TrainableModel, use_skypilot: bool = False)
         )
         for scenario in raw_train_scenarios
     ]
-    print(f"开始获取验证数据")
-    # Create validation scenarios from pre-split data (used for periodic evaluation)
+    print(f"[INFO] 训练场景对象生成完成，共 {len(train_scenarios)} 个")
+
+    print(f"[INFO] 开始生成验证场景对象")
     val_scenarios = [
         McpScenario(
             task_description=scenario["task"],
@@ -130,22 +137,25 @@ async def train_mcp_agent(model: art.TrainableModel, use_skypilot: bool = False)
         )
         for scenario in raw_val_scenarios
     ]
-    print(f"开始生成训练数据迭代器train_iterator")
-    # Create dataset iterator using raw scenarios (not McpScenario objects)
+    print(f"[INFO] 验证场景对象生成完成，共 {len(val_scenarios)} 个")
+
+    print(f"[INFO] 创建训练数据迭代器 train_iterator")
     train_iterator = iterate_dataset(
         train_scenarios,
         groups_per_step=groups_per_step,
         num_epochs=num_epochs,
         initial_step=await model.get_step(),  # Resume from checkpoint
     )
+    print(f"[INFO] 训练数据迭代器创建完成")
 
+    print(f"[INFO] 生成控制组 validation groups")
     control_groups = await generate_val_groups(gpt_4o, val_scenarios)
+    print(f"[INFO] 控制组生成完成")
 
-    # Main training loop using iterate_dataset
+    # Main training loop
     for batch in train_iterator:
-        print("收集训练轨迹的分数 trajectory groups with RULER scoring...")
+        print(f"[INFO] 开始处理训练步 {batch.step}, 收集 trajectory groups")
 
-        # Use gather_trajectory_groups with ruler_score_group
         groups = await art.gather_trajectory_groups(
             (
                 art.TrajectoryGroup(
@@ -158,27 +168,22 @@ async def train_mcp_agent(model: art.TrainableModel, use_skypilot: bool = False)
             after_each=lambda group: ruler_score_group(
                 group,
                 judge_model=ruler_judge_model,
-                debug=True,  # Show judge reasoning
+                debug=True,
                 swallow_exceptions=True,
             ),
         )
-
-        print("train groups finished")
+        print(f"[INFO] 收集训练轨迹完成，开始训练模型")
 
         if batch.step % eval_steps == 0:
-            print("starting comparison val gather")
+            print(f"[INFO] 步 {batch.step} 达到验证间隔，开始验证")
             val_groups = await generate_val_groups(model, val_scenarios)
             await calculate_beat_comp(val_groups, control_groups, control_first=True)
             await calculate_beat_comp(val_groups, control_groups, control_first=False)
-
             await model.log(val_groups, split="val")
+            print(f"[INFO] 验证完成并已记录日志")
 
-        print("starting train")
         await model.train(groups, config=art.TrainConfig(learning_rate=learning_rate))
-
-        # await backend._experimental_push_to_s3(
-        #     model,
-        # )
+        print(f"[INFO] 步 {batch.step} 模型训练完成")
 
 
 def main():
