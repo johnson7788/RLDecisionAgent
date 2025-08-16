@@ -10,7 +10,7 @@ class McpPolicyConfig(BaseModel):
     base_model: str = "Qwen/Qwen2.5-14B-Instruct"
 
     # MCP server configuration
-    mcp_server_name: str = "mcp_alphavantage"  # Default to alphavantage server
+    mcp_server_name: str = "mcp_caculator"  # Default to alphavantage server
 
     # Training configuration fields
     trajectories_per_group: int = 7

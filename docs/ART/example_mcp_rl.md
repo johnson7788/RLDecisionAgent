@@ -31,7 +31,7 @@ BALLDONTLIE_API_KEY=83xxx
 cp .env mcp_rl 
 
 准备数据(其实已经存在数据了，在每个servers/xxx/scenarios/train.jsonl和val.jsonl)
-python -m mcp_rl.scenario_generator servers/python/mcp_alphavantage/server_params.py
+python -m mcp_rl.scenario_generator servers/python/mcp_caculator/server_params.py
 输出
 weave: Please login to Weights & Biases (https://wandb.ai/) to continue...
 wandb: Logging into wandb.ai. (Learn how to deploy a W&B server locally: https://wandb.me/wandb-server)

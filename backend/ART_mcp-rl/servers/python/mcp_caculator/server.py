@@ -16,8 +16,8 @@ from mcp.server.lowlevel import Server
     help="Transport type",
 )
 def main(port: int, transport: str) -> int:
-    print(f"Starting Mock Calculator server..., port: {port}, protocol: {transport}")
-    app = Server("mcp-mock-calculator")
+    print(f"Starting Calculator server..., port: {port}, protocol: {transport}")
+    app = Server("mcp-calculator")
 
     @app.list_tools()
     async def list_tools() -> list[types.Tool]:

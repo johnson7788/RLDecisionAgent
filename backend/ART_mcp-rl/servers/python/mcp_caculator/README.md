@@ -1,6 +1,6 @@
-# MCP Mock Calculator Server
+# MCP Calculator Server
 
-A Python implementation of a mock MCP server that acts as a simple calculator.
+A Python implementation of a MCP server that acts as a simple calculator.
 
 ## Features
 
