@@ -5,7 +5,7 @@ import asyncio
 import fnmatch
 import json
 import os
-
+import wandb
 import weave
 from dotenv import load_dotenv
 
@@ -24,10 +24,13 @@ try:
 except ImportError:
     models = {}
 
-
 if os.getenv("WANDB_API_KEY"):
-    print("Initializing Weave")
-    weave.init("mcp-agent-training")
+    print("Initializing Weave 和 Wandb")
+    wandb.init(
+        project="mcp_alphavantage",
+        entity="johnson"
+    )
+    weave.init("johnson/mcp_alphavantage")
 
 
 async def train_mcp_agent(model: art.TrainableModel, use_skypilot: bool = False):
