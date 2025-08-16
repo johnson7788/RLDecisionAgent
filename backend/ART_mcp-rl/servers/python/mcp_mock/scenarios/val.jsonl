@@ -1,0 +1,8 @@
+{"task": "Add 99 and 1.", "difficulty": 1}
+{"task": "Subtract 10 from 10.", "difficulty": 1}
+{"task": "Multiply 7 by 7.", "difficulty": 1}
+{"task": "Divide 36 by 6.", "difficulty": 1}
+{"task": "Calculate (10 - 2) * 3.", "difficulty": 2}
+{"task": "Calculate 200 / (10 + 10).", "difficulty": 2}
+{"task": "Calculate (3 * 4) + (7 * 8).", "difficulty": 3}
+{"task": "Calculate (100 - 20) / (2 * 2)", "difficulty": 4}

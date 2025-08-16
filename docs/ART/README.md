@@ -102,3 +102,8 @@ pip install -e . langchain-core tenacity "mcp>=1.11.0" "gql<4" aiohttp
 # 检查vllm是否正常
 cd tools
 python vllm_test.py
+
+
+# 测试API
+https://www.alphavantage.co/
+200W6XHS4YDQZRUR

@@ -65,7 +65,7 @@ def main(api_key: Optional[str], port: int, transport: str) -> int:
             "Error: Alpha Vantage API key is required. Set ALPHAVANTAGE_API_KEY environment variable or use --api-key option."
         )
         return 1
-
+    print(f"Starting Alpha Vantage server...，端口是: {port}, 协议是： {transport}")
     app = Server("mcp-alphavantage")
     client = AlphaVantageClient(api_key)
 
