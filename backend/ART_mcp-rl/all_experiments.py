@@ -56,7 +56,7 @@ models["mcp-14b-001"].config.num_epochs = 160
 models["mcp-14b-alpha-001"] = models["mcp-7b-001"].model_copy(deep=True)
 models["mcp-14b-alpha-001"].project = "mcp_alphavantage"
 models["mcp-14b-alpha-001"].name = "mcp-14b-alpha-001"
-models["mcp-14b-alpha-001"].config.mcp_server_name = "mcp_alphavantage"
+models["mcp-14b-alpha-001"].config.mcp_server_name = "mcp_caculator"
 models["mcp-14b-alpha-001"].config.num_epochs = 300
 
 
