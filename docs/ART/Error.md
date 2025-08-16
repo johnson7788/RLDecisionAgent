@@ -155,7 +155,30 @@ async def openai_server_task(
     engine: EngineClient,
     config: OpenAIServerConfig,
 ) -> asyncio.Task[None]:
+输出错误日志
+[openai_server_task] 启动 OpenAI 兼容 server 协程...
+[openai_server_task] 使用 base_url=http://0.0.0.0:8000/v1, api_key=default
+[openai_server_task] 等待 server 启动，超时时间: 200.0 秒
+[openai_server_task] build_async_engine_client 被调用
+[openai_server_task] add_lora 被调用
+[LoRARequest] 获取属性: lora_int_id
+[LoRARequest] 获取属性: lora_int_id
+[LoRARequest] 获取属性: lora_path
+[LoRARequest] 获取属性: lora_path
+[LoRARequest] lora_tensors 不存在，返回 None
+[LoRARequest] 获取属性: lora_int_id
+[LoRARequest] 获取属性: lora_int_id
+[openai_server_task] add_lora 完成
+[openai_server_task.test_client] 开始轮询检查 server 是否可用...
+[openai_server_task.test_client] server 未就绪，重试中... 错误: Error code: 502
+[openai_server_task.test_client] server 未就绪，重试中... 错误: Error code: 502
+[openai_server_task.test_client] server 未就绪，重试中... 错误: Error code: 502
+[openai_server_task.test_client] server 未就绪，重试中... 错误: Error code: 502
+[openai_server_task.test_client] server 未就绪，重试中... 错误: Error code: 502
+[openai_server_task.test_client] server 未就绪，重试中... 错误: Error code: 502
 
+pip freeze | grep openai
+openai==1.99.1
 
 
 # 代码报错，需要wandb offline, 不是wandb offline，是有一定几率报错
