@@ -17,3 +17,10 @@ ModelConfig = TypeVar("ModelConfig", bound=BaseModel | None)
 Unsloth 是一种优化后的强化学习训练基础设施，实现了 GRPO 等算法。
 ART 是基于 Unsloth 的更高层构建，提供代理训练整个 pipeline（轨迹采集、奖励评估、训练循环等）的一体化工具库。
 
+# await model.register(backend)，是运行到这里
+ART/src/art/model.py
+async def register(
+        self,
+        model: "Model",
+    ) -> None:
+        """
