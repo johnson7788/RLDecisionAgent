@@ -142,7 +142,7 @@ Task completion attempted with summary: Attempted to perform a technical analysi
 Task completion attempted with summary: Attempted to perform a technical analysis for IBM by comparing the 30-day SMA and the 14-day RSI. However, encountered errors while retrieving the SMA and RSI data, preventing the completion of the analysis and report.
 gather gpt-4o:   6%| | 2/32 [00:21<04:25,  8.83s/it, reward=0, task_completed=1, success=0, ran_out_of_turns=0, llm_completion_duraTask completion attempted with summary: Attempted to calculate the 60-minute Simple Moving Average (SMA) for IBM and retrieve daily time series data. However, the API returned a demo limitation message, indicating the need for a full API key to access the required data. No further analysis could be performed due to this restriction.
 
-# 卡住， 然后kill掉
+# 卡住， 然后kill掉, 或者一直按ctrl+c结束
 ps aux | grep mcp_rl.train | grep -v grep | awk '{print $2}' | xargs kill -9
 
 
