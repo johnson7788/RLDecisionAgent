@@ -32,6 +32,7 @@ if os.getenv("WANDB_API_KEY"):
 
 async def train_mcp_agent(model: art.TrainableModel, use_skypilot: bool = False):
     """Example training function that creates AlphaMcpServer and passes it in scenarios."""
+    print(f"开始进行train_mcp_agent的准备工作")
     load_dotenv()
 
     gpt_4o = art.Model(
