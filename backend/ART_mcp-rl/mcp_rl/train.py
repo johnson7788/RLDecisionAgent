@@ -90,6 +90,7 @@ async def train_mcp_agent(model: art.TrainableModel, use_skypilot: bool = False)
     )
 
     if use_skypilot:
+        print(f"使用远端服务区进行训练")
         from art.skypilot.backend import SkyPilotBackend
 
         backend = await SkyPilotBackend().initialize_cluster(
@@ -97,15 +98,15 @@ async def train_mcp_agent(model: art.TrainableModel, use_skypilot: bool = False)
         )
     else:
         from art.local.backend import LocalBackend
-
+        print(f"使用本地后台进行训练，启动Backend")
         backend = LocalBackend()
 
     # await backend._experimental_pull_from_s3(
     #     model,
     # )
-
+    print(f"开始进行模型的注册")
     await model.register(backend)
-
+    print(f"开始获取训练数据")
     train_scenarios = [
         McpScenario(
             task_description=scenario["task"],
@@ -114,7 +115,7 @@ async def train_mcp_agent(model: art.TrainableModel, use_skypilot: bool = False)
         )
         for scenario in raw_train_scenarios
     ]
-
+    print(f"开始获取验证数据")
     # Create validation scenarios from pre-split data (used for periodic evaluation)
     val_scenarios = [
         McpScenario(
@@ -124,7 +125,7 @@ async def train_mcp_agent(model: art.TrainableModel, use_skypilot: bool = False)
         )
         for scenario in raw_val_scenarios
     ]
-
+    print(f"开始生成训练数据迭代器train_iterator")
     # Create dataset iterator using raw scenarios (not McpScenario objects)
     train_iterator = iterate_dataset(
         train_scenarios,
@@ -137,7 +138,7 @@ async def train_mcp_agent(model: art.TrainableModel, use_skypilot: bool = False)
 
     # Main training loop using iterate_dataset
     for batch in train_iterator:
-        print("Gathering trajectory groups with RULER scoring...")
+        print("收集训练轨迹的分数 trajectory groups with RULER scoring...")
 
         # Use gather_trajectory_groups with ruler_score_group
         groups = await art.gather_trajectory_groups(

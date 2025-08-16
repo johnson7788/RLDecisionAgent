@@ -1,7 +1,9 @@
+# 代码
 https://github.com/OpenPipe/ART/tree/main
 
 文档:
 https://art.openpipe.ai/
+https://deepwiki.com/OpenPipe/ART
 
 OpenPipe 的 ART（Agent Reinforcement Trainer）是一个开源的强化学习框架，旨在通过经验学习提升大型语言模型（LLM）在多步骤任务中的可靠性。ART 采用 GRPO（Generalized Reinforcement Policy Optimization）方法，支持 Qwen、Llama、Kimi 等模型，适用于邮件检索、2048 游戏、MCP 协议等多种实际任务。([GitHub][1], [GitHub][2])
 

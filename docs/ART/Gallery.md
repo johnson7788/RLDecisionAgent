@@ -12,3 +12,8 @@ ModelConfig = TypeVar("ModelConfig", bound=BaseModel | None)
 
 * 它是什么？ ModelConfig 是一个类型占位符（泛型类型变量），代表任何用于模型配置、且继承自 pydantic.BaseModel 的类。
 * 里面有什么？ 它的内容取决于你或库的其他部分如何定义并传入一个具体的配置类。它本身没有字段。
+
+# Unsloth
+Unsloth 是一种优化后的强化学习训练基础设施，实现了 GRPO 等算法。
+ART 是基于 Unsloth 的更高层构建，提供代理训练整个 pipeline（轨迹采集、奖励评估、训练循环等）的一体化工具库。
+
