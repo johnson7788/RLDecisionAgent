@@ -48,78 +48,6 @@ TimeoutError: Unable to reach OpenAI-compatible server within 30.0 seconds. You 
 - 查看日志
 cat ./ART/.art/mcp_alphavantage/models/mcp-14b-alpha-001/logs/vllm.log
 
-# 卡住， 然后kill掉
-ps aux | grep mcp_rl.train | grep -v grep | awk '{print $2}' | xargs kill -9
-
-
-# 报错, 不要安装==0.3.11.post5版本，因为没有after_each
-Training failed with error: gather_trajectory_groups() got an unexpected keyword argument 'after_each'
-Traceback (most recent call last):
-  File "examples/mcp-rl/mcp_rl/train.py", line 224, in main
-    asyncio.run(train_mcp_agent(model, use_skypilot=args.use_skypilot))
-  File "/home/vipuser/miniconda3/lib/python3.12/site-packages/nest_asyncio.py", line 30, in run
-    return loop.run_until_complete(task)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/vipuser/miniconda3/lib/python3.12/site-packages/nest_asyncio.py", line 98, in run_until_complete
-    return f.result()
-           ^^^^^^^^^^
-  File "/home/vipuser/miniconda3/lib/python3.12/asyncio/futures.py", line 203, in result
-    raise self._exception.with_traceback(self._exception_tb)
-  File "/home/vipuser/miniconda3/lib/python3.12/asyncio/tasks.py", line 314, in __step_run_and_handle_result
-    result = coro.send(None)
-             ^^^^^^^^^^^^^^^
-  File "/root/RLDecisionAgent/backend/ART_mcp-rl/mcp_rl/train.py", line 143, in train_mcp_agent
-    groups = await art.gather_trajectory_groups(
-                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-TypeError: gather_trajectory_groups() got an unexpected keyword argument 'after_each'
-
-
-# 报错 pip install unsloth==2025.8.4 unsloth-zoo==2025.8.3
-Traceback (most recent call last):
-  File "<frozen runpy>", line 198, in _run_module_as_main
-  File "<frozen runpy>", line 88, in _run_code
-  File "/root/RLDecisionAgent/backend/ART_mcp-rl/mcp_rl/train.py", line 234, in <module>
-    main()
-  File "/root/RLDecisionAgent/backend/ART_mcp-rl/mcp_rl/train.py", line 224, in main
-    asyncio.run(train_mcp_agent(model, use_skypilot=args.use_skypilot))
-  File "/home/vipuser/miniconda3/lib/python3.12/site-packages/nest_asyncio.py", line 30, in run
-    return loop.run_until_complete(task)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/vipuser/miniconda3/lib/python3.12/site-packages/nest_asyncio.py", line 98, in run_until_complete
-    return f.result()
-           ^^^^^^^^^^
-  File "/home/vipuser/miniconda3/lib/python3.12/asyncio/futures.py", line 203, in result
-    raise self._exception.with_traceback(self._exception_tb)
-  File "/home/vipuser/miniconda3/lib/python3.12/asyncio/tasks.py", line 316, in __step_run_and_handle_result
-    result = coro.throw(exc)
-             ^^^^^^^^^^^^^^^
-  File "/root/RLDecisionAgent/backend/ART_mcp-rl/mcp_rl/train.py", line 107, in train_mcp_agent
-    await model.register(backend)
-  File "/root/RLDecisionAgent/ART/src/art/model.py", line 308, in register
-    base_url, api_key = await backend._prepare_backend_for_training(
-                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/root/RLDecisionAgent/ART/src/art/local/backend.py", line 268, in _prepare_backend_for_training
-    await service.start_openai_server(config=config)
-  File "/root/RLDecisionAgent/ART/src/mp_actors/traceback.py", line 26, in async_wrapper
-    raise e.with_traceback(streamlined_traceback())
-  File "/root/RLDecisionAgent/ART/src/art/unsloth/service.py", line 56, in start_openai_server
-    self.state.trainer.save_model(lora_path)
-    ^^^^^^^^^^^^^^^^^
-  File "/home/vipuser/miniconda3/lib/python3.12/functools.py", line 993, in __get__
-    val = self.func(instance)
-    ^^^^^^^^^^^^^^^^^
-  File "/root/RLDecisionAgent/ART/src/art/unsloth/service.py", line 41, in state
-    return ModelState(self.config)
-    ^^^^^^^^^^^^^^^^^
-  File "/root/RLDecisionAgent/ART/src/art/unsloth/state.py", line 85, in __init__
-    unsloth.FastLanguageModel.from_pretrained(**config.get("init_args", {})),
-    ^^^^^^^^^^^^^^^^^
-  File "/home/vipuser/miniconda3/lib/python3.12/site-packages/unsloth/models/loader.py", line 363, in from_pretrained
-    patch_vllm()
-  File "/root/RLDecisionAgent/ART/src/art/vllm/patches.py", line 254, in patch_vllm
-    vllm_utils.patch_vllm_set_inductor_config()
-    ^^^^^^^^^^^^^^^^^
-AttributeError: module 'unsloth_zoo.vllm_utils' has no attribute 'patch_vllm_set_inductor_config'
 
 ART/src/art/local/backend.py传入的的config为空
 await service.start_openai_server(config=config)
@@ -213,3 +141,119 @@ Task completion attempted with summary: Attempted to perform a technical analysi
 Task completion attempted with summary: Attempted to perform a technical analysis for IBM by comparing the 30-day SMA and the 14-day RSI. However, the tool encountered errors while retrieving the SMA and RSI data, preventing the completion of the analysis.
 Task completion attempted with summary: Attempted to perform a technical analysis for IBM by comparing the 30-day SMA and the 14-day RSI. However, encountered errors while retrieving the SMA and RSI data, preventing the completion of the analysis and report.
 gather gpt-4o:   6%| | 2/32 [00:21<04:25,  8.83s/it, reward=0, task_completed=1, success=0, ran_out_of_turns=0, llm_completion_duraTask completion attempted with summary: Attempted to calculate the 60-minute Simple Moving Average (SMA) for IBM and retrieve daily time series data. However, the API returned a demo limitation message, indicating the need for a full API key to access the required data. No further analysis could be performed due to this restriction.
+
+# 卡住， 然后kill掉
+ps aux | grep mcp_rl.train | grep -v grep | awk '{print $2}' | xargs kill -9
+
+
+# 报错, 不要安装==0.3.11.post5版本，因为没有after_each
+Training failed with error: gather_trajectory_groups() got an unexpected keyword argument 'after_each'
+Traceback (most recent call last):
+  File "examples/mcp-rl/mcp_rl/train.py", line 224, in main
+    asyncio.run(train_mcp_agent(model, use_skypilot=args.use_skypilot))
+  File "/home/vipuser/miniconda3/lib/python3.12/site-packages/nest_asyncio.py", line 30, in run
+    return loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/vipuser/miniconda3/lib/python3.12/site-packages/nest_asyncio.py", line 98, in run_until_complete
+    return f.result()
+           ^^^^^^^^^^
+  File "/home/vipuser/miniconda3/lib/python3.12/asyncio/futures.py", line 203, in result
+    raise self._exception.with_traceback(self._exception_tb)
+  File "/home/vipuser/miniconda3/lib/python3.12/asyncio/tasks.py", line 314, in __step_run_and_handle_result
+    result = coro.send(None)
+             ^^^^^^^^^^^^^^^
+  File "/root/RLDecisionAgent/backend/ART_mcp-rl/mcp_rl/train.py", line 143, in train_mcp_agent
+    groups = await art.gather_trajectory_groups(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: gather_trajectory_groups() got an unexpected keyword argument 'after_each'
+
+
+# 报错 pip install unsloth==2025.8.4 unsloth-zoo==2025.8.3
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/root/RLDecisionAgent/backend/ART_mcp-rl/mcp_rl/train.py", line 234, in <module>
+    main()
+  File "/root/RLDecisionAgent/backend/ART_mcp-rl/mcp_rl/train.py", line 224, in main
+    asyncio.run(train_mcp_agent(model, use_skypilot=args.use_skypilot))
+  File "/home/vipuser/miniconda3/lib/python3.12/site-packages/nest_asyncio.py", line 30, in run
+    return loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/vipuser/miniconda3/lib/python3.12/site-packages/nest_asyncio.py", line 98, in run_until_complete
+    return f.result()
+           ^^^^^^^^^^
+  File "/home/vipuser/miniconda3/lib/python3.12/asyncio/futures.py", line 203, in result
+    raise self._exception.with_traceback(self._exception_tb)
+  File "/home/vipuser/miniconda3/lib/python3.12/asyncio/tasks.py", line 316, in __step_run_and_handle_result
+    result = coro.throw(exc)
+             ^^^^^^^^^^^^^^^
+  File "/root/RLDecisionAgent/backend/ART_mcp-rl/mcp_rl/train.py", line 107, in train_mcp_agent
+    await model.register(backend)
+  File "/root/RLDecisionAgent/ART/src/art/model.py", line 308, in register
+    base_url, api_key = await backend._prepare_backend_for_training(
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/root/RLDecisionAgent/ART/src/art/local/backend.py", line 268, in _prepare_backend_for_training
+    await service.start_openai_server(config=config)
+  File "/root/RLDecisionAgent/ART/src/mp_actors/traceback.py", line 26, in async_wrapper
+    raise e.with_traceback(streamlined_traceback())
+  File "/root/RLDecisionAgent/ART/src/art/unsloth/service.py", line 56, in start_openai_server
+    self.state.trainer.save_model(lora_path)
+    ^^^^^^^^^^^^^^^^^
+  File "/home/vipuser/miniconda3/lib/python3.12/functools.py", line 993, in __get__
+    val = self.func(instance)
+    ^^^^^^^^^^^^^^^^^
+  File "/root/RLDecisionAgent/ART/src/art/unsloth/service.py", line 41, in state
+    return ModelState(self.config)
+    ^^^^^^^^^^^^^^^^^
+  File "/root/RLDecisionAgent/ART/src/art/unsloth/state.py", line 85, in __init__
+    unsloth.FastLanguageModel.from_pretrained(**config.get("init_args", {})),
+    ^^^^^^^^^^^^^^^^^
+  File "/home/vipuser/miniconda3/lib/python3.12/site-packages/unsloth/models/loader.py", line 363, in from_pretrained
+    patch_vllm()
+  File "/root/RLDecisionAgent/ART/src/art/vllm/patches.py", line 254, in patch_vllm
+    vllm_utils.patch_vllm_set_inductor_config()
+    ^^^^^^^^^^^^^^^^^
+AttributeError: module 'unsloth_zoo.vllm_utils' has no attribute 'patch_vllm_set_inductor_config'
+
+
+# weave初始化失败， 环境变量里面加： export WANDB_MODE=offline
+raceback (most recent call last):
+  File "<frozen runpy>", line 189, in _run_module_as_main
+  File "<frozen runpy>", line 112, in _get_module_details
+  File "/workspace/verl/RLDecisionAgent/backend/ART_mcp-rl/mcp_rl/__init__.py", line 4, in <module>
+    from .rollout import McpScenario, rollout
+  File "/workspace/verl/RLDecisionAgent/backend/ART_mcp-rl/mcp_rl/rollout.py", line 30, in <module>
+    weave.init("mcp-agent-training")
+  File "/usr/local/lib/python3.12/dist-packages/weave/trace/api.py", line 98, in init
+    initialized_client = weave_init.init_weave(
+                         ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/weave/trace/weave_init.py", line 120, in init_weave
+    entity_name, project_name = get_entity_project_from_project_name(project_name)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/weave/trace/weave_init.py", line 54, in get_entity_project_from_project_name
+    entity_name = api.default_entity_name()
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/weave/wandb_interface/wandb_api.py", line 175, in default_entity_name
+    result = self.query(self.VIEWER_DEFAULT_ENTITY_QUERY)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/weave/wandb_interface/wandb_api.py", line 158, in query
+    return session.execute(query, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/gql/client.py", line 1016, in execute
+    result = self._execute(
+             ^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/gql/client.py", line 925, in _execute
+    result = self.transport.execute(
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/gql/transport/requests.py", line 237, in execute
+    response = self.session.request(
+               ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/requests/sessions.py", line 589, in request
+    resp = self.send(prep, **send_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/requests/sessions.py", line 703, in send
+    r = adapter.send(request, **kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/requests/adapters.py", line 694, in send
+    raise ProxyError(e, request=request)
+requests.exceptions.ProxyError: HTTPSConnectionPool(host='api.wandb.ai', port=443): Max retries exceeded with url: /graphql (Caused by ProxyError('Unable to connect to proxy', NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x7f42003a7200>: Failed to establish a new connection: [Errno 111] Connection refused')))

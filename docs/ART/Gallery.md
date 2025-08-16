@@ -24,3 +24,10 @@ async def register(
         model: "Model",
     ) -> None:
         """
+
+# weave 
+其实是一个 LLM 训练与推理的可观测性 / 追踪 (observability & tracing) 库，主要用于记录模型的运行信息、日志、指标和调用链。
+它是 Weights & Biases (wandb) 旗下的一个项目，定位类似于：
+给 LLM 应用 加上自动化的 logging / tracing / metrics 收集；
+在 推理 / 训练 / agent rollout 时，把调用链、prompt、response、latency、错误信息等追踪下来；
+在 web dashboard 上可视化调用过程，方便调试、监控和复现。
