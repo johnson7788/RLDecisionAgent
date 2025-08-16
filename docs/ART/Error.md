@@ -121,7 +121,7 @@ Traceback (most recent call last):
     ^^^^^^^^^^^^^^^^^
 AttributeError: module 'unsloth_zoo.vllm_utils' has no attribute 'patch_vllm_set_inductor_config'
 
-# 代码报错，需要wandb offline
+# 代码报错，需要wandb offline, 不是wandb offline，是有一定几率报错
   import unsloth  # type: ignore # noqa: F401
 🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning.
 🦥 Unsloth Zoo will now patch everything to make training faster!

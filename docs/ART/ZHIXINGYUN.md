@@ -89,3 +89,7 @@ python art_model_load.py
 ✅ 后端成功加载模型！
    耗时: 98.75 秒
    模型现在被托管在: http://0.0.0.0:8000/v1
+
+
+## 直接测试vllm是否正常，并且使用openai协议连接vllm的代码是否正常
+test_vllm_server.py
