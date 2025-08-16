@@ -14,6 +14,10 @@ from servers.python.mcp_balldontlie.server_params import (
     server_params as balldontlie_server_params,
 )
 
+from servers.python.mcp_caculator.server_params import (
+    server_params as mcp_caculator_server_params,
+)
+
 import art
 from art.local import LocalBackend
 from art.rewards.ruler import ruler_score_group
@@ -31,6 +35,7 @@ backend = LocalBackend()
 async def generate_val_groups(
     model: art.Model, val_scenarios: List[McpScenario]
 ) -> list[art.TrajectoryGroup]:
+    print(f"正在为模型生成验证组: {model.name}")
     groups = await art.gather_trajectory_groups(
         (
             art.TrajectoryGroup(rollout(model, val_scenarios[i]) for _ in range(4))
@@ -39,7 +44,7 @@ async def generate_val_groups(
         pbar_desc=f"gather {model.name}",
         max_exceptions=1,
     )
-
+    print(f"为模型生成了 {len(groups)} 个验证组: {model.name}")
     return groups
 
 
@@ -48,6 +53,7 @@ async def calculate_beat_comp(
     control_groups: list[art.TrajectoryGroup],
     control_first: bool = True,
 ):
+    print(f"正在计算击败对比, control_first: {control_first}")
     promises = []
 
     if control_groups is not None:
@@ -62,6 +68,7 @@ async def calculate_beat_comp(
                 )
 
                 async def score_group(group_idx: int, trajectory_idx: int):
+                    print(f"正在评分组 {group_idx}, 轨迹 {trajectory_idx}")
                     scored_group = await ruler_score_group(
                         group,
                         judge_model="openai/o3-mini",
@@ -76,6 +83,7 @@ async def calculate_beat_comp(
                         control_score = scored_group.trajectories[1].reward
 
                     reward_diff = benchmark_score - control_score
+                    print(f"组 {group_idx}, 轨迹 {trajectory_idx} 的奖励差异: {reward_diff}")
 
                     metric_name = (
                         "beat_comp" if control_first else "beat_comp_control_last"
@@ -97,6 +105,7 @@ async def calculate_beat_comp(
                 promises.append(score_group(i, j))
 
     await asyncio.gather(*promises)
+    print(f"完成计算击败对比, control_first: {control_first}")
 
 
 async def log_comparison_model(
@@ -104,9 +113,11 @@ async def log_comparison_model(
     val_scenarios: List[McpScenario],
     control_groups: list[art.TrajectoryGroup] | None = None,
 ) -> list[art.TrajectoryGroup]:
+    print(f"正在记录对比模型: {comparison_model.name}")
     groups = await generate_val_groups(comparison_model, val_scenarios)
 
     if control_groups is not None:
+        print(f"正在为 {comparison_model.name} 计算击败对比")
         await calculate_beat_comp(groups, control_groups, control_first=True)
         await calculate_beat_comp(groups, control_groups, control_first=False)
 
@@ -114,26 +125,33 @@ async def log_comparison_model(
         groups,
         split="val",
     )
-    await backend._experimental_push_to_s3(
-        comparison_model,
-    )
+    # print(f"正在将 {comparison_model.name} 推送到S3")
+    # await backend._experimental_push_to_s3(
+    #     comparison_model,
+    # )
+    print(f"完成记录对比模型: {comparison_model.name}")
 
     return groups
 
 
 async def run_benchmarks(server: str = "mcp_alphavantage"):
+    print(f"正在为服务器运行基准测试: {server}")
     if server == "mcp_alphavantage":
         scenarios_path = "servers/python/mcp_alphavantage/scenarios/val.jsonl"
         server_params = alphavantage_server_params
     elif server == "mcp_balldontlie":
         scenarios_path = "servers/python/mcp_balldontlie/scenarios/val.jsonl"
         server_params = balldontlie_server_params
+    elif server == "mcp_caculator":
+        scenarios_path = "servers/python/mcp_caculator/scenarios/val.jsonl"
+        server_params = mcp_caculator_server_params
     else:
         raise ValueError(
-            f"Unsupported server: {server}. Use 'mcp_alphavantage' or 'mcp_balldontlie'"
+            f"不支持的服务器: {server}. 使用 'mcp_alphavantage' 或 'mcp_balldontlie'"
         )
 
     weave.init(server)
+    print(f"使用项目初始化Weave: {server}")
 
     # comparison models
     gpt_4o_mini = art.Model(
@@ -179,6 +197,7 @@ async def run_benchmarks(server: str = "mcp_alphavantage"):
         inference_api_key=os.getenv("OPENROUTER_API_KEY"),
     )
 
+    print(f"正在从以下位置加载场景: {scenarios_path}")
     with open(scenarios_path) as f:
         raw_val_scenarios = [json.loads(line.strip()) for line in f if line.strip()]
     val_scenarios = [
@@ -189,34 +208,37 @@ async def run_benchmarks(server: str = "mcp_alphavantage"):
         )
         for scenario in raw_val_scenarios
     ]
+    print(f"已加载 {len(val_scenarios)} 个验证场景")
+    
     await gpt_4o_mini.register(backend)
     await gpt_4o.register(backend)
     await gpt_41.register(backend)
     await o3.register(backend)
     await o4_mini.register(backend)
     await sonnet_4.register(backend)
+    print("已注册所有模型")
 
+    print("正在使用gpt-4.1生成控制组")
     control_groups = await generate_val_groups(gpt_41, val_scenarios)
 
-    for comparison_model in [
-        gpt_4o_mini,
-        gpt_4o,
-        gpt_41,
-        o3,
-        o4_mini,
-        sonnet_4,
-    ]:
+    models = [gpt_4o_mini, gpt_4o, gpt_41, o3, o4_mini, sonnet_4]
+    for i, comparison_model in enumerate(models):
+        print(f"正在处理模型 {i+1}/{len(models)}: {comparison_model.name}")
         await log_comparison_model(comparison_model, val_scenarios, control_groups)
+    
+    print("完成运行基准测试")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Generate benchmarks for MCP servers")
+    parser = argparse.ArgumentParser(description="为MCP服务器生成基准测试")
     parser.add_argument(
         "--server",
         choices=["mcp_alphavantage", "mcp_balldontlie"],
         default="mcp_alphavantage",
-        help="MCP server to benchmark (default: mcp_alphavantage)",
+        help="要进行基准测试的MCP服务器 (默认: mcp_alphavantage)",
     )
     args = parser.parse_args()
 
+    print(f"开始使用服务器生成基准测试: {args.server}")
     asyncio.run(run_benchmarks(args.server))
+    print("基准测试生成完成")
