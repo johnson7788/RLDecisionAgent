@@ -19,7 +19,8 @@ SMITHERY_MCP_URL = "https://server.smithery.ai/exa/mcp?api_key=552ddb78-0e95-499
 ## Step1 数据准备
 ```
 pip install --no-deps -e . -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
-pip install bitsandbytes langchain-core tenacity "mcp>=1.11.0" "gql<4" polars torchtune trl unsloth apscheduler vllm -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
+pip install weave polars torchtune trl unsloth apscheduler vllm -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
+pip install bitsandbytes langchain-core tenacity "mcp>=1.11.0" "gql<4"  -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
 cd ART/examples/mcp-rl
 创建.env文件
 # cat .env
@@ -103,7 +104,7 @@ Generated 24 scenarios:
 ## Step2 开始训练
 ```
 wandb offline  # 关闭wandb上传
-cd ART/examples/mcp-rl
+cd backend/ART_mcp-rl
 export CUDA_VISIBLE_DEVICES=1,2
 export ALL_PROXY=http://127.0.0.1:7890
 export HTTP_PROXY=http://127.0.0.1:7890

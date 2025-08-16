@@ -1,0 +1,14 @@
+# ModelConfig
+ModelConfig 并不是一个具体的类定义，而是一个类型变量（TypeVar）。
+ModelConfig = TypeVar("ModelConfig", bound=BaseModel | None)
+这里的 bound=BaseModel | None 意味着 ModelConfig 可以是任何继承自 pydantic.BaseModel 的类，或者 None。
+1. 灵活性: Model 或 TrainableModel
+   的实例可以携带一个具体的配置对象，这个对象的类型不是写死的。你可以定义自己的配置类（只要它继承自
+   pydantic.BaseModel），然后将它用于 Model 的 config 字段。
+2. 类型安全: 使用泛型和类型变量，静态类型检查工具（如 MyPy）可以知道当你创建一个 Model 实例时，它的 config 属性应该是什么类型。
+3. 无具体实现: art 库本身不提供一个名为 ModelConfig 的具体配置类。它只是定义了一个“插槽”或“模板”，让使用者来填充具体的配置。
+
+  总结一下：
+
+* 它是什么？ ModelConfig 是一个类型占位符（泛型类型变量），代表任何用于模型配置、且继承自 pydantic.BaseModel 的类。
+* 里面有什么？ 它的内容取决于你或库的其他部分如何定义并传入一个具体的配置类。它本身没有字段。
