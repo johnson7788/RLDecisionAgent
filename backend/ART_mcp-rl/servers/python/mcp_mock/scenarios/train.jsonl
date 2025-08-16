@@ -1,8 +1,8 @@
-{"task": "Add 15 and 7.", "difficulty": 1}
-{"task": "Subtract 5 from 15.", "difficulty": 1}
-{"task": "Multiply 8 by 3.", "difficulty": 1}
-{"task": "Divide 50 by 10.", "difficulty": 1}
-{"task": "Calculate (2 + 3) * 4.", "difficulty": 2}
+{"task": "Add 1425 and 73410.", "difficulty": 1}
+{"task": "Subtract 22315 from 3948.", "difficulty": 1}
+{"task": "Multiply 8984 by 72.", "difficulty": 1}
+{"task": "Divide 84729 by 38.", "difficulty": 1}
+{"task": "Calculate (2283 + 3134) * 4.6", "difficulty": 2}
 {"task": "Calculate 100 / (25 - 5).", "difficulty": 2}
-{"task": "Calculate (5 * 6) + (10 * 2).", "difficulty": 3}
+{"task": "Calculate (5.3 * 6.4) + (9.4 * 2.3).", "difficulty": 3}
 {"task": "Calculate (10 + 5) * (20 - 10) / 2", "difficulty": 4}
