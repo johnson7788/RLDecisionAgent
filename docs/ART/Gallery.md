@@ -58,3 +58,7 @@ cat config.json
 }
 启动测试工具
 npx @modelcontextprotocol/inspector --config ./config.json --server everything
+
+
+# 测试使用模型进行评分
+python -m mcp_rl.benchmarks.generate_benchmarks

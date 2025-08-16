@@ -189,6 +189,20 @@ async def run_benchmarks(server: str = "mcp_alphavantage"):
         inference_base_url="https://api.openai.com/v1",
         inference_api_key=os.getenv("OPENAI_API_KEY"),
     )
+    deepseek_chat = art.Model(
+        name="deepseek",
+        project=server,
+        inference_model_name="deepseek-chat",
+        inference_base_url="https://api.deepseek.com/v1",
+        inference_api_key=os.getenv("DEEPSEEK_API_KEY"),
+    )
+    doubao_chat = art.Model(
+        name="deepseek",
+        project=server,
+        inference_model_name="deepseek-chat",
+        inference_base_url="https://ark.cn-beijing.volces.com/api/v3",
+        inference_api_key=os.getenv("DOUBAO_API_KEY"),
+    )
     sonnet_4 = art.Model(
         name="sonnet-4",
         project=server,
@@ -216,12 +230,14 @@ async def run_benchmarks(server: str = "mcp_alphavantage"):
     await o3.register(backend)
     await o4_mini.register(backend)
     await sonnet_4.register(backend)
+    await deepseek_chat.register(backend)
+    await doubao_chat.register(backend)
     print("已注册所有模型")
 
     print("正在使用gpt-4.1生成控制组")
-    control_groups = await generate_val_groups(gpt_41, val_scenarios)
+    control_groups = await generate_val_groups(doubao_chat, val_scenarios)
 
-    models = [gpt_4o_mini, gpt_4o, gpt_41, o3, o4_mini, sonnet_4]
+    models = [deepseek_chat]
     for i, comparison_model in enumerate(models):
         print(f"正在处理模型 {i+1}/{len(models)}: {comparison_model.name}")
         await log_comparison_model(comparison_model, val_scenarios, control_groups)
