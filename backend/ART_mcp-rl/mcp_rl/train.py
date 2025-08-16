@@ -107,7 +107,7 @@ async def train_mcp_agent(model: art.TrainableModel, use_skypilot: bool = False)
     # )
     print(f"开始进行模型的注册")
     await model.register(backend)
-    print(f"开始获取训练数据")
+    print(f"模型注册成功，开始获取训练数据")
     train_scenarios = [
         McpScenario(
             task_description=scenario["task"],

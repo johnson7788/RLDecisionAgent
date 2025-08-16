@@ -19,7 +19,7 @@ async def main():
     # 1. Initialize the vLLM engine
     #初始化1个vllm模型，然后使用下面的AsyncLLMEngine调用
     engine_args = AsyncEngineArgs(model="Qwen/Qwen2.5-0.5B-Instruct")
-    engine = await AsyncLLMEngine.from_engine_args(engine_args)
+    engine = AsyncLLMEngine.from_engine_args(engine_args)
 
     # 2. Start the OpenAI-compatible server
     server_config: dict[str, Any] = {
