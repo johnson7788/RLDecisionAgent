@@ -125,6 +125,36 @@ ART/src/art/local/backend.py传入的的config为空
 await service.start_openai_server(config=config)
 继续调用    async def start_openai_server(self, config: dev.OpenAIServerConfig | None) -> None: 函数
 ART/src/art/unsloth/service.py
+输入日志:
+[start_openai_server] 开始启动 OpenAI server...
+[start_openai_server] 当前 output_dir: /workspace/verl/RLDecisionAgent/ART/.art/mcp_alphavantage/models/mcp-14b-alpha-001
+[start_openai_server] 传入 config: None
+[start_openai_server] get_last_checkpoint_dir 返回: None
+[start_openai_server] 未找到 checkpoint，尝试使用 step=0 checkpoint
+[start_openai_server] step=0 checkpoint 路径: /workspace/verl/RLDecisionAgent/ART/.art/mcp_alphavantage/models/mcp-14b-alpha-001/checkpoints/0000
+[start_openai_server] 已确保目录存在: /workspace/verl/RLDecisionAgent/ART/.art/mcp_alphavantage/models/mcp-14b-alpha-001/checkpoints
+[start_openai_server] 保存初始模型中...
+[2025-08-16 22:36:39,241] [INFO] [real_accelerator.py:254:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+[2025-08-16 22:36:39,732] [INFO] [logging.py:107:log_dist] [Rank -1] [TorchCheckpointEngine] Initialized with serialization = False
+[start_openai_server] 初始模型保存完成
+[start_openai_server] 停止可能已有的 OpenAI server...
+[start_openai_server] 旧的 OpenAI server 已停止
+[start_openai_server] 准备启动新的 openai_server_task，配置如下：
+  - model_name: mcp-14b-alpha-001
+  - base_model: Qwen/Qwen2.5-0.5B-Instruct
+  - log_file: /workspace/verl/RLDecisionAgent/ART/.art/mcp_alphavantage/models/mcp-14b-alpha-001/logs/vllm.log
+  - lora_path: /workspace/verl/RLDecisionAgent/ART/.art/mcp_alphavantage/models/mcp-14b-alpha-001/checkpoints/0000
+  - config: {'log_file': '/workspace/verl/RLDecisionAgent/ART/.art/mcp_alphavantage/models/mcp-14b-alpha-001/logs/vllm.log', 'server_args': {'api_key': 'default', 'lora_modules': ['{"name": "mcp-14b-alpha-001", "path": "/workspace/verl/RLDecisionAgent/ART/.art/mcp_alphavantage/models/mcp-14b-alpha-001/checkpoints/0000"}'], 'return_tokens_as_token_ids': True, 'enable_auto_tool_choice': True, 'tool_call_parser': 'hermes'}, 'engine_args': {'model': 'Qwen/Qwen2.5-0.5B-Instruct', 'num_scheduler_steps': 16, 'served_model_name': 'Qwen/Qwen2.5-0.5B-Instruct', 'disable_log_requests': True, 'generation_config': 'vllm'}}
+发现这里卡住
+self._openai_server_task = await openai_server_task(
+            engine=self.state.vllm.async_engine,
+            config=final_config,
+        )
+是调用了ART/src/art/vllm/server.py的函数
+async def openai_server_task(
+    engine: EngineClient,
+    config: OpenAIServerConfig,
+) -> asyncio.Task[None]:
 
 
 
