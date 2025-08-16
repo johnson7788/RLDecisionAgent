@@ -31,3 +31,30 @@ async def register(
 给 LLM 应用 加上自动化的 logging / tracing / metrics 收集；
 在 推理 / 训练 / agent rollout 时，把调用链、prompt、response、latency、错误信息等追踪下来；
 在 web dashboard 上可视化调用过程，方便调试、监控和复现。
+
+
+# 测试MCP工具
+运行server端
+cd backend/ART_mcp-rl/servers/python/mcp_caculator
+python server.py --transport sse
+
+配置config.json
+cat config.json
+{
+  "mcpServers": {
+    "everything": {
+      "type": "sse",
+      "url": "http://localhost:8001/sse"
+    },
+    "my-server": {
+      "command": "node",
+      "args": ["build/index.js", "arg1", "arg2"],
+      "env": {
+        "key": "value",
+        "key2": "value2"
+      }
+    }
+  }
+}
+启动测试工具
+npx @modelcontextprotocol/inspector --config ./config.json --server everything
