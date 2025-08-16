@@ -62,7 +62,7 @@ models["mcp-14b-alpha-001"] = models["mcp-7b-001"].model_copy(deep=True)
 models["mcp-14b-alpha-001"].project = "mcp_alphavantage"  # 项目名
 models["mcp-14b-alpha-001"].name = "mcp-14b-alpha-001"
 models["mcp-14b-alpha-001"].config.mcp_server_name = "mcp_caculator"  # 指定服务器
-models["mcp-14b-alpha-001"].config.num_epochs = 6               # 训练轮数设为 300
+models["mcp-14b-alpha-001"].config.num_epochs = 8               # 训练轮数设为 300
 
 # 基于 alpha-001 生成多个副本模型，只修改名称
 models["mcp-14b-alpha-002"] = models["mcp-14b-alpha-001"].model_copy(deep=True)
@@ -80,4 +80,4 @@ models["mcp-14b-ball-001"] = models["mcp-7b-001"].model_copy(deep=True)
 models["mcp-14b-ball-001"].project = "mcp_balldontlie"
 models["mcp-14b-ball-001"].name = "mcp-14b-ball-001"
 models["mcp-14b-ball-001"].config.mcp_server_name = "mcp_balldontlie"
-models["mcp-14b-ball-001"].config.num_epochs = 300
+models["mcp-14b-ball-001"].config.num_epochs = 4
