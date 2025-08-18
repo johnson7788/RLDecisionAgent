@@ -354,7 +354,7 @@ Traceback (most recent call last):
 ValueError: Project Mismatch: weave and wandb must be initialized using the same project. Found wandb.init targeting project "/mcp_alphavantage" and weave.init targeting project "johnson-/mcp_alphavantage". To fix, please use the same project for both library initializations.
 
 
-# 训练时CUDA错误， 检查nvidia-smi是否正常，如果不正常，请重启容器
+# 训练时CUDA错误， 检查nvidia-smi是否正常，如果不正常，请重启容器，检查宿主机的GPU状态
 Training failed with error: CUDA error: operation not permitted
 CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
 For debugging consider passing CUDA_LAUNCH_BLOCKING=1
@@ -449,3 +449,5 @@ Traceback (most recent call last):
   File "/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py", line 372, in _lazy_init
     torch._C._cuda_init()
 RuntimeError: No CUDA GPUs are available
+
+# 训练卡住
