@@ -29,7 +29,7 @@ python LLM_cache.py
 pip install --no-deps -e . -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
 pip install weave polars torchtune trl unsloth apscheduler vllm -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
 pip install bitsandbytes langchain-core tenacity "mcp>=1.11.0" "gql<4"  -i https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
-cd ART/examples/mcp-rl
+cd backend/ART_mcp-rl
 创建.env文件
 # cat .env
 OPENAI_API_KEY=sk-proj-x-xxxx
@@ -114,12 +114,7 @@ Generated 24 scenarios:
 wandb offline  # 关闭wandb上传
 cd backend/ART_mcp-rl
 export CUDA_VISIBLE_DEVICES=1,2
-export ALL_PROXY=http://127.0.0.1:7890
-export HTTP_PROXY=http://127.0.0.1:7890
-export HTTPS_PROXY=http://127.0.0.1:7890
-export http_proxy=http://127.0.0.1:7890
-export https_proxy=http://127.0.0.1:7890
-export HF_ENDPOINT=https://hf-mirror.com
+千万不要用http_proxy
 python docs/ART/load_model.py
 pip install polars torchtune trl unsloth apscheduler vllm fastapi-sso
 # 安装一个依赖包
