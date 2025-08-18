@@ -352,3 +352,100 @@ Traceback (most recent call last):
   File "/usr/local/lib/python3.12/dist-packages/weave/trace/weave_client.py", line 2391, in check_wandb_run_matches
     raise ValueError(
 ValueError: Project Mismatch: weave and wandb must be initialized using the same project. Found wandb.init targeting project "/mcp_alphavantage" and weave.init targeting project "johnson-/mcp_alphavantage". To fix, please use the same project for both library initializations.
+
+
+# 训练时CUDA错误， 检查nvidia-smi是否正常，如果不正常，请重启容器
+Training failed with error: CUDA error: operation not permitted
+CUDA kernel errors might be asynchronously reported at some other API call, so the stacktrace below might be incorrect.
+For debugging consider passing CUDA_LAUNCH_BLOCKING=1
+Compile with `TORCH_USE_CUDA_DSA` to enable device-side assertions.
+
+Traceback (most recent call last):
+  File "/workspace/verl/RLDecisionAgent/backend/ART_mcp-rl/mcp_rl/train.py", line 235, in main
+    asyncio.run(train_mcp_agent(model, use_skypilot=args.use_skypilot))
+  File "/usr/local/lib/python3.12/dist-packages/nest_asyncio.py", line 30, in run
+    return loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/nest_asyncio.py", line 98, in run_until_complete
+    return f.result()
+           ^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/futures.py", line 203, in result
+    raise self._exception.with_traceback(self._exception_tb)
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 316, in __step_run_and_handle_result
+    result = coro.throw(exc)
+             ^^^^^^^^^^^^^^^
+  File "/workspace/verl/RLDecisionAgent/backend/ART_mcp-rl/mcp_rl/train.py", line 116, in train_mcp_agent
+    await model.register(backend)
+  File "/workspace/verl/RLDecisionAgent/ART/src/art/model.py", line 310, in register
+    base_url, api_key = await backend._prepare_backend_for_training(
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/verl/RLDecisionAgent/ART/src/art/local/backend.py", line 269, in _prepare_backend_for_training
+    await service.start_openai_server(config=config)
+  File "/workspace/verl/RLDecisionAgent/ART/src/mp_actors/traceback.py", line 26, in async_wrapper
+    raise e.with_traceback(streamlined_traceback())
+  File "/workspace/verl/RLDecisionAgent/ART/src/art/unsloth/service.py", line 65, in start_openai_server
+    self.state.trainer.save_model(lora_path)
+    ^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/functools.py", line 995, in __get__
+    val = self.func(instance)
+    ^^^^^^^^^^^^^^^^^
+  File "/workspace/verl/RLDecisionAgent/ART/src/art/unsloth/service.py", line 41, in state
+    return ModelState(self.config)
+    ^^^^^^^^^^^^^^^^^
+  File "/workspace/verl/RLDecisionAgent/ART/src/art/unsloth/state.py", line 80, in __init__
+    unsloth.FastLanguageModel.from_pretrained(**config.get("init_args", {})),
+    ^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/unsloth/models/loader.py", line 143, in from_pretrained
+    patch_unsloth_smart_gradient_checkpointing(dtype = dtype)
+    ^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/unsloth_zoo/gradient_checkpointing.py", line 778, in patch_unsloth_smart_gradient_checkpointing
+    initialize_unsloth_gradient_checkpointing(dtype)
+    ^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/unsloth_zoo/gradient_checkpointing.py", line 342, in initialize_unsloth_gradient_checkpointing
+    EXTRA_STREAMS = tuple([torch.cuda.Stream() if DEVICE_TYPE == "cuda" else torch.xpu.Stream() for i in range(n_gpus)])
+      ^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/cuda/streams.py", line 37, in __new__
+    return super().__new__(cls, priority=priority, **kwargs)
+    ^^^^^^^^^^^^^^^^^
+RuntimeError: CUDA error: operation not permitted
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/workspace/verl/RLDecisionAgent/backend/ART_mcp-rl/mcp_rl/train.py", line 245, in <module>
+    main()
+  File "/workspace/verl/RLDecisionAgent/backend/ART_mcp-rl/mcp_rl/train.py", line 235, in main
+    asyncio.run(train_mcp_agent(model, use_skypilot=args.use_skypilot))
+  File "/usr/local/lib/python3.12/dist-packages/nest_asyncio.py", line 30, in run
+    return loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/nest_asyncio.py", line 98, in run_until_complete
+    return f.result()
+           ^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/futures.py", line 203, in result
+    raise self._exception.with_traceback(self._exception_tb)
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 314, in __step_run_and_handle_result
+    result = coro.send(None)
+             ^^^^^^^^^^^^^^^
+  File "/workspace/verl/RLDecisionAgent/backend/ART_mcp-rl/mcp_rl/train.py", line 116, in train_mcp_agent
+    await model.register(backend)
+  File "/workspace/verl/RLDecisionAgent/ART/src/art/model.py", line 310, in register
+    base_url, api_key = await backend._prepare_backend_for_training(
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/verl/RLDecisionAgent/ART/src/art/local/backend.py", line 267, in _prepare_backend_for_training
+    service = await self._get_service(model)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/verl/RLDecisionAgent/ART/src/art/local/backend.py", line 131, in _get_service
+    config = get_model_config(
+             ^^^^^^^^^^^^^^^^^
+  File "/workspace/verl/RLDecisionAgent/ART/src/art/dev/get_model_config.py", line 47, in get_model_config
+    and torch.cuda.get_device_capability()[0] >= 8
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py", line 560, in get_device_capability
+    prop = get_device_properties(device)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py", line 576, in get_device_properties
+    _lazy_init()  # will define _get_device_properties
+    ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/cuda/__init__.py", line 372, in _lazy_init
+    torch._C._cuda_init()
+RuntimeError: No CUDA GPUs are available
