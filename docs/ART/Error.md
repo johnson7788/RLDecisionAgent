@@ -450,18 +450,68 @@ Traceback (most recent call last):
     torch._C._cuda_init()
 RuntimeError: No CUDA GPUs are available
 
-# 训练卡住
-0.0041547417640686035, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:151645', bytes=[], logprob=-0.0004942387458868325, top_logprobs=[])], refusal=None), message=ChatCompletionMessage(content='The task of dividing 84729 by 38 has been successfully completed. The result is 2229.7105263157896. Is there anything else I can assist you with?', refusal=None, role='assistant', annotations=None, audio=None, function_call=None, tool_calls=[], reasoning_content=None), stop_reason=None)
+# 训练卡住了，只能在ctrl +c结束
+[DEBUG] Metrics recorded for future #6
 [GatherContext.update_pbar] Called with n=1
 [GatherContext.update_pbar] Incrementing pbar by 1
-                                                                                                                                    [GatherContext.update_pbar] Metric reward: sum=0.0, divisor=27, avg=0.0ask_completed=0, success=0, ran_out_of_turns=0, llm_completio
-[GatherContext.update_pbar] Metric task_completed: sum=0, divisor=27, avg=0.0
-[GatherContext.update_pbar] Metric success: sum=0, divisor=27, avg=0.0
-[GatherContext.update_pbar] Metric ran_out_of_turns: sum=0, divisor=27, avg=0.0
-[GatherContext.update_pbar] Metric llm_completion_duration: sum=63.709491670000716, divisor=27, avg=2.359610802592619
-[GatherContext.update_pbar] Metric num_turns: sum=54, divisor=27, avg=2.0
-[GatherContext.update_pbar] Metric duration: sum=132.494511, divisor=27, avg=4.907204111111111
-[GatherContext.update_pbar] Metric completion_tokens: sum=799.0, divisor=27, avg=29.59259259259259
-[GatherContext.update_pbar] Setting postfix: {'reward': 0.0, 'task_completed': 0.0, 'success': 0.0, 'ran_out_of_turns': 0.0, 'llm_completion_duration': 2.359610802592619, 'num_turns': 2.0, 'duration': 4.907204111111111, 'completion_tokens': 29.59259259259259}
+                                                                                                                                    [GatherContext.update_pbar] Metric reward: sum=0.0, divisor=26, avg=0.0ask_completed=0, success=0, ran_out_of_turns=0, llm_completio
+[GatherContext.update_pbar] Metric task_completed: sum=0, divisor=26, avg=0.0
+[GatherContext.update_pbar] Metric success: sum=0, divisor=26, avg=0.0
+[GatherContext.update_pbar] Metric ran_out_of_turns: sum=0, divisor=26, avg=0.0
+[GatherContext.update_pbar] Metric llm_completion_duration: sum=37.21663122100108, divisor=26, avg=1.431408893115426
+[GatherContext.update_pbar] Metric num_turns: sum=52, divisor=26, avg=2.0
+[GatherContext.update_pbar] Metric duration: sum=111.58859999999999, divisor=26, avg=4.2918692307692305
+[GatherContext.update_pbar] Metric completion_tokens: sum=770.5, divisor=26, avg=29.634615384615383
+[GatherContext.update_pbar] Setting postfix: {'reward': 0.0, 'task_completed': 0.0, 'success': 0.0, 'ran_out_of_turns': 0.0, 'llm_completion_duration': 1.431408893115426, 'num_turns': 2.0, 'duration': 4.2918692307692305, 'completion_tokens': 29.634615384615383}
+                                                                                                                                    [DEBUG] Progress bar updated (success), total trajectories=7reward=0, task_completed=0, success=0, ran_out_of_turns=0, llm_completio
+[DEBUG] Gather loop finished, total trajectories=7, total exceptions=0
+在这里我按了ctrl + C                                                                                                                                    ^C[ERROR] Exception in future #5: CancelledError()2.55it/s, reward=0, task_completed=0, success=0, ran_out_of_turns=0, llm_completio
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/dist-packages/nest_asyncio.py", line 30, in run
+    return loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/nest_asyncio.py", line 92, in run_until_complete
+    self._run_once()
+  File "/usr/local/lib/python3.12/dist-packages/nest_asyncio.py", line 115, in _run_once
+    event_list = self._selector.select(timeout)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/selectors.py", line 468, in select
+    fd_event_list = self._selector.poll(timeout, max_ev)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt
 
-train gather step 0:  96%|▉| 27/28 [00:18<00:00,  9.90it/s, reward=0, task_completed=0, success=0, ran_out_of_turns=0, llm_completio
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/workspace/verl/RLDecisionAgent/ART/src/art/trajectories.py", line 199, in _
+    trajectory = await future
+                 ^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 627, in _wait_for_one
+    f = await done.get()
+        ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/queues.py", line 158, in get
+    await getter
+  File "/usr/lib/python3.12/asyncio/futures.py", line 287, in __await__
+    yield self  # This tells Task to wait for completion.
+    ^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/tasks.py", line 385, in __wakeup
+    future.result()
+  File "/usr/lib/python3.12/asyncio/futures.py", line 198, in result
+    raise exc
+asyncio.exceptions.CancelledError
+
+[GatherContext.update_pbar] Called with n=0
+[GatherContext.update_pbar] Incrementing pbar by 0
+[GatherContext.update_pbar] Metric reward: sum=0.0, divisor=26, avg=0.0
+[GatherContext.update_pbar] Metric task_completed: sum=0, divisor=26, avg=0.0
+[GatherContext.update_pbar] Metric success: sum=0, divisor=26, avg=0.0
+[GatherContext.update_pbar] Metric ran_out_of_turns: sum=0, divisor=26, avg=0.0
+[GatherContext.update_pbar] Metric llm_completion_duration: sum=37.21663122100108, divisor=26, avg=1.431408893115426
+[GatherContext.update_pbar] Metric num_turns: sum=52, divisor=26, avg=2.0
+[GatherContext.update_pbar] Metric duration: sum=111.58859999999999, divisor=26, avg=4.2918692307692305
+[GatherContext.update_pbar] Metric completion_tokens: sum=770.5, divisor=26, avg=29.634615384615383
+[GatherContext.update_pbar] Metric exceptions: sum=1, divisor=1, avg=1.0
+[GatherContext.update_pbar] Setting postfix: {'reward': 0.0, 'task_completed': 0.0, 'success': 0.0, 'ran_out_of_turns': 0.0, 'llm_completion_duration': 1.431408893115426, 'num_turns': 2.0, 'duration': 4.2918692307692305, 'exceptions': 1.0, 'completion_tokens': 29.634615384615383}
+                                                                                                                                    [DEBUG] Progress bar updated (exception), total exceptions=1reward=0, task_completed=0, success=0, ran_out_of_turns=0, llm_completio
+[GatherContext.too_many_exceptions] exceptions=1, max_exceptions=0
+[GatherContext.too_many_exceptions] -> True
