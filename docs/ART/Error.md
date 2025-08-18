@@ -451,3 +451,17 @@ Traceback (most recent call last):
 RuntimeError: No CUDA GPUs are available
 
 # 训练卡住
+0.0041547417640686035, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:151645', bytes=[], logprob=-0.0004942387458868325, top_logprobs=[])], refusal=None), message=ChatCompletionMessage(content='The task of dividing 84729 by 38 has been successfully completed. The result is 2229.7105263157896. Is there anything else I can assist you with?', refusal=None, role='assistant', annotations=None, audio=None, function_call=None, tool_calls=[], reasoning_content=None), stop_reason=None)
+[GatherContext.update_pbar] Called with n=1
+[GatherContext.update_pbar] Incrementing pbar by 1
+                                                                                                                                    [GatherContext.update_pbar] Metric reward: sum=0.0, divisor=27, avg=0.0ask_completed=0, success=0, ran_out_of_turns=0, llm_completio
+[GatherContext.update_pbar] Metric task_completed: sum=0, divisor=27, avg=0.0
+[GatherContext.update_pbar] Metric success: sum=0, divisor=27, avg=0.0
+[GatherContext.update_pbar] Metric ran_out_of_turns: sum=0, divisor=27, avg=0.0
+[GatherContext.update_pbar] Metric llm_completion_duration: sum=63.709491670000716, divisor=27, avg=2.359610802592619
+[GatherContext.update_pbar] Metric num_turns: sum=54, divisor=27, avg=2.0
+[GatherContext.update_pbar] Metric duration: sum=132.494511, divisor=27, avg=4.907204111111111
+[GatherContext.update_pbar] Metric completion_tokens: sum=799.0, divisor=27, avg=29.59259259259259
+[GatherContext.update_pbar] Setting postfix: {'reward': 0.0, 'task_completed': 0.0, 'success': 0.0, 'ran_out_of_turns': 0.0, 'llm_completion_duration': 2.359610802592619, 'num_turns': 2.0, 'duration': 4.907204111111111, 'completion_tokens': 29.59259259259259}
+
+train gather step 0:  96%|▉| 27/28 [00:18<00:00,  9.90it/s, reward=0, task_completed=0, success=0, ran_out_of_turns=0, llm_completio
