@@ -130,3 +130,9 @@ unsloth/qwen2.5-0.5b-instruct-unsloth-bnb-4bit，并同时把 vLLM 的 quantizat
 {%- if add_generation_prompt %}
     {{- '<|im_start|>assistant\n' }}
 {%- endif %}
+
+
+# 多卡训练
+LocalBackend 类会在你智能体运行的同一台机器上启动一个 vLLM 服务器和一个 Unsloth 或 torchtune 实例。
+https://github.com/OpenPipe/ART/pull/163/commits
+多 GPU 支持是近期加到 torchtune service；同时有维护者说明“torchtune 做 full finetune，通常用于单节点多 GPU；Unsloth 适合单 GPU 的 LoRA”。
