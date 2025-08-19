@@ -109,3 +109,7 @@ python vllm_test.py
 # 测试API
 https://www.alphavantage.co/
 200W6XHS4YDQZRUR
+
+# 单卡和多卡训练示例
+[unslot_gpu_train.py](unslot_gpu_train.py)
+[train_torchtune_2gpu.py](train_torchtune_2gpu.py)
