@@ -26,8 +26,8 @@ async def main():
     backend = LocalBackend(in_process=True)
     await model.register(backend)
 
-    # 这里假设你有 raw_val_scenarios
-    raw_val_scenarios = [{"task": "示例验证任务"}] * 4
+    #准备的测试数据，准备了2条
+    raw_val_scenarios = [{"task": "Calculate (10 - 9) * 3."},  {"task": "Calculate 400 / (10 + 10)."}]
     val_scenarios = [McpScenario(task_description=s["task"], server_params=server_params) for s in raw_val_scenarios]
 
     for i, scenario in enumerate(val_scenarios):
