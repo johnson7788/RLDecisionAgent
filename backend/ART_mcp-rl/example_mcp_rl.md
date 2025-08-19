@@ -304,3 +304,157 @@ LLM返回返回的评分结果类似如下
     }
   ]
 }
+
+
+# mcp_rl_test.py，训练后的模型测试结果
+python mcp_rl_test.py
+Registering model...，进行super中..
+调用backend的_prepare_backend_for_training
+INFO 08-19 20:44:04 [importing.py:53] Triton module has been replaced with a placeholder.
+INFO 08-19 20:44:04 [__init__.py:239] Automatically detected platform cuda.
+⚙️  Running in WANDB offline mode
+_prepare_backend_for_training启动OpenAI服务: None
+[start_openai_server] 开始启动 OpenAI server...
+[start_openai_server] 当前 output_dir: /workspace/verl/ART/.art/mcp_alphavantage/models/mcp-14b-alpha-001
+[start_openai_server] 传入 config: None
+[start_openai_server] get_last_checkpoint_dir 返回: /workspace/verl/ART/.art/mcp_alphavantage/models/mcp-14b-alpha-001/checkpoints/0008
+[start_openai_server] 停止可能已有的 OpenAI server...
+[start_openai_server] 旧的 OpenAI server 已停止
+[start_openai_server] 准备启动新的 openai_server_task，配置如下：
+  - model_name: mcp-14b-alpha-001
+  - base_model: Qwen/Qwen2.5-0.5B-Instruct
+  - log_file: /workspace/verl/ART/.art/mcp_alphavantage/models/mcp-14b-alpha-001/logs/vllm.log
+  - lora_path: /workspace/verl/ART/.art/mcp_alphavantage/models/mcp-14b-alpha-001/checkpoints/0008
+  - config: {'log_file': '/workspace/verl/ART/.art/mcp_alphavantage/models/mcp-14b-alpha-001/logs/vllm.log', 'server_args': {'api_key': 'default', 'lora_modules': ['{"name": "mcp-14b-alpha-001", "path": "/workspace/verl/ART/.art/mcp_alphavantage/models/mcp-14b-alpha-001/checkpoints/0008"}'], 'return_tokens_as_token_ids': True, 'enable_auto_tool_choice': True, 'tool_call_parser': 'hermes'}, 'engine_args': {'model': 'Qwen/Qwen2.5-0.5B-Instruct', 'num_scheduler_steps': 16, 'served_model_name': 'Qwen/Qwen2.5-0.5B-Instruct', 'disable_log_requests': True, 'generation_config': 'vllm'}}
+/workspace/verl/ART/src/art/unsloth/state.py:11: UserWarning: WARNING: Unsloth should be imported before trl, transformers, peft to ensure all optimizations are applied. Your code may run slower or encounter memory issues without these optimizations.
+
+Please restructure your imports with 'import unsloth' at the top of your file.
+  import unsloth  # type: ignore
+🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning.
+🦥 Unsloth Zoo will now patch everything to make training faster!
+Unsloth: Patching vLLM v1 graph capture
+Unsloth: Patching vLLM v0 graph capture
+==((====))==  Unsloth 2025.8.6: Fast Qwen2 patching. Transformers: 4.55.2. vLLM: 0.8.5.post1.
+   \\   /|    NVIDIA GeForce RTX 4090 D. Num GPUs = 2. Max memory: 23.546 GB. Platform: Linux.
+O^O/ \_/ \    Torch: 2.6.0+cu124. CUDA: 8.9. CUDA Toolkit: 12.4. Triton: 3.2.0
+\        /    Bfloat16 = TRUE. FA [Xformers = 0.0.29.post2. FA2 = True]
+ "-____-"     Free license: http://github.com/unslothai/unsloth
+Unsloth: Fast downloading is enabled - ignore downloading bars which are red colored!
+Unsloth: vLLM loading unsloth/qwen2.5-0.5b-instruct-unsloth-bnb-4bit with actual GPU utilization = 17.34%
+Unsloth: Your GPU has CUDA compute capability 8.9 with VRAM = 23.55 GB.
+Unsloth: Using conservativeness = 1.0. Chunked prefill tokens = 32768. Num Sequences = 160.
+Unsloth: vLLM's KV Cache can use up to 3.61 GB. Also swap space = 6 GB.
+INFO 08-19 20:44:45 [config.py:717] This model supports multiple tasks: {'generate', 'score', 'classify', 'reward', 'embed'}. Defaulting to 'generate'.
+Unsloth: vLLM Bitsandbytes config using kwargs = {'load_in_8bit': False, 'load_in_4bit': True, 'bnb_4bit_compute_dtype': 'bfloat16', 'bnb_4bit_quant_storage': 'uint8', 'bnb_4bit_quant_type': 'nf4', 'bnb_4bit_use_double_quant': True, 'llm_int8_enable_fp32_cpu_offload': False, 'llm_int8_has_fp16_weight': False, 'llm_int8_skip_modules': ['lm_head', 'multi_modal_projector', 'merger', 'modality_projection', 'model.layers.0.self_attn', 'model.layers.0.mlp', 'model.layers.2.mlp', 'model.layers.3.mlp', 'model.layers.21.mlp', 'model.layers.0.self_attn.q_proj'], 'llm_int8_threshold': 6.0}
+INFO 08-19 20:44:45 [llm_engine.py:240] Initializing a V0 LLM engine (v0.8.5.post1) with config: model='unsloth/qwen2.5-0.5b-instruct-unsloth-bnb-4bit', speculative_config=None, tokenizer='unsloth/qwen2.5-0.5b-instruct-unsloth-bnb-4bit', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, override_neuron_config=None, tokenizer_revision=None, trust_remote_code=False, dtype=torch.bfloat16, max_seq_len=32768, download_dir=None, load_format=bitsandbytes, tensor_parallel_size=1, pipeline_parallel_size=1, disable_custom_all_reduce=False, quantization=bitsandbytes, enforce_eager=False, kv_cache_dtype=auto,  device_config=cuda:0, decoding_config=DecodingConfig(guided_decoding_backend='auto', reasoning_backend=None), observability_config=ObservabilityConfig(show_hidden_metrics=False, otlp_traces_endpoint=None, collect_model_forward_time=False, collect_model_execute_time=False), seed=0, served_model_name=unsloth/qwen2.5-0.5b-instruct-unsloth-bnb-4bit, num_scheduler_steps=16, multi_step_stream_outputs=True, enable_prefix_caching=True, chunked_prefill_enabled=False, use_async_output_proc=True, disable_mm_preprocessor_cache=False, mm_processor_kwargs=None, pooler_config=None, compilation_config={"level":0,"backend":"inductor","splitting_ops":[],"use_inductor":true,"compile_sizes":[],"inductor_compile_config":{"epilogue_fusion":true,"max_autotune":false,"shape_padding":true,"trace.enabled":false,"triton.cudagraphs":true,"debug":false,"dce":true,"memory_planning":true,"coordinate_descent_tuning":true,"trace.graph_diagram":false,"compile_threads":32,"group_fusion":true,"disable_progress":false,"verbose_progress":true,"triton.multi_kernel":0,"triton.use_block_ptr":true,"triton.enable_persistent_tma_matmul":true,"triton.autotune_at_compile_time":false,"triton.cooperative_reductions":false,"cuda.compile_opt_level":"-O2","cuda.enable_cuda_lto":true,"combo_kernels":false,"benchmark_combo_kernel":true,"combo_kernel_foreach_dynamic_shapes":true,"enable_auto_functionalized_v2":false},"use_cudagraph":true,"cudagraph_num_of_warmups":1,"cudagraph_capture_sizes":[160,152,144,136,128,120,112,104,96,88,80,72,64,56,48,40,32,24,16,8,4,2,1],"max_capture_size":160}, use_cached_outputs=False,
+INFO 08-19 20:44:50 [cuda.py:292] Using Flash Attention backend.
+INFO 08-19 20:45:00 [parallel_state.py:1004] rank 0 in world size 1 is assigned as DP rank 0, PP rank 0, TP rank 0
+INFO 08-19 20:45:00 [model_runner.py:1108] Starting to load model unsloth/qwen2.5-0.5b-instruct-unsloth-bnb-4bit...
+INFO 08-19 20:45:00 [loader.py:1187] Loading weights with BitsAndBytes quantization. May take a while ...
+INFO 08-19 20:45:09 [weight_utils.py:265] Using model weights format ['*.safetensors']
+INFO 08-19 20:45:10 [weight_utils.py:281] Time spent downloading weights for unsloth/qwen2.5-0.5b-instruct-unsloth-bnb-4bit: 0.915206 seconds
+INFO 08-19 20:45:10 [weight_utils.py:315] No model.safetensors.index.json found in remote.
+Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:00<?, ?it/s]
+Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  3.04it/s]
+Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  3.04it/s]
+
+Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:00<?, ?it/s]
+Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  2.70it/s]
+Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  2.70it/s]
+
+INFO 08-19 20:45:11 [punica_selector.py:18] Using PunicaWrapperGPU.
+INFO 08-19 20:45:12 [model_runner.py:1140] Model loading took 0.5153 GiB and 10.813045 seconds
+INFO 08-19 20:45:15 [worker.py:287] Memory profiling takes 2.76 seconds
+INFO 08-19 20:45:15 [worker.py:287] the current vLLM instance can use total_gpu_memory (23.55GiB) x gpu_memory_utilization (0.17) = 4.08GiB
+INFO 08-19 20:45:15 [worker.py:287] model weights take 0.52GiB; non_torch_memory takes 0.07GiB; PyTorch activation peak memory takes 1.18GiB; the rest of the memory reserved for KV Cache is 2.32GiB.
+INFO 08-19 20:45:15 [executor_base.py:112] # cuda blocks: 12652, # CPU blocks: 32768
+INFO 08-19 20:45:15 [executor_base.py:117] Maximum concurrency for 32768 tokens per request: 6.18x
+INFO 08-19 20:45:19 [vllm_utils.py:671] Unsloth: Running patched vLLM v0 `capture_model`.
+INFO 08-19 20:45:19 [model_runner.py:1450] Capturing cudagraphs for decoding. This may lead to unexpected consequences if the model is not static. To run the model in eager mode, set 'enforce_eager=True' or use '--enforce-eager' in the CLI. If out-of-memory error occurs during cudagraph capture, consider decreasing `gpu_memory_utilization` or switching to eager mode. You can also reduce the `max_num_seqs` as needed to decrease memory usage.
+Capturing CUDA graph shapes: 100%|██████████████████████████████████████████████████████████████████| 23/23 [00:07<00:00,  2.97it/s]
+INFO 08-19 20:45:27 [model_runner.py:1592] Graph capturing finished in 8 secs, took 0.35 GiB
+INFO 08-19 20:45:27 [vllm_utils.py:678] Unsloth: Patched vLLM v0 graph capture finished in 8 secs.
+INFO 08-19 20:45:27 [llm_engine.py:437] init engine (profile, create kv cache, warmup model) took 15.92 seconds
+Unsloth: Just some info: will skip parsing ['k_norm', 'q_norm', 'post_feedforward_layernorm', 'pre_feedforward_layernorm']
+Unsloth: Just some info: will skip parsing ['k_norm', 'q_norm', 'post_feedforward_layernorm', 'pre_feedforward_layernorm']
+Unsloth 2025.8.6 patched 24 layers with 24 QKV layers, 24 O layers and 24 MLP layers.
+Unsloth: Already have LoRA adapters! We shall skip this step.
+[openai_server_task] 初始化开始...
+[openai_server_task] 调用 subclass_chat_completion_request()...
+[openai_server_task] 导入 vllm.entrypoints.openai.api_server...
+[openai_server_task] 应用 vLLM patches...
+[openai_server_task] 设置 vLLM 日志文件: /workspace/verl/ART/.art/mcp_alphavantage/models/mcp-14b-alpha-001/logs/vllm.log
+[openai_server_task] 启动 OpenAI 兼容 server 协程...
+[openai_server_task] 使用 base_url=http://0.0.0.0:8000/v1, api_key=default
+[openai_server_task] 等待 server 启动，超时时间: 30.0 秒
+[openai_server_task] build_async_engine_client 被调用
+[openai_server_task] add_lora 被调用
+[LoRARequest] 获取属性: lora_int_id
+[LoRARequest] 获取属性: lora_int_id
+[LoRARequest] 获取属性: lora_path
+[LoRARequest] 获取属性: lora_path
+[LoRARequest] lora_tensors 不存在，返回 None
+[LoRARequest] 获取属性: lora_int_id
+[LoRARequest] 获取属性: lora_int_id
+[openai_server_task] add_lora 完成
+[openai_server_task.test_client] 开始轮询检查 server 是否可用...
+[2025-08-19 20:45:40] INFO _client.py:1740: HTTP Request: GET http://0.0.0.0:8000/v1/models "HTTP/1.1 200 OK"
+[openai_server_task.test_client] 成功连通 server！
+[openai_server_task] task <Task finished name='Task-3' coro=<openai_server_task.<locals>.test_client() done, defined at /workspace/verl/ART/src/art/vllm/server.py:98> result=None> 已完成，检查结果...
+[openai_server_task] server 成功启动！
+[start_openai_server] openai_server_task 启动完成: <Task pending name='Task-2' coro=<run_server() running at /usr/local/lib/python3.10/dist-packages/vllm/entrypoints/openai/api_server.py:1094> wait_for=<Task pending name='Task-5' coro=<Server.serve() running at /usr/local/lib/python3.10/dist-packages/uvicorn/server.py:70> wait_for=<Future pending cb=[Task.__wakeup()]> cb=[Task.__wakeup()]>>
+[start_openai_server] 设置 lora: /workspace/verl/ART/.art/mcp_alphavantage/models/mcp-14b-alpha-001/checkpoints/0008
+[start_openai_server] 启动流程完成 ✅
+
+测试： 1: Calculate (10 - 9) * 3.
+[INFO] 开始 rollout，任务: Calculate (10 - 9) * 3., 最大轮数: 10
+[INFO] 连接 MCP 服务器...
+[INFO] MCP 服务器连接成功，初始化 session
+[INFO] MCP server 返回 4 个工具
+[DEBUG] Available MCP tools: ['add', 'subtract', 'multiply', 'divide']
+[DEBUG] 初始消息: [{'role': 'system', 'content': "You are an MCP (Model Context Protocol) agent.\nYou have access to MCP tools through the server. Use them to complete your task.\nYou have a total of 10 turns. Only use tool calls.\nCall 'complete_task' when finished."}, {'role': 'user', 'content': 'Please complete this task: Calculate (10 - 9) * 3.'}]
+[INFO] 开始第 1 轮交互
+[2025-08-19 20:45:41] INFO _client.py:1740: HTTP Request: POST http://0.0.0.0:8000/v1/chat/completions "HTTP/1.1 200 OK"
+[DEBUG] LLM Choice: ChatCompletionMessage(content=None, refusal=None, role='assistant', annotations=None, audio=None, function_call=None, tool_calls=[ChatCompletionMessageToolCall(id='chatcmpl-tool-4f1d268e3c554e75bc18947c927fd86c', function=Function(arguments='{"a": 1, "b": 3}', name='multiply'), type='function')], reasoning_content=None)
+[INFO] 执行工具调用: multiply, args={'a': 1, 'b': 3}
+[INFO] 工具 multiply 调用返回长度: 1
+[DEBUG] 工具调用结果: 3...
+[INFO] 开始第 2 轮交互
+[2025-08-19 20:45:41] INFO _client.py:1740: HTTP Request: POST http://0.0.0.0:8000/v1/chat/completions "HTTP/1.1 200 OK"
+[DEBUG] LLM Choice: ChatCompletionMessage(content='The result of the calculation (10 - 9) * 3 is 3.', refusal=None, role='assistant', annotations=None, audio=None, function_call=None, tool_calls=[], reasoning_content=None)
+[INFO] 本轮无工具调用, 继续下一轮或结束
+[INFO] rollout 结束, 总轮数: 2, 完成状态: False
+[DEBUG] 最终消息列表:
+{'role': 'system', 'content': "You are an MCP (Model Context Protocol) agent.\nYou have access to MCP tools through the server. Use them to complete your task.\nYou have a total of 10 turns. Only use tool calls.\nCall 'complete_task' when finished."}
+{'role': 'user', 'content': 'Please complete this task: Calculate (10 - 9) * 3.'}
+Choice(finish_reason='tool_calls', index=0, logprobs=ChoiceLogprobs(content=[ChatCompletionTokenLogprob(token='token_id:151657', bytes=[60, 116, 111, 111, 108, 95, 99, 97, 108, 108, 62], logprob=-0.0047868178226053715, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:198', bytes=[10], logprob=-0.0008794969180598855, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:4913', bytes=[123, 34], logprob=-0.0005046047735959291, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:606', bytes=[110, 97, 109, 101], logprob=-2.95634672511369e-05, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:788', bytes=[34, 58], logprob=-5.960462772236497e-07, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:330', bytes=[32, 34], logprob=-0.00018368464952800423, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:64648', bytes=[109, 117, 108, 116, 105, 112, 108, 121], logprob=-0.0758897215127945, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:497', bytes=[34, 44], logprob=-1.823885577323381e-05, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:330', bytes=[32, 34], logprob=-2.50339189733495e-06, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:16370', bytes=[97, 114, 103, 117, 109, 101, 110, 116, 115], logprob=-0.0003599472693167627, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:788', bytes=[34, 58], logprob=-9.846202738117427e-05, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:5212', bytes=[32, 123, 34], logprob=-0.004258967936038971, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:64', bytes=[97], logprob=-2.3603161025675945e-05, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:788', bytes=[34, 58], logprob=-9.536738616588991e-07, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:220', bytes=[32], logprob=-0.053150810301303864, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:16', bytes=[49], logprob=-0.008982841856777668, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:11', bytes=[44], logprob=-2.930082321166992, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:330', bytes=[32, 34], logprob=-1.6689286894688848e-06, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:65', bytes=[98], logprob=-1.311301275563892e-06, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:788', bytes=[34, 58], logprob=-7.152555099310121e-07, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:220', bytes=[32], logprob=-1.966933996300213e-05, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:18', bytes=[51], logprob=-0.0018358058296144009, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:11248', bytes=[125, 125, 10], logprob=-0.004112596623599529, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:151658', bytes=[60, 47, 116, 111, 111, 108, 95, 99, 97, 108, 108, 62], logprob=-0.002861098386347294, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:151645', bytes=[], logprob=-0.00021610308613162488, top_logprobs=[])], refusal=None), message=ChatCompletionMessage(content=None, refusal=None, role='assistant', annotations=None, audio=None, function_call=None, tool_calls=[ChatCompletionMessageToolCall(id='chatcmpl-tool-4f1d268e3c554e75bc18947c927fd86c', function=Function(arguments='{"a": 1, "b": 3}', name='multiply'), type='function')], reasoning_content=None), stop_reason=None)
+{'role': 'tool', 'tool_call_id': 'chatcmpl-tool-4f1d268e3c554e75bc18947c927fd86c', 'content': '3'}
+Choice(finish_reason='stop', index=0, logprobs=ChoiceLogprobs(content=[ChatCompletionTokenLogprob(token='token_id:785', bytes=[84, 104, 101], logprob=-0.020876435562968254, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:1102', bytes=[32, 114, 101, 115, 117, 108, 116], logprob=-0.04908208176493645, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:315', bytes=[32, 111, 102], logprob=-0.0013579442165791988, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:279', bytes=[32, 116, 104, 101], logprob=-2.5378024578094482, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:21937', bytes=[32, 99, 97, 108, 99, 117, 108, 97, 116, 105, 111, 110], logprob=-0.489208459854126, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:320', bytes=[32, 40], logprob=-0.08190760016441345, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:16', bytes=[49], logprob=-9.858122211880982e-05, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:15', bytes=[48], logprob=-7.748573807475623e-06, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:481', bytes=[32, 45], logprob=-0.0008654424455016851, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:220', bytes=[32], logprob=-5.960446742392378e-06, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:24', bytes=[57], logprob=-9.059865078597795e-06, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:8', bytes=[41], logprob=-0.0002803409588523209, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:353', bytes=[32, 42], logprob=-4.51792984677013e-05, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:220', bytes=[32], logprob=-1.6689286894688848e-06, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:18', bytes=[51], logprob=-5.960462772236497e-07, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:374', bytes=[32, 105, 115], logprob=-0.0003819928097072989, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:220', bytes=[32], logprob=-0.00017975145601667464, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:18', bytes=[51], logprob=-0.001562089892104268, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:13', bytes=[46], logprob=-0.02700188383460045, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:151645', bytes=[], logprob=-0.0893554538488388, top_logprobs=[])], refusal=None), message=ChatCompletionMessage(content='The result of the calculation (10 - 9) * 3 is 3.', refusal=None, role='assistant', annotations=None, audio=None, function_call=None, tool_calls=[], reasoning_content=None), stop_reason=None)
+模型输出: The result of the calculation (10 - 9) * 3 is 3.
+
+测试： 2: Calculate 400 / (10 + 10).
+[INFO] 开始 rollout，任务: Calculate 400 / (10 + 10)., 最大轮数: 10
+[INFO] 连接 MCP 服务器...
+[INFO] MCP 服务器连接成功，初始化 session
+[INFO] MCP server 返回 4 个工具
+[DEBUG] Available MCP tools: ['add', 'subtract', 'multiply', 'divide']
+[DEBUG] 初始消息: [{'role': 'system', 'content': "You are an MCP (Model Context Protocol) agent.\nYou have access to MCP tools through the server. Use them to complete your task.\nYou have a total of 10 turns. Only use tool calls.\nCall 'complete_task' when finished."}, {'role': 'user', 'content': 'Please complete this task: Calculate 400 / (10 + 10).'}]
+[INFO] 开始第 1 轮交互
+[2025-08-19 20:45:42] INFO _client.py:1740: HTTP Request: POST http://0.0.0.0:8000/v1/chat/completions "HTTP/1.1 200 OK"
+[DEBUG] LLM Choice: ChatCompletionMessage(content=None, refusal=None, role='assistant', annotations=None, audio=None, function_call=None, tool_calls=[ChatCompletionMessageToolCall(id='chatcmpl-tool-a8c24beba5ac4bdf8bd97bc31630e30d', function=Function(arguments='{"a": 400, "b": 20}', name='divide'), type='function')], reasoning_content=None)
+[INFO] 执行工具调用: divide, args={'a': 400, 'b': 20}
+[INFO] 工具 divide 调用返回长度: 4
+[DEBUG] 工具调用结果: 20.0...
+[INFO] 开始第 2 轮交互
+[2025-08-19 20:45:43] INFO _client.py:1740: HTTP Request: POST http://0.0.0.0:8000/v1/chat/completions "HTTP/1.1 200 OK"
+[DEBUG] LLM Choice: ChatCompletionMessage(content='The result of 400 / (10 + 10) is 20.0.', refusal=None, role='assistant', annotations=None, audio=None, function_call=None, tool_calls=[], reasoning_content=None)
+[INFO] 本轮无工具调用, 继续下一轮或结束
+[INFO] rollout 结束, 总轮数: 2, 完成状态: False
+[DEBUG] 最终消息列表:
+{'role': 'system', 'content': "You are an MCP (Model Context Protocol) agent.\nYou have access to MCP tools through the server. Use them to complete your task.\nYou have a total of 10 turns. Only use tool calls.\nCall 'complete_task' when finished."}
+{'role': 'user', 'content': 'Please complete this task: Calculate 400 / (10 + 10).'}
+Choice(finish_reason='tool_calls', index=0, logprobs=ChoiceLogprobs(content=[ChatCompletionTokenLogprob(token='token_id:151657', bytes=[60, 116, 111, 111, 108, 95, 99, 97, 108, 108, 62], logprob=-0.003934025764465332, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:198', bytes=[10], logprob=-0.0004415729199536145, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:4913', bytes=[123, 34], logprob=-0.0004204819560982287, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:606', bytes=[110, 97, 109, 101], logprob=-3.1709168979432434e-05, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:788', bytes=[34, 58], logprob=-8.344646857949556e-07, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:330', bytes=[32, 34], logprob=-0.00013124081306159496, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:59394', bytes=[100, 105, 118, 105, 100, 101], logprob=-0.12195511907339096, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:497', bytes=[34, 44], logprob=-6.318072337307967e-06, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:330', bytes=[32, 34], logprob=-9.65590606938349e-06, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:16370', bytes=[97, 114, 103, 117, 109, 101, 110, 116, 115], logprob=-0.00040141629870049655, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:788', bytes=[34, 58], logprob=-8.701899787411094e-05, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:5212', bytes=[32, 123, 34], logprob=-0.004756564274430275, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:64', bytes=[97], logprob=-0.0001110968878492713, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:788', bytes=[34, 58], logprob=-5.960462772236497e-07, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:220', bytes=[32], logprob=-0.0037193186581134796, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:19', bytes=[52], logprob=-0.0041105784475803375, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:15', bytes=[48], logprob=-0.0002366024418734014, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:15', bytes=[48], logprob=-3.862306402879767e-05, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:11', bytes=[44], logprob=-0.005275377072393894, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:330', bytes=[32, 34], logprob=-1.7881377516459906e-06, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:65', bytes=[98], logprob=-0.0003137096355203539, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:788', bytes=[34, 58], logprob=-2.264974000354414e-06, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:220', bytes=[32], logprob=-0.00023910524032544345, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:17', bytes=[50], logprob=-0.6938489675521851, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:15', bytes=[48], logprob=-8.868777513271198e-05, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:11248', bytes=[125, 125, 10], logprob=-0.014010997489094734, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:151658', bytes=[60, 47, 116, 111, 111, 108, 95, 99, 97, 108, 108, 62], logprob=-0.0029475123155862093, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:151645', bytes=[], logprob=-0.0002113357331836596, top_logprobs=[])], refusal=None), message=ChatCompletionMessage(content=None, refusal=None, role='assistant', annotations=None, audio=None, function_call=None, tool_calls=[ChatCompletionMessageToolCall(id='chatcmpl-tool-a8c24beba5ac4bdf8bd97bc31630e30d', function=Function(arguments='{"a": 400, "b": 20}', name='divide'), type='function')], reasoning_content=None), stop_reason=None)
+{'role': 'tool', 'tool_call_id': 'chatcmpl-tool-a8c24beba5ac4bdf8bd97bc31630e30d', 'content': '20.0'}
+Choice(finish_reason='stop', index=0, logprobs=ChoiceLogprobs(content=[ChatCompletionTokenLogprob(token='token_id:785', bytes=[84, 104, 101], logprob=-0.03439528867602348, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:1102', bytes=[32, 114, 101, 115, 117, 108, 116], logprob=-0.12837809324264526, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:315', bytes=[32, 111, 102], logprob=-0.0065645999275147915, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:220', bytes=[32], logprob=-0.38478943705558777, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:19', bytes=[52], logprob=-2.5987286790041253e-05, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:15', bytes=[48], logprob=-1.1920922133867862e-06, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:15', bytes=[48], logprob=-1.1920928244535389e-07, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:608', bytes=[32, 47], logprob=-0.9812964200973511, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:320', bytes=[32, 40], logprob=-0.00030083899036981165, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:16', bytes=[49], logprob=-2.1457441107486375e-05, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:15', bytes=[48], logprob=-1.9192511899746023e-05, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:488', bytes=[32, 43], logprob=-0.0003904534096363932, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:220', bytes=[32], logprob=-4.887569048150908e-06, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:16', bytes=[49], logprob=-1.1920922133867862e-06, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:15', bytes=[48], logprob=-1.1920928244535389e-07, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:8', bytes=[41], logprob=-0.00013422065239865333, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:374', bytes=[32, 105, 115], logprob=-0.0008557948167435825, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:220', bytes=[32], logprob=-0.0009078433504328132, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:17', bytes=[50], logprob=-0.0002949994814116508, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:15', bytes=[48], logprob=-3.933898824470816e-06, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:13', bytes=[46], logprob=-0.0018945855554193258, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:15', bytes=[48], logprob=-0.0008897398365661502, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:13', bytes=[46], logprob=-0.004208399448543787, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:151645', bytes=[], logprob=-0.01276665460318327, top_logprobs=[])], refusal=None), message=ChatCompletionMessage(content='The result of 400 / (10 + 10) is 20.0.', refusal=None, role='assistant', annotations=None, audio=None, function_call=None, tool_calls=[], reasoning_content=None), stop_reason=None)
+模型输出: The result of 400 / (10 + 10) is 20.0.
+[rank0]:[W819 20:45:44.636916587 ProcessGroupNCCL.cpp:1496] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
