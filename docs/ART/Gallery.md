@@ -59,4 +59,5 @@ cat config.json
 启动测试工具
 npx @modelcontextprotocol/inspector --config ./config.json --server everything
 
-
+# LocalBackend中的in_process参数
+in_process 是一个开关参数，用来决定 模型服务（model-service）是直接在当前 Python 进程里运行，还是要 fork / spawn 成一个独立的子进程运行。
