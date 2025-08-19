@@ -44,7 +44,7 @@ from google import genai  # pip install google-genai
 import dotenv
 import time
 
-dotenv.load_dotenv()
+dotenv.load_dotenv('.env_llm_cache')
 
 async def generate_google_streaming_text(prompt: str, api_key, model="gemini-2.0-flash"):
     client = genai.Client(api_key=os.environ["GOOGLE_API_KEY"])
