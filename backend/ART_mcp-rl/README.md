@@ -8,6 +8,10 @@
    * run_remote.py: 一个使用 sky (SkyPilot) 库在远程计算集群上运行训练任务的脚本。它负责设置远程环境、同步代码并执行指定的 Python
      模块（如训练或基准测试脚本）。
 
+# 训练好的本地模型的验证程序
+[mcp_rl_test.py](mcp_rl_test.py)
+
+
   mcp_rl/ 目录 (核心 RL 逻辑)
 
    * __init__.py: 将 mcp_rl 目录标记为 Python 包，并导出了关键的类和函数，如 rollout, McpScenario, McpServer。
