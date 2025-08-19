@@ -253,7 +253,7 @@ async def proxy_request(request: Request):
         if lines:
             content_str = "".join(lines)
             if any(err in content_str.lower() for err in ["incorrect api key", "timeout", "error"]):
-                logger.log(f"⚠️ 缓存中含有错误关键词，跳过写入")
+                logger.log(f"⚠️ 缓存中含有错误关键词，跳过写入: {content_str}")
                 return
             try:
                 with open(cache_path, 'w', encoding='utf-8') as f:
