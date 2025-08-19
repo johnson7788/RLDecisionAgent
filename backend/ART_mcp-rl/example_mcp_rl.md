@@ -458,3 +458,137 @@ Choice(finish_reason='tool_calls', index=0, logprobs=ChoiceLogprobs(content=[Cha
 Choice(finish_reason='stop', index=0, logprobs=ChoiceLogprobs(content=[ChatCompletionTokenLogprob(token='token_id:785', bytes=[84, 104, 101], logprob=-0.03439528867602348, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:1102', bytes=[32, 114, 101, 115, 117, 108, 116], logprob=-0.12837809324264526, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:315', bytes=[32, 111, 102], logprob=-0.0065645999275147915, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:220', bytes=[32], logprob=-0.38478943705558777, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:19', bytes=[52], logprob=-2.5987286790041253e-05, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:15', bytes=[48], logprob=-1.1920922133867862e-06, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:15', bytes=[48], logprob=-1.1920928244535389e-07, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:608', bytes=[32, 47], logprob=-0.9812964200973511, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:320', bytes=[32, 40], logprob=-0.00030083899036981165, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:16', bytes=[49], logprob=-2.1457441107486375e-05, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:15', bytes=[48], logprob=-1.9192511899746023e-05, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:488', bytes=[32, 43], logprob=-0.0003904534096363932, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:220', bytes=[32], logprob=-4.887569048150908e-06, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:16', bytes=[49], logprob=-1.1920922133867862e-06, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:15', bytes=[48], logprob=-1.1920928244535389e-07, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:8', bytes=[41], logprob=-0.00013422065239865333, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:374', bytes=[32, 105, 115], logprob=-0.0008557948167435825, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:220', bytes=[32], logprob=-0.0009078433504328132, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:17', bytes=[50], logprob=-0.0002949994814116508, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:15', bytes=[48], logprob=-3.933898824470816e-06, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:13', bytes=[46], logprob=-0.0018945855554193258, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:15', bytes=[48], logprob=-0.0008897398365661502, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:13', bytes=[46], logprob=-0.004208399448543787, top_logprobs=[]), ChatCompletionTokenLogprob(token='token_id:151645', bytes=[], logprob=-0.01276665460318327, top_logprobs=[])], refusal=None), message=ChatCompletionMessage(content='The result of 400 / (10 + 10) is 20.0.', refusal=None, role='assistant', annotations=None, audio=None, function_call=None, tool_calls=[], reasoning_content=None), stop_reason=None)
 模型输出: The result of 400 / (10 + 10) is 20.0.
 [rank0]:[W819 20:45:44.636916587 ProcessGroupNCCL.cpp:1496] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+
+
+# 训练模型的保存目录
+.art/mcp_alphavantage/models/mcp-14b-alpha-001/
+# tree /workspace/verl/ART/.art/mcp_alphavantage/models/mcp-14b-alpha-001/
+├── checkpoints
+│   ├── 0001
+│   │   ├── README.md
+│   │   ├── adapter_config.json
+│   │   ├── adapter_model.safetensors
+│   │   ├── added_tokens.json
+│   │   ├── chat_template.jinja
+│   │   ├── merges.txt
+│   │   ├── special_tokens_map.json
+│   │   ├── tokenizer.json
+│   │   ├── tokenizer_config.json
+│   │   ├── training_args.bin
+│   │   └── vocab.json
+│   ├── 0002
+│   │   ├── README.md
+│   │   ├── adapter_config.json
+│   │   ├── adapter_model.safetensors
+│   │   ├── added_tokens.json
+│   │   ├── chat_template.jinja
+│   │   ├── merges.txt
+│   │   ├── special_tokens_map.json
+│   │   ├── tokenizer.json
+│   │   ├── tokenizer_config.json
+│   │   ├── training_args.bin
+│   │   └── vocab.json
+│   ├── 0003
+│   │   ├── README.md
+│   │   ├── adapter_config.json
+│   │   ├── adapter_model.safetensors
+│   │   ├── added_tokens.json
+│   │   ├── chat_template.jinja
+│   │   ├── merges.txt
+│   │   ├── special_tokens_map.json
+│   │   ├── tokenizer.json
+│   │   ├── tokenizer_config.json
+│   │   ├── training_args.bin
+│   │   └── vocab.json
+│   ├── 0004
+│   │   ├── README.md
+│   │   ├── adapter_config.json
+│   │   ├── adapter_model.safetensors
+│   │   ├── added_tokens.json
+│   │   ├── chat_template.jinja
+│   │   ├── merges.txt
+│   │   ├── special_tokens_map.json
+│   │   ├── tokenizer.json
+│   │   ├── tokenizer_config.json
+│   │   ├── training_args.bin
+│   │   └── vocab.json
+│   ├── 0005
+│   │   ├── README.md
+│   │   ├── adapter_config.json
+│   │   ├── adapter_model.safetensors
+│   │   ├── added_tokens.json
+│   │   ├── chat_template.jinja
+│   │   ├── merges.txt
+│   │   ├── special_tokens_map.json
+│   │   ├── tokenizer.json
+│   │   ├── tokenizer_config.json
+│   │   ├── training_args.bin
+│   │   └── vocab.json
+│   ├── 0006
+│   │   ├── README.md
+│   │   ├── adapter_config.json
+│   │   ├── adapter_model.safetensors
+│   │   ├── added_tokens.json
+│   │   ├── chat_template.jinja
+│   │   ├── merges.txt
+│   │   ├── special_tokens_map.json
+│   │   ├── tokenizer.json
+│   │   ├── tokenizer_config.json
+│   │   ├── training_args.bin
+│   │   └── vocab.json
+│   ├── 0007
+│   │   ├── README.md
+│   │   ├── adapter_config.json
+│   │   ├── adapter_model.safetensors
+│   │   ├── added_tokens.json
+│   │   ├── chat_template.jinja
+│   │   ├── merges.txt
+│   │   ├── special_tokens_map.json
+│   │   ├── tokenizer.json
+│   │   ├── tokenizer_config.json
+│   │   ├── training_args.bin
+│   │   └── vocab.json
+│   └── 0008
+│       ├── README.md
+│       ├── adapter_config.json
+│       ├── adapter_model.safetensors
+│       ├── added_tokens.json
+│       ├── chat_template.jinja
+│       ├── merges.txt
+│       ├── special_tokens_map.json
+│       ├── tokenizer.json
+│       ├── tokenizer_config.json
+│       ├── training_args.bin
+│       └── vocab.json
+├── history.jsonl
+├── logs
+│   └── vllm.log
+├── model.json
+├── tensors
+│   ├── advantages.pt
+│   ├── assistant_mask.pt
+│   ├── group_ids.pt
+│   ├── input_pos.pt
+│   ├── logprobs.pt
+│   ├── parent_ids.pt
+│   ├── tokens.pt
+│   └── weights.pt
+└── trajectories
+    ├── train
+    │   ├── 0000.jsonl
+    │   ├── 0001.jsonl
+    │   ├── 0002.jsonl
+    │   ├── 0003.jsonl
+    │   ├── 0004.jsonl
+    │   ├── 0005.jsonl
+    │   ├── 0006.jsonl
+    │   └── 0007.jsonl
+    └── val
+        ├── 0000.jsonl
+        ├── 0001.jsonl
+        ├── 0002.jsonl
+        ├── 0003.jsonl
+        ├── 0004.jsonl
+        ├── 0005.jsonl
+        ├── 0006.jsonl
+        └── 0007.jsonl
