@@ -110,6 +110,6 @@ python vllm_test.py
 https://www.alphavantage.co/
 200W6XHS4YDQZRUR
 
-# 单卡和多卡训练示例
+# 单卡和多卡训练示例, 还有报错
 [unslot_gpu_train.py](unslot_gpu_train.py)
 [train_torchtune_2gpu.py](train_torchtune_2gpu.py)
