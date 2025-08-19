@@ -155,7 +155,7 @@ async def train_mcp_agent(model: art.TrainableModel, use_skypilot: bool = False)
     # Main training loop
     for batch in train_iterator:
         print(f"[INFO] 开始处理训练步 {batch.step}, 收集 trajectory groups")
-
+        extra_litellm_params = {"api_base": "http://localhost:6688", "api_key": os.environ["OPENAI_API_KEY"]}
         groups = await art.gather_trajectory_groups(
             (
                 art.TrajectoryGroup(
@@ -168,6 +168,7 @@ async def train_mcp_agent(model: art.TrainableModel, use_skypilot: bool = False)
             after_each=lambda group: ruler_score_group(
                 group,
                 judge_model=ruler_judge_model,
+                extra_litellm_params=extra_litellm_params,
                 debug=True,
                 swallow_exceptions=True,
             ),

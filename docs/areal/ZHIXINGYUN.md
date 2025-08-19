@@ -96,5 +96,3 @@ actor:
   path: Qwen/Qwen2-0.5B-Instruct
 开始训练
 python3 -m areal.launcher.local examples/lite/gsm8k_grpo.py --config examples/lite/configs/gsm8k_grpo.yaml
-
-
