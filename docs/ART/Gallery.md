@@ -61,3 +61,15 @@ npx @modelcontextprotocol/inspector --config ./config.json --server everything
 
 # LocalBackend中的in_process参数
 in_process 是一个开关参数，用来决定 模型服务（model-service）是直接在当前 Python 进程里运行，还是要 fork / spawn 成一个独立的子进程运行。
+
+
+# Unsloth加载同等模型时，会自动加载节省显存的更小版本
+Unsloth 在“偷偷帮你省显存/提速”：
+
+你在 vLLM 的 engine_args 里把 model 设成了 Qwen/Qwen2.5-0.5B-Instruct，所以「对外宣称」的 base_model 就是它。
+
+但你项目里 引入了 Unsloth（日志里有 Unsloth: Will patch...），Unsloth 会对常见模型做 自动优化与替换：当检测到可用的同等模型的 4bit 预量化权重 时，会把实际加载的权重换成自己在 HF 上的镜像，例如
+unsloth/qwen2.5-0.5b-instruct-unsloth-bnb-4bit，并同时把 vLLM 的 quantization=bitsandbytes、load_format=bitsandbytes 等参数一并设置好。
+这就是为啥后面 vLLM 的初始化与下载日志显示的是 unsloth/...-bnb-4bit。
+
+简单说：名义上仍是 Qwen 官方模型；实际加载的是 Unsloth 的 4bit 等价权重，这样更省显存、更快，但行为（除了量化误差）与原模型对齐。

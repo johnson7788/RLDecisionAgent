@@ -13,6 +13,8 @@ import art
 from art.local import LocalBackend
 
 from mcp_rl.rollout import McpScenario, rollout
+# 使用不同的mcp工具的配置
+from servers.python.mcp_caculator.server_params import server_params
 
 load_dotenv()
 
@@ -20,13 +22,13 @@ MODEL_NAME = "mcp-14b-alpha-001"
 PROJECT_NAME = "mcp_alphavantage"
 
 async def main():
-    model = art.TrainableModel(name=MODEL_NAME, project=PROJECT_NAME, base_model=None)
+    model = art.TrainableModel(name=MODEL_NAME, project=PROJECT_NAME, base_model="Qwen/Qwen2.5-0.5B-Instruct")
     backend = LocalBackend(in_process=True)
     await model.register(backend)
 
     # 这里假设你有 raw_val_scenarios
     raw_val_scenarios = [{"task": "示例验证任务"}] * 4
-    val_scenarios = [McpScenario(task_description=s["task"]) for s in raw_val_scenarios]
+    val_scenarios = [McpScenario(task_description=s["task"], server_params=server_params) for s in raw_val_scenarios]
 
     for i, scenario in enumerate(val_scenarios):
         print(f"\n测试： {i+1}: {scenario.task_description}")
