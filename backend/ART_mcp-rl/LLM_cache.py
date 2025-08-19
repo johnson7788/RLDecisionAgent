@@ -83,6 +83,7 @@ provider2url = {
     "gpt-4.1": "https://api.openai.com/v1/chat/completions",
     "gpt-4.1-nano-2025-04-14": "https://api.openai.com/v1/chat/completions",
     "o3-mini": "https://api.openai.com/v1/chat/completions",
+    "o3": "https://api.openai.com/v1/chat/completions",
     "deepseek-chat": "https://api.deepseek.com/v1/chat/completions",
     "doubao-seed-1-6-flash-250615": "https://ark.cn-beijing.volces.com/api/v3/chat/completions",
     "doubao-seed-1-6-thinking-250715": "https://ark.cn-beijing.volces.com/api/v3/chat/completions",
