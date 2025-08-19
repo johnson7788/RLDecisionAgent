@@ -82,6 +82,8 @@ provider2url = {
     "qwq-plus-latest": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
     "gpt-4.1": "https://api.openai.com/v1/chat/completions",
     "gpt-4.1-nano-2025-04-14": "https://api.openai.com/v1/chat/completions",
+    "gpt-4o-mini": "https://api.openai.com/v1/chat/completions",
+    "gpt-4o": "https://api.openai.com/v1/chat/completions",
     "o3-mini": "https://api.openai.com/v1/chat/completions",
     "o3": "https://api.openai.com/v1/chat/completions",
     "deepseek-chat": "https://api.deepseek.com/v1/chat/completions",
@@ -90,6 +92,7 @@ provider2url = {
     "doubao-seed-1-6-250615": "https://ark.cn-beijing.volces.com/api/v3/chat/completions",
     "deepseek-r1-250528": "https://ark.cn-beijing.volces.com/api/v3/chat/completions",
     "deepseek-v3-250324": "https://ark.cn-beijing.volces.com/api/v3/chat/completions",
+    "claude-sonnet-4": "https://api.anthropic.com/v1",
 }
 
 

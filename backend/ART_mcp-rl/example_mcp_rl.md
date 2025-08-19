@@ -9,8 +9,6 @@ Tesla T4 16GB
 
 # 配置smithery
 https://smithery.ai/
-配置
-OPENROUTER_API_KEY = "sk-or-v1-xxx" 
 
 打开https://smithery.ai/server/exa， 然后点击点击 Get URL with keys instead, 是网络搜索的工具
 SMITHERY_MCP_URL = "https://server.smithery.ai/exa/mcp?api_key=552ddb78-0e95-4998-be87-b936502a5a97&profile=stiff-sole-4FpnEv"

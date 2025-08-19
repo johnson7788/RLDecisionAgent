@@ -162,22 +162,22 @@ async def run_benchmarks(server: str = "mcp_alphavantage"):
         name="gpt-4o-mini",
         project=server,
         inference_model_name="openai/gpt-4o-mini",
-        inference_base_url="https://openrouter.ai/api/v1",
-        inference_api_key=os.getenv("OPENROUTER_API_KEY"),
+        inference_base_url="http://localhost:6688",
+        inference_api_key=os.getenv("OPENAI_API_KEY"),
     )
     gpt_4o = art.Model(
         name="gpt-4o",
         project=server,
         inference_model_name="openai/gpt-4o",
-        inference_base_url="https://openrouter.ai/api/v1",
-        inference_api_key=os.getenv("OPENROUTER_API_KEY"),
+        inference_base_url="http://localhost:6688",
+        inference_api_key=os.getenv("OPENAI_API_KEY"),
     )
     gpt_41 = art.Model(
         name="gpt-4.1",
         project=server,
         inference_model_name="openai/gpt-4.1",
-        inference_base_url="https://openrouter.ai/api/v1",
-        inference_api_key=os.getenv("OPENROUTER_API_KEY"),
+        inference_base_url="http://localhost:6688",
+        inference_api_key=os.getenv("OPENAI_API_KEY"),
     )
     o3 = art.Model(
         name="o3",
@@ -210,9 +210,9 @@ async def run_benchmarks(server: str = "mcp_alphavantage"):
     sonnet_4 = art.Model(
         name="sonnet-4",
         project=server,
-        inference_model_name="anthropic/claude-sonnet-4",
-        inference_base_url="https://openrouter.ai/api/v1",
-        inference_api_key=os.getenv("OPENROUTER_API_KEY"),
+        inference_model_name="openai/claude-sonnet-4",
+        inference_base_url="http://localhost:6688",
+        inference_api_key=os.getenv("CLAUDE_API_KEY"),
     )
 
     print(f"正在从以下位置加载场景: {scenarios_path}")
