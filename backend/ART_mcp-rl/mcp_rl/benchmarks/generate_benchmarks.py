@@ -161,14 +161,14 @@ async def run_benchmarks(server: str = "mcp_alphavantage"):
     gpt_4o_mini = art.Model(
         name="gpt-4o-mini",
         project=server,
-        inference_model_name="openai/gpt-4o-mini",
+        inference_model_name="gpt-4o-mini",
         inference_base_url="http://localhost:6688",
         inference_api_key=os.getenv("OPENAI_API_KEY"),
     )
     gpt_4o = art.Model(
         name="gpt-4o",
         project=server,
-        inference_model_name="openai/gpt-4o",
+        inference_model_name="gpt-4o",
         inference_base_url="http://localhost:6688",
         inference_api_key=os.getenv("OPENAI_API_KEY"),
     )
@@ -196,9 +196,9 @@ async def run_benchmarks(server: str = "mcp_alphavantage"):
     deepseek_chat = art.Model(
         name="deepseek",
         project=server,
-        inference_model_name="openai/deepseek-chat",
+        inference_model_name="gpt-4o-mini",
         inference_base_url="http://localhost:6688",
-        inference_api_key=os.getenv("DEEPSEEK_API_KEY"),
+        inference_api_key=os.getenv("OPENAI_API_KEY"),
     )
     doubao_chat = art.Model(
         name="deepseek",

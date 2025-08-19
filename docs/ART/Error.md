@@ -548,3 +548,32 @@ asyncio.exceptions.CancelledError
                                                                                                                                     [DEBUG] Progress bar updated (exception), total exceptions=1reward=0, task_completed=0, success=0, ran_out_of_turns=0, llm_completio
 [GatherContext.too_many_exceptions] exceptions=1, max_exceptions=0
 [GatherContext.too_many_exceptions] -> True
+
+
+# litellm 计算cost
+[RULER-DEBUG] Parsed 2 scores from model response.
+[RULER-DEBUG] Trajectory updated with score=0.3, explanation=Trajectory 1 makes an attempt using tool calls but fails due to input
+validation errors and never computes the expression. It shows some effort but does not provide a correct or complete result.
+[RULER-DEBUG] Trajectory updated with score=0.0, explanation=Trajectory 2 contains no actions or attempts to complete the problem,
+and therefore does not contribute toward achieving the task.
+[RULER-DEBUG] Returning new TrajectoryGroup with updated scores.
+[DEBUG] TrajectoryGroup.__init__ started
+[DEBUG] TrajectoryGroup.__init__ finished
+[DEBUG] TrajectoryGroup.__init__ started
+[DEBUG] TrajectoryGroup.__init__ finished
+组 2, 轨迹 2 的奖励差异: 0.3
+19:49:45 - LiteLLM:INFO: cost_calculator.py:655 - selected model name for cost calculation: openai/o3-mini-2025-01-31
+[2025-08-19 19:49:45] INFO cost_calculator.py:655: selected model name for cost calculation: openai/o3-mini-2025-01-31
+
+# 训练代码卡住， 训练已经结束，只是 dataset 迭代器还没完全释放（或者日志还在显示进度条），看起来像“卡住”了。
+DEBUG put request: train () {}████████| 2/2 [00:03<00:00,  1.41s/it, loss=0.0899, grad_norm=1.08, policy_loss=0.0899, entropy=0.252]
+[HANDLE_REQUEST] id=b15c632c-f3df-470f-bad7-ba2bc782f29b, method=train, args=(), kwargs={}
+[ERROR] Exception in train: <class 'StopAsyncIteration'>
+Traceback (most recent call last):
+  File "/workspace/verl/ART/src/mp_actors/move.py", line 255, in _handle_request
+    result = await generators[request.id].asend(request.send_value)
+StopAsyncIteration
+[HANDLE_REQUEST_DONE] id=b15c632c-f3df-470f-bad7-ba2bc782f29b, result_type=<class 'NoneType'>, exception_type=<class 'StopAsyncIteration'>
+train: 100%|██████████████████████████| 2/2 [00:07<00:00,  3.70s/it, loss=0.0899, grad_norm=1.08, policy_loss=0.0899, entropy=0.252]
+[INFO] 步 7 模型训练完成
+Iterating dataset: 100%|██████████████████████████████████████████████████████████████████████████| 8/8 [13:29<00:00, 115.59s/batch]
