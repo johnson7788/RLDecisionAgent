@@ -208,9 +208,9 @@ async def test_rollout():
     model = art.Model(
         name="o4-mini",
         project="mcp-agent-training",
-        inference_model_name="deepseek-chat",
-        inference_api_key=os.getenv("DEEPSEEK_API_KEY"),
-        inference_base_url="https://api.deepseek.com/v1",
+        inference_model_name="openai/o4-mini",
+        inference_api_key=os.getenv("OPENAI_API_KEY"),
+        inference_base_url="http://localhost:6688",
     )
 
     scenario = McpScenario(

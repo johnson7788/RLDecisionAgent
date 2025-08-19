@@ -84,10 +84,10 @@ Based on the conversation above, determine if the agent successfully completed t
 Respond with only a JSON object containing {{"success": true}} if the task was completed successfully, or {{"success": false}} if it was not completed or only partially completed."""
 
     try:
-        client = AsyncOpenAI(api_key=os.getenv("DEEPSEEK_API_KEY"), base_url="https://api.deepseek.com/v1")
+        client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"), base_url="http://localhost:6688")
 
         response = await client.chat.completions.create(
-            model="deepseek-chat",
+            model="openai/gpt-4o",
             messages=[{"role": "user", "content": evaluation_prompt}],
             max_completion_tokens=1000,
             response_format={"type": "json_object"},

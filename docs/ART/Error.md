@@ -450,7 +450,7 @@ Traceback (most recent call last):
     torch._C._cuda_init()
 RuntimeError: No CUDA GPUs are available
 
-# 训练卡住了，只能在ctrl +c结束
+# 训练卡住了，只能在ctrl +c结束， 是ruler模型问题，需要检查网络是否能正常连同openai，或者使用LLM_cache.py文件
 [DEBUG] Metrics recorded for future #6
 [GatherContext.update_pbar] Called with n=1
 [GatherContext.update_pbar] Incrementing pbar by 1

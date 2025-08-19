@@ -26,7 +26,7 @@ class McpPolicyConfig(BaseModel):
     val_set_size: int = 8                       # 验证集大小
     training_dataset_size: int = 4            # 训练数据集大小
     num_epochs: int = 4                        # 训练轮数
-    ruler_judge_model: str = "deepseek/deepseek-chat"  # 用于 RULER 重评分的模型
+    ruler_judge_model: str = "openai/o3"  # 用于 RULER 重评分的模型
     minimum_reward_std_dev: float = 0.0        # 奖励的最小标准差
     training_dataset_seed: int | None = None   # 随机种子，用于训练数据采样
 

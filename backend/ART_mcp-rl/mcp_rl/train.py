@@ -42,9 +42,9 @@ async def train_mcp_agent(model: art.TrainableModel, use_skypilot: bool = False)
     gpt_4o = art.Model(
         name="gpt-4o",
         project=model.project,
-        inference_model_name="deepseek-chat",
+        inference_model_name="openai/deepseek-chat",
         inference_api_key=os.getenv("DEEPSEEK_API_KEY"),
-        inference_base_url="https://api.deepseek.com/v1",
+        inference_base_url="http://localhost:6688",
     )
     print(f"[INFO] GPT-4o 模型实例创建完成: {gpt_4o}")
 

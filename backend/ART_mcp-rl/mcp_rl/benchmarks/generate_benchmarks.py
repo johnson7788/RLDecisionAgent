@@ -69,7 +69,7 @@ async def calculate_beat_comp(
 
                 async def score_group(group_idx: int, trajectory_idx: int):
                     print(f"正在评分组 {group_idx}, 轨迹 {trajectory_idx}")
-                    judge_model = "o3-mini"
+                    judge_model = "openai/o3-mini"
                     extra_litellm_params = {"api_base": "http://localhost:6688", "api_key": os.environ["OPENAI_API_KEY"]}
                     print(f"使用的评判模型为 {judge_model}")
                     scored_group = await ruler_score_group(
@@ -196,15 +196,15 @@ async def run_benchmarks(server: str = "mcp_alphavantage"):
     deepseek_chat = art.Model(
         name="deepseek",
         project=server,
-        inference_model_name="deepseek-chat",
-        inference_base_url="https://api.deepseek.com/v1",
+        inference_model_name="openai/deepseek-chat",
+        inference_base_url="http://localhost:6688",
         inference_api_key=os.getenv("DEEPSEEK_API_KEY"),
     )
     doubao_chat = art.Model(
         name="deepseek",
         project=server,
-        inference_model_name="deepseek-chat",
-        inference_base_url="https://ark.cn-beijing.volces.com/api/v3",
+        inference_model_name="openai/deepseek-r1-250528",
+        inference_base_url="http://localhost:6688",
         inference_api_key=os.getenv("DOUBAO_API_KEY"),
     )
     sonnet_4 = art.Model(
