@@ -144,6 +144,7 @@ pip install polars torchtune trl unsloth apscheduler vllm fastapi-sso
  │    178   def main():
 
 # 运行命令
+export HF_ENDPOINT=https://hf-mirror.com
 python -m mcp_rl.train --models=mcp-14b-alpha-001
 输出:
 weave: wandb version 0.21.1 is available!  To upgrade, please run:

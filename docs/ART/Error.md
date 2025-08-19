@@ -112,7 +112,7 @@ openai==1.99.1
 https://github.com/vllm-project/vllm/issues/1519
 
 
-# 训练报错，需要wandb offline, 不是wandb offline的原因，是有一定几率报错, https://github.com/OpenPipe/ART/issues/343
+# 训练报错
   import unsloth  # type: ignore # noqa: F401
 🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning.
 🦥 Unsloth Zoo will now patch everything to make training faster!
@@ -126,6 +126,39 @@ Traceback (most recent call last):
   File "/home/vipuser/miniconda3/lib/python3.12/multiprocessing/reduction.py", line 51, in dumps
     cls(buf, protocol).dump(obj)
 TypeError: cannot pickle 'SSLContext' object
+在move.py的_handle_request函数中加上详细的日志后，出现的报错如下，发现是huggingface的问题
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/workspace/verl/backend/ART_mcp-rl/mcp_rl/train.py", line 246, in <module>
+    main()
+  File "/workspace/verl/backend/ART_mcp-rl/mcp_rl/train.py", line 236, in main
+    asyncio.run(train_mcp_agent(model, use_skypilot=args.use_skypilot))
+  File "/usr/local/lib/python3.10/dist-packages/nest_asyncio.py", line 30, in run
+    return loop.run_until_complete(task)
+  File "/usr/local/lib/python3.10/dist-packages/nest_asyncio.py", line 98, in run_until_complete
+    return f.result()
+  File "/usr/lib/python3.10/asyncio/futures.py", line 201, in result
+    raise self._exception.with_traceback(self._exception_tb)
+  File "/usr/lib/python3.10/asyncio/tasks.py", line 234, in __step
+    result = coro.throw(exc)
+  File "/workspace/verl/backend/ART_mcp-rl/mcp_rl/train.py", line 116, in train_mcp_agent
+    await model.register(backend)
+  File "/workspace/verl/ART/src/art/model.py", line 310, in register
+    base_url, api_key = await backend._prepare_backend_for_training(
+  File "/workspace/verl/ART/src/art/local/backend.py", line 269, in _prepare_backend_for_training
+    await service.start_openai_server(config=config)
+  File "/workspace/verl/ART/src/mp_actors/traceback.py", line 26, in async_wrapper
+    raise e.with_traceback(streamlined_traceback())
+  File "/usr/lib/python3.10/asyncio/futures.py", line 285, in __await__
+    yield self  # This tells Task to wait for completion.
+  File "/usr/lib/python3.10/asyncio/tasks.py", line 304, in __wakeup
+    future.result()
+  File "/usr/lib/python3.10/asyncio/futures.py", line 201, in result
+    raise self._exception.with_traceback(self._exception_tb)
+RuntimeError: Unpicklable exception: ConnectionError(MaxRetryError("HTTPSConnectionPool(host='huggingface.co', port=443): Max retries exceeded with url: /api/models/unsloth/qwen2.5-0.5b-instruct-unsloth-bnb-4bit (Caused by NewConnectionError('<urllib3.connection.HTTPSConnection object at 0x7446e1683e20>: Failed to establish a new connection: [Errno 101] Network is unreachable'))"), '(Request ID: ecfdd9c7-7787-4009-8994-254fa9185698)')
 
 
 # 训练报错，MCP的的请求受到频率限制
