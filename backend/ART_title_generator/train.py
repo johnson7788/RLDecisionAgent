@@ -18,7 +18,7 @@ from art.utils import iterate_dataset, limit_concurrency
 load_dotenv()
 
 MODEL_NAME = "001"
-BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
+BASE_MODEL = "Qwen/Qwen2.5-0.5B-Instruct"
 MAX_COMPLETION_LENGTH = 100
 MAX_PROMPT_LENGTH = 8192 - MAX_COMPLETION_LENGTH
 LEARNING_RATE = 1.2e-5
