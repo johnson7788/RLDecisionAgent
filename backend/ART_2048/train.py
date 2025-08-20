@@ -63,9 +63,9 @@ async def train():
         )
 
         # save the model to S3
-        await backend._experimental_push_to_s3(
-            model,
-        )
+        # await backend._experimental_push_to_s3(
+        #     model,
+        # )
 
         await model.train(
             train_groups,

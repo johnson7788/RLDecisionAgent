@@ -1,3 +1,7 @@
+# 训练玩2048游戏的Agent
+[2048.py](2048.py)  # 没有ruler模型评判训练（伪代码）
+[2048-ruler.py](2048-ruler.py)  # 使用ruler模型评判的训练（伪代码）
+
 # 启动LLM代理
 cd ART_mcp-rl
 python LLM_cache.py
