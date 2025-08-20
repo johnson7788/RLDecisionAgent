@@ -577,3 +577,25 @@ StopAsyncIteration
 train: 100%|██████████████████████████| 2/2 [00:07<00:00,  3.70s/it, loss=0.0899, grad_norm=1.08, policy_loss=0.0899, entropy=0.252]
 [INFO] 步 7 模型训练完成
 Iterating dataset: 100%|██████████████████████████████████████████████████████████████████████████| 8/8 [13:29<00:00, 115.59s/batch]
+
+
+# python -m ART.src.art.openai_patch  测试Openai报错
+/usr/lib/python3.10/runpy.py:126: RuntimeWarning: 'ART.src.art.openai_patch' found in sys.modules after import of package 'ART.src.art', but prior to execution of 'ART.src.art.openai_patch'; this may result in unpredictable behaviour
+  warn(RuntimeWarning(msg))
+Testing patched client.chat.completions.create ...
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/workspace/verl/ART/src/art/openai_patch.py", line 201, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.10/asyncio/runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "/usr/lib/python3.10/asyncio/base_events.py", line 649, in run_until_complete
+    return future.result()
+  File "/workspace/verl/ART/src/art/openai_patch.py", line 198, in main
+    full_completion = await consume_chat_completion_stream(resp, on_chunk)
+  File "/workspace/verl/ART/src/art/openai_patch.py", line 172, in consume_chat_completion_stream
+    assert chat_completion is not None, f"模型回复的内容为空，请检查"
+AssertionError: 模型回复的内容为空，请检查

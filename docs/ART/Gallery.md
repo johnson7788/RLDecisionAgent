@@ -137,3 +137,7 @@ LocalBackend 类会在你智能体运行的同一台机器上启动一个 vLLM �
 https://github.com/OpenPipe/ART/pull/163/commits
 多 GPU 支持是近期加到 torchtune service；同时有维护者说明“torchtune 做 full finetune，通常用于单节点多 GPU；Unsloth 适合单 GPU 的 LoRA”。
 训练后端升级成可分布式的 torchtune service，并在推理侧配合 vLLM，从而让你在一台多 GPU 机器，或通过 SkyPilot 起的多 GPU 节点上做 单机多卡 训练
+
+
+# 测试兼容的openai
+python -m ART.src.art.openai_patch
