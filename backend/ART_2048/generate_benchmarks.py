@@ -21,21 +21,21 @@ gpt_4o_mini = art.Model(
     project="2048",
     inference_model_name="openai/gpt-4o-mini",
     inference_base_url="https://openrouter.ai/api/v1",
-    inference_api_key=os.getenv("OPENROUTER_API_KEY"),
+    inference_api_key=os.getenv("OPENAI_API_KEY"),
 )
 gpt_4o = art.Model(
     name="gpt-4o",
     project="2048",
     inference_model_name="openai/gpt-4o",
     inference_base_url="https://openrouter.ai/api/v1",
-    inference_api_key=os.getenv("OPENROUTER_API_KEY"),
+    inference_api_key=os.getenv("OPENAI_API_KEY"),
 )
 gpt_4_1 = art.Model(
     name="gpt-4.1",
     project="2048",
     inference_model_name="openai/gpt-4.1",
     inference_base_url="https://openrouter.ai/api/v1",
-    inference_api_key=os.getenv("OPENROUTER_API_KEY"),
+    inference_api_key=os.getenv("OPENAI_API_KEY"),
 )
 
 
@@ -55,9 +55,10 @@ async def log_comparison_model(comparison_model: art.Model):
         trajectories,
         split="val",
     )
-    await backend._experimental_push_to_s3(
-        comparison_model,
-    )
+    # 不推送到s3
+    # await backend._experimental_push_to_s3(
+    #     comparison_model,
+    # )
 
 
 async def run_benchmarks():
