@@ -92,4 +92,7 @@ python art_model_load.py
 
 
 ## 直接测试vllm是否正常，并且使用openai协议连接vllm的代码是否正常
-test_vllm_server.py
+python test_vllm_server.py
+
+## 测试huggingface连通和模型使用
+python load_model.py
