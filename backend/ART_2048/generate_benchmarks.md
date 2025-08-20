@@ -1,0 +1,30 @@
+# 
+
+# 日志
+[GatherContext.update_pbar] Setting postfix: {'prompt_tokens': 112.36363636363636, 'total_completion_tokens': 0.0}
+gather gpt-4o:   0%| | 0/12 [00:17<?, ?it/s, prompt_tokens=112, total_completion[GatherContext.update_pbar] Called with n=0
+[GatherContext.update_pbar] Incrementing pbar by 0
+[GatherContext.update_pbar] Metric total_completion_tokens: sum=0, divisor=1, avg=0.0
+[GatherContext.update_pbar] Metric prompt_tokens: sum=2472, divisor=22, avg=112.36363636363636
+[GatherContext.update_pbar] Setting postfix: {'prompt_tokens': 112.36363636363636, 'total_completion_tokens': 0.0}
+gather gpt-4o:   0%| | 0/12 [00:17<?, ?it/s, prompt_tokens=112, total_completion[GatherContext.update_pbar] Called with n=0
+[GatherContext.update_pbar] Incrementing pbar by 0
+[GatherContext.update_pbar] Metric total_completion_tokens: sum=0, divisor=1, avg=0.0
+[GatherContext.update_pbar] Metric prompt_tokens: sum=2472, divisor=22, avg=112.36363636363636
+[GatherContext.update_pbar] Setting postfix: {'prompt_tokens': 112.36363636363636, 'total_completion_tokens': 0.0}
+gather gpt-4o:   0%| | 0/12 [00:17<?, ?it/s, prompt_tokens=112, total_completion[GatherContext.update_pbar] Called with n=0
+[GatherContext.update_pbar] Incrementing pbar by 0
+[GatherContext.update_pbar] Metric total_completion_tokens: sum=0, divisor=1, avg=0.0
+[GatherContext.update_pbar] Metric prompt_tokens: sum=1817, divisor=17, avg=106.88235294117646
+[GatherContext.update_pbar] Setting postfix: {'prompt_tokens': 106.88235294117646, 'total_completion_tokens': 0.0}
+gather gpt-4o-mini:   0%| | 0/12 [00:17<?, ?it/s, prompt_tokens=107, total_compl[GatherContext.update_pbar] Called with n=0
+[GatherContext.update_pbar] Incrementing pbar by 0
+[GatherContext.update_pbar] Metric total_completion_tokens: sum=0, divisor=1, avg=0.0
+[GatherContext.update_pbar] Metric prompt_tokens: sum=1817, divisor=17, avg=106.88235294117646
+[GatherContext.update_pbar] Setting postfix: {'prompt_tokens': 106.88235294117646, 'total_completion_tokens': 0.0}
+gather gpt-4o-mini:   0%| | 0/12 [00:17<?, ?it/s, prompt_tokens=107, total_compl[GatherContext.update_pbar] Called with n=0
+
+
+
+# 1次请求
+{"messages":[{"content":"You are an excellent 2048 player. Always choose the move most likely to lead to combine cells to eventually reach the number 2048. Optional moves are 'left', 'right', 'up', 'down'. Return your move as an XML object with a single property 'move', like so: <move>left</move>","role":"system"},{"role":"user","content":"_|_|2|_\n_|_|_|_\n_|_|_|_\n4|_|_|_\n"},{"role":"assistant","content":"<move>right</move>"},{"role":"user","content":"_|_|_|2\n_|_|2|_\n_|_|_|_\n_|_|_|4\n"},{"role":"assistant","content":"<move>left</move>"},{"role":"user","content":"2|_|_|_\n2|_|_|_\n_|_|_|_\n4|_|_|2\n"},{"role":"assistant","content":"<move>up</move>"},{"role":"user","content":"4|_|_|2\n4|_|_|_\n_|_|_|_\n2|_|_|_\n"},{"role":"assistant","content":"<move>left</move>"},{"role":"user","content":"4|2|_|_\n4|_|_|_\n_|2|_|_\n2|_|_|_\n"},{"role":"assistant","content":"<move>up</move>"},{"role":"user","content":"8|4|_|_\n2|_|_|_\n_|_|_|4\n_|_|_|_\n"},{"role":"assistant","content":"<move>left</move>"},{"role":"user","content":"8|4|_|_\n2|_|_|_\n4|_|_|_\n_|_|_|2\n"},{"role":"assistant","content":"<move>up</move>"},{"role":"user","content":"8|4|_|2\n2|2|_|_\n4|_|_|_\n_|_|_|_\n"},{"role":"assistant","content":"<move>left</move>"},{"role":"user","content":"8|4|2|_\n4|_|_|4\n4|_|_|_\n_|_|_|_\n"},{"role":"assistant","content":"<move>down</move>"},{"role":"user","content":"_|2|_|_\n_|_|_|_\n8|_|_|_\n8|4|2|4\n"},{"role":"assistant","content":"<move>left</move>"},{"role":"user","content":"2|_|_|_\n_|_|2|_\n8|_|_|_\n8|4|2|4\n"},{"role":"assistant","content":"<move>up</move>"},{"role":"user","content":" 2| 4| 4| 4\n16| _| _| _\n _| _| _| 2\n _| _| _| _\n"},{"role":"assistant","content":"<move>left</move>"},{"role":"user","content":" 2| 8| 4| _\n16| _| _| _\n 2| _| _| _\n _| 2| _| _\n"},{"role":"assistant","content":"<move>up</move>"},{"role":"user","content":" 2| 8| 4| _\n16| 2| _| _\n 2| _| _| _\n 2| _| _| _\n"},{"role":"assistant","content":"<move>left</move>"},{"role":"user","content":" 2| 8| 4| _\n16| 2| _| 2\n 2| _| _| _\n 2| _| _| _\n"},{"role":"assistant","content":"<move>up</move>"},{"role":"user","content":" 2| 8| 4| 2\n16| 2| _| _\n 4| _| _| _\n 2| _| _| _\n"},{"role":"assistant","content":"<move>left</move>"},{"role":"user","content":" 2| 8| 4| 2\n16| 2| _| _\n 4| _| _| 2\n 2| _| _| _\n"},{"role":"assistant","content":"<move>up</move>"},{"role":"user","content":" 2| 8| 4| 4\n16| 2| _| _\n 4| _| _| _\n 2| _| _| 2\n"},{"role":"assistant","content":"<move>left</move>"},{"role":"user","content":" 2| 8| 8| _\n16| 2| _| _\n 4| _| _| _\n 4| _| 2| _\n"},{"role":"assistant","content":"<move>up</move>"},{"role":"user","content":" 2| 8| 8| _\n16| 2| 2| _\n 8| _| _| _\n _| 4| _| _\n"},{"role":"assistant","content":"<move>left</move>"},{"role":"user","content":" 2|16| _| _\n16| 4| 2| _\n 8| _| _| _\n 4| _| _| _\n"},{"role":"assistant","content":"<move>up</move>"},{"role":"user","content":" 2|16| 2| _\n16| 4| _| _\n 8| _| 2| _\n 4| _| _| _\n"},{"role":"assistant","content":"<move>left</move>"},{"role":"user","content":" 2|16| 2| _\n16| 4| _| _\n 8| 2| _| 4\n 4| _| _| _\n"},{"role":"assistant","content":"<move>up</move>"},{"role":"user","content":" 2|16| 2| 4\n16| 4| _| _\n 8| 2| 2| _\n 4| _| _| _\n"},{"role":"assistant","content":"<move>left</move>"},{"role":"user","content":" 2|16| 2| 4\n16| 4| _| 2\n 8| 4| _| _\n 4| _| _| _\n"},{"role":"assistant","content":"<move>up</move>"},{"role":"user","content":" 2|16| 2| 4\n16| 8| _| 2\n 8| 2| _| _\n 4| _| _| _\n"},{"role":"assistant","content":"<move>left</move>"},{"role":"user","content":" 2|16| 2| 4\n16| 8| 2| 4\n 8| 2| _| _\n 4| _| _| _\n"}],"model":"gpt-4o","max_completion_tokens":128,"stream":true,"stream_options":{"include_usage":true}}
