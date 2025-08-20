@@ -599,3 +599,18 @@ Traceback (most recent call last):
   File "/workspace/verl/ART/src/art/openai_patch.py", line 172, in consume_chat_completion_stream
     assert chat_completion is not None, f"模型回复的内容为空，请检查"
 AssertionError: 模型回复的内容为空，请检查
+
+
+# 训练卡住，如果在下面的步骤中卡住，那么需要使用export CUDA_VISIBLE_DEVICES=1指定显卡，并确保有显存
+[ASYNCGEN] Creating generator for train
+==((====))==  Unsloth - 2x faster free finetuning | Num GPUs used = 1
+   \\   /|    Num examples = 10,000,000 | Num Epochs = 3 | Total steps = 10,000,002
+O^O/ \_/ \    Batch size per device = 6 | Gradient accumulation steps = 1
+\        /    Data Parallel GPUs = 1 | Total batch size (6 x 1 x 1) = 6
+ "-____-"     Trainable parameters = 4,399,104 of 498,431,872 (0.88% trained)
+Unsloth: Will smartly offload gradients to save VRAM!
+==((====))==  Unsloth - 2x faster free finetuning | Num GPUs used = 1
+   \\   /|    Num examples = 10,000,000 | Num Epochs = 3 | Total steps = 20,000,001
+O^O/ \_/ \    Batch size per device = 3 | Gradient accumulation steps = 1
+\        /    Data Parallel GPUs = 1 | Total batch size (3 x 1 x 1) = 3
+ "-____-"     Trainable parameters = 4,399,104 of 498,431,872 (0.88% trained)

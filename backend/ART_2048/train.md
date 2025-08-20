@@ -319,3 +319,23 @@ Unsloth: Will smartly offload gradients to save VRAM!
 O^O/ \_/ \    Batch size per device = 3 | Gradient accumulation steps = 1
 \        /    Data Parallel GPUs = 1 | Total batch size (3 x 1 x 1) = 3
  "-____-"     Trainable parameters = 4,399,104 of 498,431,872 (0.88% trained)
+
+Unsloth: Will smartly offload gradients to save VRAM!
+[PICKLE] Result of train is picklable (<class 'dict'>)
+[HANDLE_REQUEST_DONE] id=58b7f0ce-b50c-482c-80b4-462a1d7bd7e3, result_type=<class 'dict'>, exception_type=<class 'NoneType'>
+train:  25%|█████████▊                             | 1/4 [00:12<00:38, 12.88s/it, loss=0.574, grad_norm=0.449, policy_loss=0.574, entropy=0.382]DEBUG put request: train () {}
+[HANDLE_REQUEST] id=58b7f0ce-b50c-482c-80b4-462a1d7bd7e3, method=train, args=(), kwargs={}
+[PICKLE] Result of train is picklable (<class 'dict'>)
+[HANDLE_REQUEST_DONE] id=58b7f0ce-b50c-482c-80b4-462a1d7bd7e3, result_type=<class 'dict'>, exception_type=<class 'NoneType'>
+train:  50%|██████████████████▌                  | 2/4 [00:13<00:11,  5.59s/it, loss=-0.438, grad_norm=0.661, policy_loss=-0.438, entropy=0.886]DEBUG put request: train () {}
+[HANDLE_REQUEST] id=58b7f0ce-b50c-482c-80b4-462a1d7bd7e3, method=train, args=(), kwargs={}
+[PICKLE] Result of train is picklable (<class 'dict'>)
+[HANDLE_REQUEST_DONE] id=58b7f0ce-b50c-482c-80b4-462a1d7bd7e3, result_type=<class 'dict'>, exception_type=<class 'NoneType'>
+train:  75%|████████████████████████████████▎          | 3/4 [00:13<00:03,  3.26s/it, loss=0.462, grad_norm=12, policy_loss=0.462, entropy=1.42]DEBUG put request: train () {}
+[HANDLE_REQUEST] id=58b7f0ce-b50c-482c-80b4-462a1d7bd7e3, method=train, args=(), kwargs={}
+[PICKLE] Result of train is picklable (<class 'dict'>)
+[HANDLE_REQUEST_DONE] id=58b7f0ce-b50c-482c-80b4-462a1d7bd7e3, result_type=<class 'dict'>, exception_type=<class 'NoneType'>
+train: 100%|██████████████████████████████████████| 4/4 [00:14<00:00,  2.17s/it, loss=-0.253, grad_norm=0.769, policy_loss=-0.253, entropy=1.05]DEBUG put request: train () {}
+[HANDLE_REQUEST] id=58b7f0ce-b50c-482c-80b4-462a1d7bd7e3, method=train, args=(), kwargs={}
+[ASYNCGEN] train completed
+[HANDLE_REQUEST_DONE] id=58b7f0ce-b50c-482c-80b4-462a1d7bd7e3, 遇到StopAsyncIteration，应该是训练完成了
