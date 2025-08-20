@@ -120,9 +120,9 @@ if __name__ == "__main__":
     gpt_4o_mini = art.Model(
         name="gpt-4o-mini",
         project="2048",
-        inference_model_name="openai/gpt-4o-mini",
-        inference_base_url="https://openrouter.ai/api/v1",
-        inference_api_key=os.getenv("OPENROUTER_API_KEY"),
+        inference_model_name="gpt-4o-mini",
+        inference_base_url="http://localhost:6688",
+        inference_api_key=os.getenv("OPENAI_API_KEY"),
     )
 
     async def main():

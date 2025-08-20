@@ -7,3 +7,10 @@ python LLM_cache.py
 
 # 绘制这些模型的结果到图像
 [display_benchmarks.py](display_benchmarks.py)
+
+# 训练玩2048游戏的Agent模型
+export HF_ENDPOINT=https://hf-mirror.com
+python train.py
+
+# kill掉进程
+ps aux | grep train.py | grep -v grep | awk '{print $2}' | xargs kill -9

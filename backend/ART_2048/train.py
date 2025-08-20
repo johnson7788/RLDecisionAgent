@@ -1,6 +1,6 @@
 import asyncio
 import random
-
+import os
 from dotenv import load_dotenv
 from rollout import rollout
 
@@ -16,7 +16,7 @@ random.seed(42)
 model = art.TrainableModel(
     name="tutorial-001",
     project="2048",
-    base_model="Qwen/Qwen2.5-3B-Instruct",
+    base_model="Qwen/Qwen2.5-0.5B-Instruct",
 )
 model._internal_config = art.dev.InternalModelConfig(
     init_args=art.dev.InitArgs(
@@ -35,12 +35,7 @@ async def train():
 
     # Register the model with the local backend (sets up logging, inference, and training)
     await model.register(backend)
-
-    await backend._experimental_pull_from_s3(
-        model,
-        verbose=True,
-    )
-
+    extra_litellm_params = {"api_base": "http://localhost:6688", "api_key": os.environ["OPENAI_API_KEY"]}
     # train for 40 steps
     for i in range(await model.get_step(), TRAIN_STEPS):
         train_groups = await art.gather_trajectory_groups(
@@ -57,6 +52,7 @@ async def train():
                     group,
                     "openai/o4-mini",
                     debug=True,
+                    extra_litellm_params=extra_litellm_params,
                     swallow_exceptions=True,  # Return None on error, filtering out the group
                 )
                 if ENABLE_RULER
