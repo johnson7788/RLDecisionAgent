@@ -19,22 +19,22 @@ backend = LocalBackend()
 gpt_4o_mini = art.Model(
     name="gpt-4o-mini",
     project="2048",
-    inference_model_name="openai/gpt-4o-mini",
-    inference_base_url="https://openrouter.ai/api/v1",
+    inference_model_name="gpt-4o-mini",
+    inference_base_url="http://127.0.0.1:6688",
     inference_api_key=os.getenv("OPENAI_API_KEY"),
 )
 gpt_4o = art.Model(
     name="gpt-4o",
     project="2048",
-    inference_model_name="openai/gpt-4o",
-    inference_base_url="https://openrouter.ai/api/v1",
+    inference_model_name="gpt-4o",
+    inference_base_url="http://127.0.0.1:6688",
     inference_api_key=os.getenv("OPENAI_API_KEY"),
 )
 gpt_4_1 = art.Model(
     name="gpt-4.1",
     project="2048",
-    inference_model_name="openai/gpt-4.1",
-    inference_base_url="https://openrouter.ai/api/v1",
+    inference_model_name="gpt-4.1",
+    inference_base_url="http://127.0.0.1:6688",
     inference_api_key=os.getenv("OPENAI_API_KEY"),
 )
 
