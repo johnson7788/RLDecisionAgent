@@ -14,6 +14,7 @@ python LLM_cache.py
 
 # 训练玩2048游戏的Agent模型
 export HF_ENDPOINT=https://hf-mirror.com
+export CUDA_VISIBLE_DEVICES=1
 python train.py
 
 # kill掉进程
