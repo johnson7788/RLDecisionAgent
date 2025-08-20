@@ -220,10 +220,10 @@ async def proxy_request(request: Request):
                                 break
 
                         async for line in response.aiter_lines():
-                            if line.strip():
-                                logger.log(f"收到数据: {line}")
-                                lines.append(line + "\n")
-                                yield line + "\n"
+                            # if line.strip():  # 不能去掉换行，否则会产生Bug
+                            logger.log(f"收到数据: {line}")
+                            lines.append(line + "\n")
+                            yield line + "\n"
                         break
 
             except Exception as e:
