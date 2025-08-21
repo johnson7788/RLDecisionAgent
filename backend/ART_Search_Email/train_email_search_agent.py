@@ -208,14 +208,22 @@ def create_email_database() -> sqlite3.Connection:
             (message_id, subject, from_address, date_str, body, file_name),
         )
 
-        recs = []
-        for a in to_list: recs.append((message_id, a, "to"))
-        for a in cc_list: recs.append((message_id, a, "cc"))
-        for a in bcc_list: recs.append((message_id, a, "bcc"))
-        if recs:
+        # Insert recipients
+        recipient_data = []
+        for addr in to_list:
+            recipient_data.append((message_id, addr, "to"))
+        for addr in cc_list:
+            recipient_data.append((message_id, addr, "cc"))
+        for addr in bcc_list:
+            recipient_data.append((message_id, addr, "bcc"))
+
+        if recipient_data:
             cursor.executemany(
-                "INSERT INTO recipients (email_id, recipient_address, recipient_type) VALUES (?, ?, ?)",
-                recs,
+                """
+                INSERT INTO recipients (email_id, recipient_address, recipient_type)
+                VALUES (?, ?, ?)
+            """,
+                recipient_data,
             )
 
         record_count += 1
@@ -301,7 +309,9 @@ def search_emails(
     params.append(max_results)
 
     cursor.execute(sql, params)
-    return [SearchResult(message_id=r[0], snippet=r[1]) for r in cursor.fetchall()]
+    results = cursor.fetchall()
+
+    return [SearchResult(message_id=row[0], snippet=row[1]) for row in results]
 
 
 def read_email(message_id: str) -> Optional[Email]:
@@ -324,9 +334,15 @@ def read_email(message_id: str) -> Optional[Email]:
         elif t == "bcc": bcc_addrs.append(addr)
 
     return Email(
-        message_id=msg_id, date=date, subject=subject, from_address=from_addr,
-        to_addresses=to_addrs, cc_addresses=cc_addrs, bcc_addresses=bcc_addrs,
-        body=body, file_name=file_name
+        message_id=msg_id,
+        date=date,
+        subject=subject,
+        from_address=from_addr,
+        to_addresses=to_addrs,
+        cc_addresses=cc_addrs,
+        bcc_addresses=bcc_addrs,
+        body=body,
+        file_name=file_name,
     )
 
 
@@ -340,18 +356,32 @@ def load_training_scenarios(
     """从 HF 加载场景（可限制每场景引用的邮件数量）"""
     print(f"Loading {split} scenarios from HF...")
     dataset: Dataset = load_dataset(SCENARIO_DATASET_REPO_ID, split=split)
+
     if max_messages is not None:
         dataset = dataset.filter(lambda x: len(x["message_ids"]) <= max_messages)
+
     if shuffle or (seed is not None):
-        dataset = dataset.shuffle(seed=seed) if seed is not None else dataset.shuffle()
+        if seed is not None:
+            dataset = dataset.shuffle(seed=seed)
+        else:
+            dataset = dataset.shuffle()
+
+    # Convert each row to a Scenario object
     scenarios = [Scenario(**row, split=split) for row in dataset]
+
     if max_messages is not None:
         scenarios = [s for s in scenarios if len(s.message_ids) <= max_messages]
+
     if shuffle:
-        rng = random.Random(seed) if seed is not None else random
-        rng.shuffle(scenarios)
+        if seed is not None:
+            rng = random.Random(seed)
+            rng.shuffle(scenarios)
+        else:
+            random.shuffle(scenarios)
+
     if limit is not None:
         scenarios = scenarios[:limit]
+
     print(f"Loaded {len(scenarios)} scenarios.")
     return scenarios
 
@@ -438,7 +468,10 @@ async def rollout(model: art.Model, email_scenario: EmailScenario) -> ProjectTra
     tools_by_name = {t.__name__: t for t in tools}
     traj.tools = [convert_to_openai_tool(t) for t in tools]
 
-    litellm_model_name = f"hosted_vllm/{model.name}" if model.trainable else model.name
+    if model.trainable:
+        litellm_model_name = f"hosted_vllm/{model.name}"
+    else:
+        litellm_model_name = model.name
 
     for _ in range(MAX_TURNS):
         resp = await acompletion(
@@ -454,7 +487,7 @@ async def rollout(model: art.Model, email_scenario: EmailScenario) -> ProjectTra
         msg = choice.message
         traj.messages_and_choices.append(convert_litellm_choice_to_openai(choice))
 
-        if not getattr(msg, "tool_calls", None):
+        if not msg.tool_calls:
             return traj
 
         try:
@@ -513,7 +546,6 @@ async def run_training(
     model = await setup_model_and_backend()
     train_scenarios = load_training_scenarios(split="train", limit=50, max_messages=1, shuffle=True, seed=42)
 
-    from art.utils import iterate_dataset
     step0 = await model.get_step()
     it = iterate_dataset(
         train_scenarios,
