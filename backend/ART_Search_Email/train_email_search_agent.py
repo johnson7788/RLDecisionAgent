@@ -406,6 +406,7 @@ async def judge_correctness(scenario: Scenario, answer: str) -> CorrectnessJudge
     ]
     resp = await acompletion(
         model="openai/o4-mini",   # 可改为 openai/gpt-4.1 等
+        base_url="http://127.0.0.1:6688",
         messages=messages,
         response_format=CorrectnessJudgeResponse,
     )
@@ -520,7 +521,7 @@ async def setup_model_and_backend(seed: int = 42) -> art.TrainableModel:
     model = art.TrainableModel(
         name="email-agent-001",
         project="email-search-agent",
-        base_model="Qwen/Qwen2.5-7B-Instruct",
+        base_model="Qwen/Qwen2.5-0.5B-Instruct",
     )
     # T4 友好设置
     model._internal_config = art.dev.InternalModelConfig(
@@ -572,10 +573,10 @@ async def run_training(
             pbar_desc="gather",
             max_exceptions=rollouts_per_group * len(batch.items),
         )
-
+        extra_litellm_params = {"api_base": "http://localhost:6688", "api_key": os.environ["OPENAI_API_KEY"]}
         judged_groups = []
         for g in finished:
-            judged = await ruler_score_group(g, "openai/o4-mini", debug=True)
+            judged = await ruler_score_group(group=g, judge_model="o4-mini", extra_litellm_params=extra_litellm_params,debug=True)
             judged_groups.append(judged)
 
         await model.delete_checkpoints()
