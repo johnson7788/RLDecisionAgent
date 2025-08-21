@@ -614,3 +614,71 @@ Unsloth: Will smartly offload gradients to save VRAM!
 O^O/ \_/ \    Batch size per device = 3 | Gradient accumulation steps = 1
 \        /    Data Parallel GPUs = 1 | Total batch size (3 x 1 x 1) = 3
  "-____-"     Trainable parameters = 4,399,104 of 498,431,872 (0.88% trained)
+
+
+# 报错
+uant_storage': 'uint8', 'bnb_4bit_quant_type': 'nf4', 'bnb_4bit_use_double_quant': True, 'llm_int8_enable_fp32_cpu_offload': False, 'llm_int8_has_fp16_weight': False, 'llm_int8_skip_modules': ['lm_head', 'multi_modal_projector', 'merger', 'modality_projection', 'model.layers.0.self_attn', 'model.layers.0.mlp', 'model.layers.2.mlp', 'model.layers.3.mlp', 'model.layers.21.mlp', 'model.layers.0.self_attn.q_proj'], 'llm_int8_threshold': 6.0}
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/unsloth_zoo/vllm_utils.py", line 1500, in load_vllm
+[rank0]:     llm = AsyncLLMEngine.from_engine_args(AsyncEngineArgs(**engine_args))
+[rank0]:   File "/workspace/verl/ART/src/art/unsloth/state.py", line 74, in _from_engine_args
+[rank0]:     return from_engine_args(
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/engine/async_llm_engine.py", line 684, in from_engine_args
+[rank0]:     return async_engine_cls.from_vllm_config(
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/engine/async_llm_engine.py", line 657, in from_vllm_config
+[rank0]:     return cls(
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/engine/async_llm_engine.py", line 612, in __init__
+[rank0]:     self.engine = self._engine_class(*args, **kwargs)
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/engine/async_llm_engine.py", line 267, in __init__
+[rank0]:     super().__init__(*args, **kwargs)
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/engine/llm_engine.py", line 275, in __init__
+[rank0]:     self.model_executor = executor_class(vllm_config=vllm_config)
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/executor/executor_base.py", line 52, in __init__
+[rank0]:     self._init_executor()
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/executor/uniproc_executor.py", line 47, in _init_executor
+[rank0]:     self.collective_rpc("load_model")
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/executor/uniproc_executor.py", line 56, in collective_rpc
+[rank0]:     answer = run_method(self.driver_worker, method, args, kwargs)
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/utils.py", line 2456, in run_method
+[rank0]:     return func(*args, **kwargs)
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/worker/worker.py", line 195, in load_model
+[rank0]:     assert allocator.get_current_usage() == 0, (
+[rank0]: AssertionError: Sleep mode can only be used for one instance per process.
+
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/workspace/verl/backend/ART_Search_Email/train_email_search_agent.py", line 640, in <module>
+[rank0]:     main()
+[rank0]:   File "/workspace/verl/backend/ART_Search_Email/train_email_search_agent.py", line 628, in main
+[rank0]:     asyncio.run(
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/nest_asyncio.py", line 30, in run
+[rank0]:     return loop.run_until_complete(task)
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/nest_asyncio.py", line 98, in run_until_complete
+[rank0]:     return f.result()
+[rank0]:   File "/usr/lib/python3.10/asyncio/futures.py", line 201, in result
+[rank0]:     raise self._exception.with_traceback(self._exception_tb)
+[rank0]:   File "/usr/lib/python3.10/asyncio/tasks.py", line 232, in __step
+[rank0]:     result = coro.send(None)
+[rank0]:   File "/workspace/verl/backend/ART_Search_Email/train_email_search_agent.py", line 584, in run_training
+[rank0]:     await model.train(
+[rank0]:   File "/workspace/verl/ART/src/art/model.py", line 356, in train
+[rank0]:     async for _ in self.backend()._train_model(
+[rank0]:   File "/workspace/verl/ART/src/art/local/backend.py", line 562, in _train_model
+[rank0]:     async for result in service.train(
+[rank0]:   File "/workspace/verl/ART/src/art/unsloth/service.py", line 123, in train
+[rank0]:     trainer=self.state.trainer,
+[rank0]:   File "/usr/lib/python3.10/functools.py", line 981, in __get__
+[rank0]:     val = self.func(instance)
+[rank0]:   File "/workspace/verl/ART/src/art/unsloth/service.py", line 45, in state
+[rank0]:     return ModelState(self.config)
+[rank0]:   File "/workspace/verl/ART/src/art/unsloth/state.py", line 82, in __init__
+[rank0]:     unsloth.FastLanguageModel.from_pretrained(**config.get("init_args", {})),
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/unsloth/models/loader.py", line 402, in from_pretrained
+[rank0]:     model, tokenizer = dispatch_model.from_pretrained(
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/unsloth/models/qwen2.py", line 87, in from_pretrained
+[rank0]:     return FastLlamaModel.from_pretrained(
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/unsloth/models/llama.py", line 2041, in from_pretrained
+[rank0]:     llm = load_vllm(**load_vllm_kwargs)
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/unsloth_zoo/vllm_utils.py", line 1527, in load_vllm
+[rank0]:     raise RuntimeError(error)
+[rank0]: RuntimeError: Sleep mode can only be used for one instance per process.
+[rank0]:[W821 20:01:54.081613048 ProcessGroupNCCL.cpp:1496] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
