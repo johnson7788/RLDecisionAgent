@@ -89,7 +89,7 @@ async def run_test(sample_index: int = 0):
 
 def main():
     parser = argparse.ArgumentParser(description="Test the trained ART email search agent.")
-    parser.add_argument("--sample-index", type=int, default=0, help="Which scenario to test within the sampled set.")
+    parser.add_argument("--sample-index", type=int, default=1, help="Which scenario to test within the sampled set.")
     args = parser.parse_args()
 
     ensure_env()
