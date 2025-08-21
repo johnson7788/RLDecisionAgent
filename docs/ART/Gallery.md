@@ -151,3 +151,104 @@ IMPORT_PEFT=1
 # metrics值
 exception_rate： 轨迹异常的数量
 reward_std_dev：reward 的平均标准差
+
+# Scenario
+简短说：**Scenario 就是一次“任务+环境配置”的打包**。它把“要做什么”（task）和“在哪儿/怎么做”（环境或服务器参数、初始状态、步数上限等）装进一个可序列化的小对象里，交给 `rollout(...)` 去运行并采样轨迹（trajectory）。不同子项目里有各自的 Scenario 结构，但本质都是“让 `rollout` 知道如何开局和何时结束”的数据容器。
+
+## 代码里已经有哪些 Scenario？
+
+* **MCP 代理训练（mcp-rl）**
+  `McpScenario`：一个 dataclass，字段很精简
+
+  * `task_description: str` —— 要求代理完成的自然语言任务
+  * `server_params: StdioServerParameters` —— 要连接的 MCP 服务器配置
+  * `max_turns: int = 10` —— 回合上限
+    用法：`rollout(model, scenario: McpScenario)` 在给定 MCP 服务器里执行这项任务（见 `mcp_rl/rollout.py` 第 33–45 行与第 215–221 行示例）。
+
+* **邮件问答实验（art-e.py）**
+  两层结构：
+
+  * `Scenario(BaseModel)`：数据集里的“问答场景”，含 `id / question / answer / message_ids / how_realistic / inbox_address / query_date / split` 等，用来**定义问题与参考答案**、以及判分需要的元信息（见 `art-e.py` 第 118–127 行；加载函数在第 466–483 行把每条数据转成 `Scenario`）。
+  * `EmailScenario(BaseModel)`：训练/推理时的“执行包装”，含 `step` 与 `scenario: Scenario`，交给 `rollout(model, email_scenario)` 使用（见 `art-e.py` 第 641–648、942–946 行）。
+
+* **井字棋自博弈（tic\_tac\_toe*）*\*
+  `TicTacToeScenario(BaseModel)`：描述博弈初始条件和训练/验证分割
+
+  * 轻量版仅有 `step`（`tic_tac_toe/rollout.py` 第 27–33 行）。
+  * 自博弈版增加 `split / x_teacher / o_teacher / initial_move` 等（`tic_tac_toe_self_play/rollout.py` 第 103–113 行）。
+    用法：`rollout(..., scenario=TicTacToeScenario(...))`（多处示例，如 `train.py`/`tic-tac-toe.py`）。
+
+## 把它抽象出来：Scenario 的通用组成
+
+1. **任务**：自然语言目标或游戏/问题定义（`task_description` / `question`）。
+2. **环境**：怎么接入外部系统或如何初始化状态（如 `server_params`、棋局初始落子）。
+3. **约束**：回合/步数上限、难度、split 等（`max_turns`、`split`、`difficulty`）。
+4. **评测信息（可选）**：参考答案、判分所需元数据（`answer`、`message_ids` 等）。
+
+## 我该如何定义自己的 Scenario？
+
+关键是**先看你的 `rollout` 需要什么**。`rollout` 的函数签名决定了 Scenario 的字段。举三个最小模板：
+
+* **针对 MCP 工具调用类任务**（复用现有 `McpScenario` 足够）：
+
+  ```python
+  from mcp_rl.mcp_rl.rollout import McpScenario, rollout
+
+  scenario = McpScenario(
+      task_description="用 search_symbol 搜 biotech 相关公司并整理结果",
+      server_params=server_params,  # 你已有的 MCP StdioServerParameters
+      max_turns=8,
+  )
+  traj = await rollout(model, scenario)
+  ```
+
+* **针对“有参考答案”的信息检索/问答**（仿照 `art-e.py`）：
+
+  ```python
+  from pydantic import BaseModel
+  from typing import List, Literal
+
+  class QARefScenario(BaseModel):
+      id: int
+      question: str
+      answer: str                   # 评测用的参考答案
+      evidence_ids: List[str] = []  # 可选：引用到的数据/文档键
+      split: Literal["train", "test"] = "train"
+
+  class QARunScenario(BaseModel):
+      step: int
+      scenario: QARefScenario
+
+  # rollout(model, qa_run_scenario) 内部读取 question、产生答案，再对比 reference
+  ```
+
+* **针对“有明确初始状态”的交互/博弈**（仿照井字棋）：
+
+  ```python
+  from pydantic import BaseModel
+  from typing import Optional
+
+  class GameScenario(BaseModel):
+      step: int
+      split: str = "train"
+      seed: Optional[int] = None
+      initial_state: Optional[dict] = None
+  ```
+
+## 设计小建议
+
+* **越小越好**：只放 `rollout` 真正需要的字段，便于序列化/记录/回放。
+* **可序列化**：用 `dataclass` 或 Pydantic `BaseModel`（方便校验与保存）。
+* **明确评测接口**：如果要自动打分，Scenario 里应包含参考答案或可据此得分的线索。
+* **与数据生成对齐**：你若用 `scenario_generator.py` 自动生成任务，它产出形如 `{"task": "...", "difficulty": ...}` 的 JSON；训练脚本再把它转成 `McpScenario`（见 `mcp_rl/train.py` 118–137 行）。
+
+
+# model.get_step()
+get_step() 用来拿“这个可训练模型目前处在第几步（global training step）”。它返回一个整数，比如 0、1、2……，表示你已经完成并落盘的最新训练步，从而让训练/评测/保存都能接着上次的进度继续，而不是从头来。
+model.get_step()（src/art/model.py）是个 async 方法 → 调用后端的 backend._get_step(model)。
+本地后端里（src/art/local/backend.py）实际实现为：
+若是 TrainableModel，就从模型的输出目录里找最新的 checkpoint 目录，路径约为
+.../<project>/models/<name>/checkpoints/<step:04d>
+并取其中最大的 <step> 作为当前 step（见 src/art/utils/get_model_step.py）。
+如果没有找到，则返回 0。注册后会有 0000 这个初始 checkpoint。
+之所以是 async，是因为也可能通过 REST 接口查询远端/本地服务（见 src/art/backend.py 与 src/art/cli.py）。

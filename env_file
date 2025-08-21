@@ -1,9 +1,9 @@
 CUDA_VISIBLE_DEVICES=1
-ALL_PROXY=http://127.0.0.1:7890
-HTTP_PROXY=http://127.0.0.1:7890
-HTTPS_PROXY=http://127.0.0.1:7890
-http_proxy=http://127.0.0.1:7890
-https_proxy=http://127.0.0.1:7890
+#ALL_PROXY=http://127.0.0.1:7890
+#HTTP_PROXY=http://127.0.0.1:7890
+#HTTPS_PROXY=http://127.0.0.1:7890
+#http_proxy=http://127.0.0.1:7890
+#https_proxy=http://127.0.0.1:7890
 HF_ENDPOINT=https://hf-mirror.com
 
 # export ALL_PROXY=http://127.0.0.1:7890

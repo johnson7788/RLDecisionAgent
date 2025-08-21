@@ -548,6 +548,7 @@ async def run_training(
     train_scenarios = load_training_scenarios(split="train", limit=50, max_messages=1, shuffle=True, seed=42)
 
     step0 = await model.get_step()
+    print(f"模型已经训练步数：{step0}")
     it = iterate_dataset(
         train_scenarios,
         groups_per_step=groups_per_step,
