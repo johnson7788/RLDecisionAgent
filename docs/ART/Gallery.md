@@ -141,3 +141,13 @@ https://github.com/OpenPipe/ART/pull/163/commits
 
 # 测试兼容的openai
 python -m ART.src.art.openai_patch
+
+
+# 可以考虑在环境变量里面添加IMPORT_UNSLOTH和IMPORT_PEFT，因为ART/src/art/local/backend.py里设置了，让它们提前加载，提升性能
+IMPORT_UNSLOTH=1
+IMPORT_PEFT=1
+
+
+# metrics值
+exception_rate： 轨迹异常的数量
+reward_std_dev：reward 的平均标准差
