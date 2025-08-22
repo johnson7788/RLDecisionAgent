@@ -182,14 +182,14 @@ async def run_benchmarks(server: str = "mcp_alphavantage"):
     doubao_chat = art.Model(
         name="deepseek",
         project=server,
-        inference_model_name="openai/deepseek-r1-250528",
+        inference_model_name="deepseek-r1-250528",
         inference_base_url="http://localhost:6688",
         inference_api_key=os.getenv("DOUBAO_API_KEY"),
     )
     sonnet_4 = art.Model(
         name="sonnet-4",
         project=server,
-        inference_model_name="openai/claude-sonnet-4",
+        inference_model_name="claude-sonnet-4",
         inference_base_url="http://localhost:6688",
         inference_api_key=os.getenv("CLAUDE_API_KEY"),
     )
