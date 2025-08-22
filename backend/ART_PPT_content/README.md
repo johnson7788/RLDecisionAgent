@@ -14,5 +14,12 @@ python download_data.py
 
 ## 生成问题场景，覆盖现有场景
 python generate_questions.py
+cd scenarios
+python data_convert.py
+输出文件,训练数据和测试数据
+[questions.jsonl](mcp_search%2Fquestions.jsonl)
+[scenarios.jsonl](mcp_search%2Fscenarios.jsonl)
+[scenarios](mcp_search%2Fscenarios)
+
 
 ## MCP工具
