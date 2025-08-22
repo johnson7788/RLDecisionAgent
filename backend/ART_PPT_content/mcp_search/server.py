@@ -16,58 +16,27 @@ from mcp.server.lowlevel import Server
     help="Transport type",
 )
 def main(port: int, transport: str) -> int:
-    print(f"Starting Calculator server..., port: {port}, protocol: {transport}")
-    app = Server("mcp-calculator")
+    print(f"Starting Search server..., port: {port}, protocol: {transport}")
+    app = Server("mcp-search")
+
+    # Load the news data from the jsonl file
+    news_data = []
+    with open('train_url_content.jsonl', 'r', encoding='utf-8') as f:
+        for line in f:
+            news_data.append(json.loads(line))
 
     @app.list_tools()
     async def list_tools() -> list[types.Tool]:
         return [
             types.Tool(
-                name="add",
-                description="Add two numbers",
+                name="search_news",
+                description="Search for news articles containing the keyword",
                 inputSchema={
                     "type": "object",
                     "properties": {
-                        "a": {"type": "number", "description": "First number"},
-                        "b": {"type": "number", "description": "Second number"},
+                        "keyword": {"type": "string", "description": "Keyword to search for"},
                     },
-                    "required": ["a", "b"],
-                },
-            ),
-            types.Tool(
-                name="subtract",
-                description="Subtract two numbers",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "a": {"type": "number", "description": "First number"},
-                        "b": {"type": "number", "description": "Second number"},
-                    },
-                    "required": ["a", "b"],
-                },
-            ),
-            types.Tool(
-                name="multiply",
-                description="Multiply two numbers",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "a": {"type": "number", "description": "First number"},
-                        "b": {"type": "number", "description": "Second number"},
-                    },
-                    "required": ["a", "b"],
-                },
-            ),
-            types.Tool(
-                name="divide",
-                description="Divide two numbers",
-                inputSchema={
-                    "type": "object",
-                    "properties": {
-                        "a": {"type": "number", "description": "Numerator"},
-                        "b": {"type": "number", "description": "Denominator"},
-                    },
-                    "required": ["a", "b"],
+                    "required": ["keyword"],
                 },
             ),
         ]
@@ -75,29 +44,19 @@ def main(port: int, transport: str) -> int:
     @app.call_tool()
     async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
         try:
-            a = arguments["a"]
-            b = arguments["b"]
-            result: float
-
-            if name == "add":
-                result = a + b
-            elif name == "subtract":
-                result = a - b
-            elif name == "multiply":
-                result = a * b
-            elif name == "divide":
-                if b == 0:
-                    raise ValueError("Cannot divide by zero")
-                result = a / b
+            if name == "search_news":
+                keyword = arguments["keyword"]
+                for article in news_data:
+                    if keyword in article["content"]:
+                        return [
+                            types.TextContent(
+                                type="text",
+                                text=f"Found news: {article['url']}\n\n{article['content']}",
+                            )
+                        ]
+                return [types.TextContent(type="text", text="No news found.")]
             else:
                 raise ValueError(f"Unknown tool: {name}")
-
-            return [
-                types.TextContent(
-                    type="text",
-                    text=str(result),
-                )
-            ]
 
         except Exception as e:
             return [types.TextContent(type="text", text=f"Error: {str(e)}")]

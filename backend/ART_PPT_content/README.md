@@ -12,4 +12,6 @@ python download_data.py
 数据集:
 [train_url_content.jsonl](train_url_content.jsonl)
 
+## 生成问题场景，覆盖现有场景
+
 ## MCP工具
