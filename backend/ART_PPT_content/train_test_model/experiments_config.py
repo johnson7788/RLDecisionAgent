@@ -41,7 +41,7 @@ models: dict = {
         name="ppt_agent_01",
         project="ppt_project_01",
         base_model="Qwen/Qwen2.5-0.5B-Instruct",
-        config=McpPolicyConfig(num_epochs=4),
+        config=McpPolicyConfig(num_epochs=2),
     ),
 
     "mcp-14b-001": art.TrainableModel(

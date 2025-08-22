@@ -11,7 +11,7 @@ import asyncio
 from dotenv import load_dotenv
 import art
 from art.local import LocalBackend
-from .rollout import McpScenario, rollout
+from rollout import McpScenario, rollout
 # 使用不同的mcp工具的配置
 from experiments_config import MCP_SERVERS
 
