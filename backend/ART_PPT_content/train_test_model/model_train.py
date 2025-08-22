@@ -71,7 +71,7 @@ async def train_mcp_agent(model: art.TrainableModel, use_skypilot: bool = False)
     try:
         print(f"[INFO] 尝试导入 MCP Server 配置: {mcp_server_name}")
         server_params_module = __import__(
-            f"servers.python.{mcp_server_name}.server_params",
+            f"{mcp_server_name}.server_params",
             fromlist=["server_params"],
         )
         server_params = server_params_module.server_params
