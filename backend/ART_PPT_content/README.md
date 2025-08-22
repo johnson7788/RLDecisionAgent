@@ -13,5 +13,6 @@ python download_data.py
 [train_url_content.jsonl](train_url_content.jsonl)
 
 ## 生成问题场景，覆盖现有场景
+python generate_questions.py
 
 ## MCP工具
