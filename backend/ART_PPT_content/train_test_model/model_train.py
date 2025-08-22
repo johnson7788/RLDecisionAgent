@@ -15,14 +15,8 @@ from art.utils import iterate_dataset
 
 from .benchmarks.generate_benchmarks import calculate_beat_comp, generate_val_groups
 from .rollout import McpScenario, rollout
-
+from .experiments_config import models
 load_dotenv()
-
-# Import models from all_experiments.py
-try:
-    from all_experiments import models
-except ImportError:
-    models = {}
 
 if os.getenv("WANDB_API_KEY"):
     print("Initializing Weave 和 Wandb")
