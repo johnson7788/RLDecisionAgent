@@ -38,7 +38,7 @@ load_dotenv()
 
 # --- 全局配置参数（可根据需要调整） ---
 MODEL_NAME = "001"                      # 可训练模型的标识（本地实验/版本号）
-BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct" # 用于推断/校验的基础指令模型
+BASE_MODEL = "Qwen/Qwen2.5-0.5B-Instruct" # 用于推断/校验的基础指令模型
 MAX_COMPLETION_LENGTH = 100             # 生成标题允许的最大 token 数（输出上限）
 # 预留输出 token 空间后，限制输入 token 的最大长度（防止总长度超上下文）
 MAX_PROMPT_LENGTH = 8192 - MAX_COMPLETION_LENGTH

@@ -3,7 +3,7 @@ import os
 from typing import Tuple
 
 import numpy as np
-# import wandb
+import wandb
 from datasets import Dataset
 from dotenv import load_dotenv
 from transformers import PreTrainedTokenizer
@@ -292,16 +292,16 @@ class ValidationCallback(TrainerCallback):
 
         # Log aggregate scores and metrics to W&B
         if scores:  # Check if scores list is not empty
-            # wandb.log(
-            #     {
-            #         "val/reward/mean": np.mean(scores),
-            #         "val/reward/p5": np.percentile(scores, 5),
-            #         "val/reward/median": np.percentile(scores, 50),
-            #         "val/reward/p95": np.percentile(scores, 95),
-            #         "val/reward/std_dev": np.std(scores),
-            #     },
-            #     step=state.global_step,
-            # )
+            wandb.log(
+                {
+                    "val/reward/mean": np.mean(scores),
+                    "val/reward/p5": np.percentile(scores, 5),
+                    "val/reward/median": np.percentile(scores, 50),
+                    "val/reward/p95": np.percentile(scores, 95),
+                    "val/reward/std_dev": np.std(scores),
+                },
+                step=state.global_step,
+            )
 
             # Aggregate and log metrics
             all_metrics: dict[str, list[float]] = {}
@@ -314,16 +314,16 @@ class ValidationCallback(TrainerCallback):
             for k, v_list in all_metrics.items():
                 if v_list:  # Check if list for metric is not empty
                     print(f"v_list: {v_list}")
-                    # wandb.log(
-                    #     {
-                    #         f"val/metrics/{k}/mean": np.mean(v_list),
-                    #         f"val/metrics/{k}/p5": np.percentile(v_list, 5),
-                    #         f"val/metrics/{k}/median": np.percentile(v_list, 50),
-                    #         f"val/metrics/{k}/p95": np.percentile(v_list, 95),
-                    #         f"val/metrics/{k}/std_dev": np.std(v_list),
-                    #     },
-                    #     step=state.global_step,
-                    # )
+                    wandb.log(
+                        {
+                            f"val/metrics/{k}/mean": np.mean(v_list),
+                            f"val/metrics/{k}/p5": np.percentile(v_list, 5),
+                            f"val/metrics/{k}/median": np.percentile(v_list, 50),
+                            f"val/metrics/{k}/p95": np.percentile(v_list, 95),
+                            f"val/metrics/{k}/std_dev": np.std(v_list),
+                        },
+                        step=state.global_step,
+                    )
         else:
             print("Warning: No validation scores generated.")
 
@@ -335,7 +335,7 @@ class ValidationCallback(TrainerCallback):
 
 
 print("Starting GRPO Reference Implementation Script")
-# wandb.init(project="hn_title_generation", name=RUN_NAME)
+wandb.init(project="hn_title_generation", name=RUN_NAME)
 
 # 3. Load Datasets (Train and Validation)
 print("Loading and preparing datasets...")
@@ -382,7 +382,7 @@ training_args = GRPOConfig(
     logging_steps=LOGGING_STEPS,
     save_steps=SAVE_STEPS,
     save_total_limit=2,  # Keep last 2 checkpoints
-    # report_to="wandb",
+    report_to="wandb",
     bf16=is_bfloat16_supported(),
     fp16=not is_bfloat16_supported(),
     gradient_checkpointing=True,  # Already enabled via get_peft_model 'unsloth' setting
