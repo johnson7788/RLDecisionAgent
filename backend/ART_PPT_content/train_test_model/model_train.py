@@ -188,8 +188,8 @@ def main():
     parser.add_argument(
         "--models",
         type=str,
-        required=True,
-        help="Model key to train from all_experiments.py (e.g. 001, 002, etc.). If not provided, uses default model.",
+        default="ppt_agent_01",
+        help="使用的训练模型的配置信息，从experiments_config中读取",
     )
     parser.add_argument(
         "--use-skypilot",
