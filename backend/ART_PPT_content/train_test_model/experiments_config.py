@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 import art
-
+from mcp_search.server_params import server_params as MCP_SERVER_PARAMS
 
 # 简单配置类
 class McpPolicyConfig(BaseModel):

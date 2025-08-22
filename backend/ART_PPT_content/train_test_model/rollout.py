@@ -15,7 +15,6 @@ from dotenv import load_dotenv
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from openai import AsyncOpenAI
-from servers.python.mcp_alphavantage.server_params import server_params
 
 import art
 
@@ -205,6 +204,7 @@ async def rollout(
 
 
 async def test_rollout():
+    from experiments_config import MCP_SERVER_PARAMS
     model = art.Model(
         name="o4-mini",
         project="mcp-agent-training",
@@ -215,7 +215,7 @@ async def test_rollout():
 
     scenario = McpScenario(
         task_description="Use search_symbol to find emerging biotech companies by searching with keywords 'biotech' and review the results.",
-        server_params=server_params,
+        server_params=MCP_SERVER_PARAMS,
     )
 
     traj = await rollout(model, scenario, debug=True)
