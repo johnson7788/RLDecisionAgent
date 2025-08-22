@@ -13,12 +13,14 @@ import art
 from art.local import LocalBackend
 from .rollout import McpScenario, rollout
 # 使用不同的mcp工具的配置
-from .mcp_caculator.server_params import server_params
+from experiments_config import MCP_SERVERS
 
 load_dotenv()
 
 MODEL_NAME = "ppt_agent_01"
 PROJECT_NAME = "ppt_project_01"
+mcp_configs = MCP_SERVERS["mcp_search"]
+server_params = mcp_configs["server_params"]
 
 async def main():
     model = art.TrainableModel(name=MODEL_NAME, project=PROJECT_NAME, base_model="Qwen/Qwen2.5-0.5B-Instruct")

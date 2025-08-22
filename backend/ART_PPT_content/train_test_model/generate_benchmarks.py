@@ -7,22 +7,11 @@ from typing import List
 
 # import weave
 from dotenv import load_dotenv
-from servers.python.mcp_alphavantage.server_params import (
-    server_params as alphavantage_server_params,
-)
-from servers.python.mcp_balldontlie.server_params import (
-    server_params as balldontlie_server_params,
-)
-
-from servers.python.mcp_caculator.server_params import (
-    server_params as mcp_caculator_server_params,
-)
-
 import art
 from art.local import LocalBackend
 from art.rewards.ruler import ruler_score_group
-
-from ..rollout import McpScenario, rollout
+from rollout import McpScenario, rollout
+from experiments_config import MCP_SERVERS
 
 load_dotenv()
 
@@ -140,19 +129,9 @@ async def log_comparison_model(
 
 async def run_benchmarks(server: str = "mcp_alphavantage"):
     print(f"正在为服务器运行基准测试: {server}")
-    if server == "mcp_alphavantage":
-        scenarios_path = "servers/python/mcp_alphavantage/scenarios/val.jsonl"
-        server_params = alphavantage_server_params
-    elif server == "mcp_balldontlie":
-        scenarios_path = "servers/python/mcp_balldontlie/scenarios/val.jsonl"
-        server_params = balldontlie_server_params
-    elif server == "mcp_caculator":
-        scenarios_path = "servers/python/mcp_caculator/scenarios/val.jsonl"
-        server_params = mcp_caculator_server_params
-    else:
-        raise ValueError(
-            f"不支持的服务器: {server}. 使用 'mcp_alphavantage' 或 'mcp_balldontlie'"
-        )
+    mcp_configs = MCP_SERVERS[server]
+    scenarios_path = mcp_configs["val_data"]
+    server_params = mcp_configs["server_params"]
 
     # weave.init(server)
     # print(f"使用项目初始化Weave: {server}")
@@ -253,9 +232,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="为MCP服务器生成基准测试")
     parser.add_argument(
         "--server",
-        choices=["mcp_alphavantage", "mcp_balldontlie","mcp_caculator"],
-        default="mcp_caculator",
-        help="要进行基准测试的MCP服务器 (默认: mcp_caculator)",
+        choices=["mcp_search", "mcp_balldontlie","mcp_caculator"],
+        default="mcp_search",
+        help="要进行基准测试的MCP服务器 (默认: mcp_search)",
     )
     args = parser.parse_args()
 

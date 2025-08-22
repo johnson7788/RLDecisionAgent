@@ -204,7 +204,9 @@ async def rollout(
 
 
 async def test_rollout():
-    from experiments_config import MCP_SERVER_PARAMS
+    from experiments_config import MCP_SERVERS
+    mcp_configs = MCP_SERVERS["mcp_search"]
+    server_params = mcp_configs["server_params"]
     model = art.Model(
         name="o4-mini",
         project="mcp-agent-training",
@@ -215,7 +217,7 @@ async def test_rollout():
 
     scenario = McpScenario(
         task_description="Use search_symbol to find emerging biotech companies by searching with keywords 'biotech' and review the results.",
-        server_params=MCP_SERVER_PARAMS,
+        server_params=server_params,
     )
 
     traj = await rollout(model, scenario, debug=True)

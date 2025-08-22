@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 import art
-from mcp_search.server_params import server_params as MCP_SERVER_PARAMS
+from mcp_search.server_params import server_params as search_server_params
 
 # 简单配置类
 class McpPolicyConfig(BaseModel):
@@ -11,6 +11,12 @@ class McpPolicyConfig(BaseModel):
     num_epochs: int = 4
     learning_rate: float = 1e-6
 
+MCP_SERVERS = {
+    "mcp_search": {
+        "server_params": search_server_params,
+        "val_data": "mcp_search/scenarios/val.jsonl"
+    }
+}
 
 # 定义模型集合
 models: dict = {

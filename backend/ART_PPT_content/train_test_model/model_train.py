@@ -13,7 +13,7 @@ import art
 from art.rewards import ruler_score_group
 from art.utils import iterate_dataset
 
-from benchmarks.generate_benchmarks import calculate_beat_comp, generate_val_groups
+from generate_benchmarks import calculate_beat_comp, generate_val_groups
 from rollout import McpScenario, rollout
 from experiments_config import models
 load_dotenv()
