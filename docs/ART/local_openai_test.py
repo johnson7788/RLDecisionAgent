@@ -26,7 +26,8 @@ def streaming_main():
 
 async def main():
     resp = await litellm.acompletion(
-        model="o4-mini",
+        model="o3-mini",
+        # model="o4-mini",
         messages=[{"role":"user","content":"Hello"}],
         base_url="http://localhost:6688",
         api_key=os.environ["OPENAI_API_KEY"]
