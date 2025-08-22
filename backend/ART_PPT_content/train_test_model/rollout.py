@@ -18,8 +18,8 @@ from openai import AsyncOpenAI
 
 import art
 
-from .checks import check_successful
-from .utils import get_content_text
+from checks import check_successful
+from utils import get_content_text
 
 load_dotenv()
 
