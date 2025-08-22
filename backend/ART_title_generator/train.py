@@ -7,12 +7,11 @@ HN 标题生成（Hacker News Title Generation）- 使用 ART 做强化学习微
 3) 使用校验器（基础模型）判定标题是否与正文一致（防止夸大/幻觉）
 4) 使用 RM（Reward Model）对标题打分
 5) 组合得到奖励并更新策略（可训练模型）
-6) 周期性评估与日志上报
+6) 周期性评估与日志上报（基于 ART 的日志与 checkpoint）
 
 依赖与环境：
-- 需要在项目根目录放置 .env 文件，其中至少包含 OPENPIPE_API_KEY；
-  若模型或数据加载需要 OPENAI_API_KEY / HF_TOKEN 等，也可在此声明。
-- 依赖的内部工具/库：art（训练框架）、utils（数据与缓存工具）、openpipe（日志/可观测性）。
+- 需要在项目根目录放置 .env 文件（如有 OPENAI_API_KEY / HF_TOKEN 等，可在此声明）。
+- 依赖的内部工具/库：art（训练框架）、utils（数据与缓存工具）。
 
 注意：
 - MAX_PROMPT_LENGTH + MAX_COMPLETION_LENGTH 不应超过基础模型的最大上下文长度。
@@ -20,15 +19,13 @@ HN 标题生成（Hacker News Title Generation）- 使用 ART 做强化学习微
 """
 
 import asyncio
-import os
-from datetime import datetime
+from datetime import datetime  # 可保留以备进一步自定义日志
 from typing import Any, Dict, Iterable, List
 
 import openai
 from datasets import Dataset
 from dotenv import load_dotenv
 from openai.types.chat import ChatCompletionMessageParam
-from openpipe import AsyncOpenPipe
 from transformers.models.auto.tokenization_auto import AutoTokenizer
 from utils import cache, prompt_for_title, pull_data, score_title
 
@@ -36,7 +33,7 @@ import art
 from art.local import LocalBackend
 from art.utils import iterate_dataset, limit_concurrency
 
-# 读取 .env 文件中的环境变量（例如 OPENPIPE_API_KEY / OPENAI_API_KEY / HF_TOKEN 等）
+# 读取 .env 文件中的环境变量（例如 OPENAI_API_KEY / HF_TOKEN 等）
 load_dotenv()
 
 # --- 全局配置参数（可根据需要调整） ---
@@ -50,7 +47,7 @@ GROUPS_PER_STEP = 1                      # 每个训练 step 采样的 group 数
 EVAL_STEPS = 50                          # 每隔多少个 step 做一次验证评估
 VAL_SET_SIZE = 100                       # 验证集大小
 TRAINING_DATASET_SIZE = 5000             # 训练集大小
-PROJECT = "hn_title_generation"         # 项目名（用于日志/可观测性归档）
+PROJECT = "hn_title_generation"         # 项目标识（ART 内部使用）
 NUM_EPOCHS = 1                           # 训练轮数（遍历数据的次数）
 NUM_GENERATIONS = 6                      # 单样本并行生成多少个标题（用于探索）
 
@@ -191,7 +188,6 @@ async def check_title_matches_body(client: openai.AsyncOpenAI, body: str, title:
 # --- rollout（单步采样与打分） ---
 async def rollout(
     client: openai.AsyncOpenAI,
-    op_client: AsyncOpenPipe,
     model_name: str,
     prompt: Iterable[ChatCompletionMessageParam],
     row: Dict[str, Any],
@@ -238,29 +234,8 @@ async def rollout(
     # Step 4: 组合奖励策略：若不匹配则零奖励，否则使用 RM 分数
     final_reward = 0.0 if title_matches == 0 else rm_score
 
-    # 记录 rollout 的请求与响应，用于审计与可观测性
+    # 打包为 ART 轨迹对象（仍保留 messages 与 choice 供训练/审计）
     messages_and_choices = [*prompt, choice]
-
-    await op_client.report(
-        requested_at=requested_at.timestamp(),
-        received_at=received_at.timestamp(),
-        req_payload={
-            "model": model_name,
-            "messages": prompt,
-            "metadata": {
-                "type": "art_rollout",
-                "split": row["split"],
-                "step": global_step,
-                "epoch": epoch,
-                "dataset_id": row["id"],
-                **metrics,
-            },
-        },
-        resp_payload=chat_completion,
-        status_code=200,
-    )
-
-    # 将上述信息包装为 ART 轨迹对象，供训练器使用
     trajectory = art.Trajectory(
         messages_and_choices=messages_and_choices,
         reward=final_reward,
@@ -284,9 +259,6 @@ async def main():
         ),
     )
     await model.register(backend)
-
-    # OpenPipe 客户端，用于汇报每次 rollout 的请求/响应，便于可视化与追踪
-    op_client = AsyncOpenPipe(api_key=os.getenv("OPENPIPE_API_KEY"))
 
     # 2) 加载训练/验证数据集（含过滤与 prompt 构造）
     print("Loading training data...")
@@ -325,7 +297,7 @@ async def main():
         train_groups = await art.gather_trajectory_groups(
             (
                 art.TrajectoryGroup(
-                    rollout(openai_client, op_client, MODEL_NAME, bi["prompt"], bi["row"], batch.step, batch.epoch)
+                    rollout(openai_client, MODEL_NAME, bi["prompt"], bi["row"], batch.step, batch.epoch)
                     for _ in range(NUM_GENERATIONS)
                 )
                 for bi in batch.items
@@ -351,12 +323,12 @@ async def main():
             print(f"\n--- Evaluating at Step {batch.step} ---")
             val_trajectories = await art.gather_trajectories(
                 (
-                    rollout(openai_client, op_client, MODEL_NAME, item["prompt"], item["row"], batch.step, batch.epoch)
+                    rollout(openai_client, MODEL_NAME, item["prompt"], item["row"], batch.step, batch.epoch)
                     for item in val_data_list
                 ),
                 pbar_desc="val",
             )
-            await model.log(val_trajectories)   # 将评估轨迹打点/可视化
+            await model.log(val_trajectories)   # 将评估轨迹打点/可视化（ART 内部）
             await model.delete_checkpoints()    # 清理旧的 checkpoint，节省磁盘
 
     print("Training finished.")

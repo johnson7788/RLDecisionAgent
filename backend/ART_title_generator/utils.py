@@ -192,7 +192,7 @@ def pull_data(
     返回：
         处理后的 Dataset 对象
     """
-    print(f"Loading dataset from HuggingFace (max {max_items} items)...")
+    print(f"从 HuggingFace 下载数据集hacker-news-scraped-stories-filtered (max {max_items} items)...")
     dataset: Dataset = load_dataset(
         "OpenPipe/hacker-news-scraped-stories-filtered", split=split
     )  # type: ignore
