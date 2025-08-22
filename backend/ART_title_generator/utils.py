@@ -30,7 +30,7 @@ from dotenv import load_dotenv
 from panza import SQLiteCache
 from pydantic import BaseModel, Field, field_serializer
 
-# 从 .env 文件加载环境变量，例如 REWARD_MODEL_URL
+# 从 .env 文件加载环境变量，例如OPENAI的key
 load_dotenv()
 
 # 缓存数据库文件路径（与当前文件同目录下）
@@ -142,7 +142,7 @@ async def score_title(
 
     参数:
         story_dict: 包含 title, by, time, scraped_body, url 的字典
-        _reward_model: 奖励模型标识/URL（此处未直接使用，保留作接口兼容）
+        _reward_model: 奖励模型标识/URL
 
     返回:
         奖励模型返回的分数（float）。若请求超时/异常，返回 0.0 作为默认值。

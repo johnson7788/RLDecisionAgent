@@ -115,3 +115,24 @@ utils.py
   * 更灵活，可以控制 rollout、reward 计算和日志上报。
   * 支持异步 API 调用，适合大规模分布式实验。
   * 训练逻辑由用户完全掌控，但实现更复杂。
+
+
+# Train.py的伪代码
+load train/val datasets → map(scraped_body → chat messages) → length filter
+init ART backend & TrainableModel (LoRA, grad clip, etc.)
+get start_step
+for each epoch/step batch:
+  for each item in batch:
+    generate NUM_GENERATIONS titles with trainable model (logprobs on)
+    for each title:
+      check match = validator(base_model) → True/False
+      rm = reward_model_score(HTTP)
+      reward = 0 if not match else rm
+      build trajectory(messages+choice, reward, metrics)
+    group trajectories per item
+  filter groups with ≥2 valid trajectories
+  if any:
+    model.train(groups, lr)
+  if step % EVAL_STEPS == 0:
+    val_trajectories = rollout on all val items
+    model.log(val_trajectories); model.delete_checkpoints()
