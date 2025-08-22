@@ -252,3 +252,119 @@ model.get_step()（src/art/model.py）是个 async 方法 → 调用后端的 ba
 并取其中最大的 <step> 作为当前 step（见 src/art/utils/get_model_step.py）。
 如果没有找到，则返回 0。注册后会有 0000 这个初始 checkpoint。
 之所以是 async，是因为也可能通过 REST 接口查询远端/本地服务（见 src/art/backend.py 与 src/art/cli.py）。
+
+
+#  FastLanguageModel 参数
+下面把你贴的 `FastLanguageModel.from_pretrained(...)` / `FastModel.from_pretrained(...)` 里常见参数逐个用中文说明，并给出“什么时候用/怎么选”的简要建议。括号里是默认值（来自你给的源码）。
+
+# FastLanguageModel.from\_pretrained(...)（纯文本/常见 LLM）
+
+* **model\_name** (`"unsloth/Llama-3.2-1B-Instruct"`): 要加载的模型或路径。既可指向基础模型，也可指向只含 LoRA 的仓库；如果检测到是 LoRA 适配器，会自动回溯并加载其 `base_model` 再套上适配器。
+  用法：传 HF Hub 名称或本地目录。若仓库包含 `adapter_config.json` 就视为 PEFT 适配器。([Hugging Face][1])
+* **max\_seq\_length** (`2048`): 生成/训练时支持的最大上下文长度（Unsloth 会据此创建/补丁缓存）。
+  经验：设为你准备训练/推理所需的最大值。
+* **dtype** (`None`): `torch.float16` / `torch.bfloat16`（或留空自动选 bfloat16 支持则用 bf16，否则 fp16）。
+  经验：A100/H100/4090 等优先 `bfloat16`；老显卡用 `float16`。Unsloth 文档也建议按硬件自动选择。([Unsloth 文档][2])
+* **load\_in\_4bit** (`True`): 是否以 **bitsandbytes 4-bit** 量化加载（QLoRA 常用，显存友好）。Unsloth 会把 `quantization_config`（NF4 + double quant）写进 `model.config`。
+  何时用：显存紧/准备做 QLoRA/LoRA；推理或微调都可。([Hugging Face][3])
+* **load\_in\_8bit** (`False`): 以 8-bit 量化加载（LLM.int8）。与 `load_in_4bit` 互斥。([Hugging Face][4])
+* **full\_finetuning** (`False`): 是否进行“全参微调”。若开了它，会强制关闭 4/8bit（源码里直接改为浮点权重训练）。
+  何时用：你真的要全参训练且显存够用。
+* **token** (`None`): Hugging Face 访问令牌，用于拉取私有模型/推送模型等。文档在保存/导出章节多次强调需设置 token。([Unsloth 文档][5])
+* **device\_map** (`"sequential"`): 模型分布到设备的方式。常见还有 `"auto"`, `"balanced"`, `"balanced_low_0"` 等（由 Accelerate 计算）。
+  何时用：单卡默认即可；多卡/大模型建议 `"auto"`。([Hugging Face][6])
+* **rope\_scaling** (`None`): RoPE 缩放配置（如扩上下文时的 YaRN/LLAMA3 方案，取决于底模支持）。
+  备注：是否支持由 transformers 版本/底模决定。([Hugging Face][7])
+* **fix\_tokenizer** (`True`): 针对部分本地权重，优先用同目录下的 tokenizer 三件套（防止被底模覆盖）。
+  何时用：本地自带 tokenizer（源码已做存在性检查）。
+* **trust\_remote\_code** (`False`): 允许执行模型仓库自定义代码（某些模型必需）。([Hugging Face][8])
+* **use\_gradient\_checkpointing** (`"unsloth"`): 启用 **Unsloth 定制的梯度检查点**，更省显存；文档/示例里称可显著降低 VRAM、适合长上下文训练。可设为 `True` 或 `"unsloth"`（推荐后者）。([Unsloth 文档][9])
+* **resize\_model\_vocab** (`None`): 需要时调整词表大小（会调用 `resize_token_embeddings`）。
+* **revision** (`None`): 指定 Hub 仓库的分支/tag/commit。([Hugging Face][8])
+* **use\_exact\_model\_name** (`False`): 关闭 Unsloth 的“名称重写/动态量化名”逻辑，按字面 `model_name` 加载（例如你已下载到本地时）。文档在“环境标志/疑难排解”里也展示过“强制精确名”的场景。([Unsloth 文档][10])
+* **fast\_inference** (`False`): 走 **vLLM** 推理路径（需 `pip install vllm`）；Unsloth 文档有专门的 vLLM 保存/部署页面。
+  何时用：部署推理服务、需要吞吐/并发更高。([Unsloth 文档][11])
+* **gpu\_memory\_utilization** (`0.5`): vLLM 显存利用率（仅 `fast_inference=True` 时有用）。
+* **float8\_kv\_cache** (`False`): KV-cache 用 float8 存储以省显存（更偏推理优化）。
+* **random\_state** (`3407`): 随机种子（用于训练/采样的可复现性）。
+* **max\_lora\_rank** (`64`): 给 LoRA 的 rank 上限（便于后续 `get_peft_model` 时做检查/优化，一般保默认即可）。
+* **disable\_log\_stats** (`True`): 关闭若干统计日志输出，减少噪声。
+
+> 返回值：`(model, tokenizer)`；官方“推理”页也用该二元组示例，并建议再调用 `FastLanguageModel.for_inference(model)` 以开启本地 2× 推理优化。([Unsloth 文档][12])
+
+---
+
+# FastModel.from\_pretrained(...)（更通用：含多模态/视觉）
+
+多数参数与上面一致，另有：
+
+* **return\_logits** (`False`): 为评测等场景直接返回 logits（也可用环境变量开关）。([Unsloth 文档][10])
+* **fullgraph** (`True`): 与 Unsloth 的 compile/图优化相关（控制是否允许图中断等，影响速度/稳定性）。
+* **auto\_model** (`None`): 自动选 `AutoModelForCausalLM`（文本）或 `AutoModelForVision2Seq`（VLM）；源码会根据 `architectures/vision_config` 判断是否是多模态。
+* **whisper\_language / whisper\_task**: 若加载 Whisper 系列，指定 ASR 语言/任务。
+* **unsloth\_force\_compile** (`False`): 强制编译（debug/性能调优用）。
+* 视觉/多模态相关的教程在“Vision Fine-tuning”和各模型专项页（Pixtral、Qwen2-VL、Llama 3.2 Vision 等）。([Unsloth 文档][13], [CSDN博客][14])
+
+---
+
+## 常见用法小抄
+
+```python
+# 1) QLoRA 微调（4-bit 省显存，推荐）
+from unsloth import FastLanguageModel
+model, tok = FastLanguageModel.from_pretrained(
+    model_name="unsloth/llama-3.1-8b-unsloth-bnb-4bit",
+    load_in_4bit=True, dtype=None, use_gradient_checkpointing="unsloth"
+)
+# 接着：FastLanguageModel.get_peft_model(...) 开 LoRA
+```
+
+（QLoRA + 4bit 的背景与优点详见 HF 官方量化与 PEFT 文档。）([Hugging Face][15])
+
+```python
+# 2) 全参微调（需要大显存）
+model, tok = FastLanguageModel.from_pretrained(
+    model_name="meta-llama/Llama-3.1-8B",
+    full_finetuning=True, load_in_4bit=False, load_in_8bit=False,
+    dtype=torch.bfloat16, device_map="auto"
+)
+```
+
+（`device_map="auto"` 由 Accelerate 自动做“大模型切分”以适配多卡/单机显存。）([Hugging Face][6])
+
+```python
+# 3) vLLM 快速推理
+model, tok = FastLanguageModel.from_pretrained(
+    "unsloth/Llama-3.1-8B-Instruct-bnb-4bit",
+    fast_inference=True, gpu_memory_utilization=0.8
+)
+```
+
+（Unsloth 支持与 vLLM 的保存/部署联动。）([Unsloth 文档][11])
+
+---
+
+## 重要行为/坑点（来自源码）
+
+* **LoRA 适配器与基座不能同仓**：若同一目录同时存在 `config.json` 和 `adapter_config.json`，函数会报错，要求分仓（一个放基座，一个放 LoRA）。这是为了避免“到底加载谁”的二义性。
+* **自动量化配置**：`load_in_4bit=True` 时，函数会把 `nf4 + double quant` 等写入 `model.config.quantization_config`，便于后续在 transformers 框架下正确识别量化状态。相关量化原理参见 HF 官方文档。([Hugging Face][3])
+* **Unsloth 梯度检查点**：`"unsloth"` 方案更省显存、适合长上下文任务；官方示例在 RL/DPO 教程里也默认这么设。([Unsloth 文档][9])
+* **token 登录**：私有模型/推送到 Hub 时需要 HF token。([Unsloth 文档][5])
+
+如果你给我你现在的**显卡型号/显存**和**目的（微调/推理/多模态？）**，我可以把上面的小抄进一步改成“可直接跑”的最小脚本。
+
+[1]: https://huggingface.co/docs/peft/v0.10.0/en/package_reference/peft_model?utm_source=chatgpt.com "Models - Hugging Face"
+[2]: https://docs.unsloth.ai/get-started/fine-tuning-llms-guide?utm_source=chatgpt.com "Fine-tuning LLMs Guide | Unsloth Documentation"
+[3]: https://huggingface.co/docs/transformers/main/en/quantization/bitsandbytes?utm_source=chatgpt.com "Bitsandbytes"
+[4]: https://huggingface.co/docs/transformers/v4.27.0/main_classes/quantization?utm_source=chatgpt.com "Quantize Transformers models - Hugging Face"
+[5]: https://docs.unsloth.ai/basics/running-and-saving-models/saving-to-ollama?utm_source=chatgpt.com "Saving to Ollama | Unsloth Documentation"
+[6]: https://huggingface.co/docs/accelerate/usage_guides/big_modeling?utm_source=chatgpt.com "Big Model Inference - Hugging Face"
+[7]: https://huggingface.co/docs/transformers/main/index?utm_source=chatgpt.com "Transformers - Hugging Face"
+[8]: https://huggingface.co/docs/transformers/main_classes/model?utm_source=chatgpt.com "Models - Hugging Face"
+[9]: https://docs.unsloth.ai/basics/reinforcement-learning-rl-guide/reinforcement-learning-dpo-orpo-and-kto?utm_source=chatgpt.com "Reinforcement Learning - DPO, ORPO & KTO - Unsloth"
+[10]: https://docs.unsloth.ai/basics/troubleshooting-and-faqs/unsloth-environment-flags?utm_source=chatgpt.com "Unsloth Environment Flags | Unsloth Documentation"
+[11]: https://docs.unsloth.ai/basics/running-and-saving-models/saving-to-vllm?utm_source=chatgpt.com "Saving to VLLM | Unsloth Documentation"
+[12]: https://docs.unsloth.ai/basics/running-and-saving-models/inference "Inference | Unsloth Documentation"
+[13]: https://docs.unsloth.ai/basics/vision-fine-tuning?utm_source=chatgpt.com "Vision Fine-tuning | Unsloth Documentation"
+[14]: https://blog.csdn.net/raozhongbo/article/details/149329645?utm_source=chatgpt.com "使用unsloth模型微调过程_unsloth微调全流程-CSDN博客"
+[15]: https://huggingface.co/docs/transformers/v4.48.0/en/quantization/bitsandbytes?utm_source=chatgpt.com "bitsandbytes"
