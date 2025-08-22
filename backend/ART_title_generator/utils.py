@@ -132,6 +132,8 @@ REWARD_MODEL_URL = os.getenv(
     "REWARD_MODEL_URL", "https://openpipe-dev--hn-title-rm-serve-rm.modal.run/score"
 )
 
+print(f"使用的奖励模型服务 URL: {REWARD_MODEL_URL}")
+
 
 @cache.cache()  # 使用 SQLite 缓存函数输出，避免对同一输入重复请求远端服务
 async def score_title(
