@@ -201,7 +201,7 @@ async def run_benchmarks(server: str = "mcp_alphavantage"):
         McpScenario(
             task_description=scenario["task"],
             server_params=server_params,
-            max_turns=5,
+            max_turns=2,
         )
         for scenario in raw_val_scenarios
     ]
@@ -220,7 +220,7 @@ async def run_benchmarks(server: str = "mcp_alphavantage"):
     print("正在使用gpt-4.1生成控制组")
     control_groups = await generate_val_groups(doubao_chat, val_scenarios)
 
-    models = [deepseek_chat]
+    models = [gpt_4o_mini]
     for i, comparison_model in enumerate(models):
         print(f"正在处理模型 {i+1}/{len(models)}: {comparison_model.name}")
         await log_comparison_model(comparison_model, val_scenarios, control_groups)

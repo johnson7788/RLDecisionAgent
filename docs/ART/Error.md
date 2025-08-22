@@ -702,3 +702,26 @@ uant_storage': 'uint8', 'bnb_4bit_quant_type': 'nf4', 'bnb_4bit_use_double_quant
   File "/usr/local/lib/python3.10/dist-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 474, in exception_type
     raise APIError(
 litellm.exceptions.APIError: litellm.APIError: APIError: OpenAIException - 'str' object has no attribute 'model_dump'
+
+
+# 在使用模型前必须先注册，例如await gpt_4o_mini.register(backend)
+Traceback (most recent call last):
+  File "/workspace/verl/backend/ART_PPT_content/train_test_model/generate_benchmarks.py", line 242, in <module>
+    asyncio.run(run_benchmarks(args.server))
+  File "/usr/local/lib/python3.10/dist-packages/nest_asyncio.py", line 30, in run
+    return loop.run_until_complete(task)
+  File "/usr/local/lib/python3.10/dist-packages/nest_asyncio.py", line 98, in run_until_complete
+    return f.result()
+  File "/usr/lib/python3.10/asyncio/futures.py", line 201, in result
+    raise self._exception.with_traceback(self._exception_tb)
+  File "/usr/lib/python3.10/asyncio/tasks.py", line 232, in __step
+    result = coro.send(None)
+  File "/workspace/verl/backend/ART_PPT_content/train_test_model/generate_benchmarks.py", line 226, in run_benchmarks
+    await log_comparison_model(comparison_model, val_scenarios, control_groups)
+  File "/workspace/verl/backend/ART_PPT_content/train_test_model/generate_benchmarks.py", line 117, in log_comparison_model
+    await comparison_model.log(
+  File "/workspace/verl/ART/src/art/model.py", line 224, in log
+    await self.backend()._log(
+  File "/workspace/verl/ART/src/art/model.py", line 131, in backend
+    raise ValueError(
+ValueError: Model is not registered with the Backend. You must call `model.register()` first.
