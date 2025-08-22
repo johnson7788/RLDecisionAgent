@@ -20,4 +20,9 @@ python data_convert.py
 [scenarios.jsonl](scenarios.jsonl)
 
 
-## MCP工具
+## MCP工具准备，搜索工具
+[mcp_search](mcp_search)
+
+
+## 训练模型
+[train_test_model](train_test_model)

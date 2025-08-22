@@ -1,0 +1,39 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Date  : 2025/8/19 16:49
+# @File  : mcp_rl_test.md.py
+# @Author: johnson
+# @Contact : github: johnson7788
+# @Desc  : 测试模型的训练效果
+
+# test_mcp_rl.py
+import asyncio
+from dotenv import load_dotenv
+import art
+from art.local import LocalBackend
+
+from mcp_rl.rollout import McpScenario, rollout
+# 使用不同的mcp工具的配置
+from servers.python.mcp_caculator.server_params import server_params
+
+load_dotenv()
+
+MODEL_NAME = "mcp-14b-alpha-001"
+PROJECT_NAME = "mcp_alphavantage"
+
+async def main():
+    model = art.TrainableModel(name=MODEL_NAME, project=PROJECT_NAME, base_model="Qwen/Qwen2.5-0.5B-Instruct")
+    backend = LocalBackend(in_process=True)
+    await model.register(backend)
+
+    #准备的测试数据，准备了2条
+    raw_val_scenarios = [{"task": "Calculate (10 - 9) * 3."},  {"task": "Calculate 400 / (10 + 10)."}]
+    val_scenarios = [McpScenario(task_description=s["task"], server_params=server_params) for s in raw_val_scenarios]
+
+    for i, scenario in enumerate(val_scenarios):
+        print(f"\n测试： {i+1}: {scenario.task_description}")
+        result = await rollout(model, scenario)
+        print("模型输出:", result.messages()[-1]["content"] if result.messages() else "No response")
+
+if __name__ == "__main__":
+    asyncio.run(main())
