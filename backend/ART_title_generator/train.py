@@ -59,13 +59,13 @@ def filter_on_length(data: Dataset, max_length: int, tokenizer_name: str) -> Dat
     - 使用给定 tokenizer（与 BASE_MODEL 对齐）将聊天消息模板化并 tokenization。
     - 若某条数据无法成功 tokenization，或长度超限，则丢弃。
     """
-    print(f"Filtering dataset for max prompt length: {max_length} using tokenizer: {tokenizer_name}")
+    print(f"按最大 Prompt 长度过滤数据：{max_length}（分词器：{tokenizer_name}）")
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
 
     def check_length(x):
         # 期望 prompt 为消息列表（[{role, content}, ...]），否则跳过
         if not isinstance(x.get("prompt"), list):
-            print(f"Warning: Skipping row with invalid prompt format: {x}")
+            print(f"警告：跳过一条无效的 prompt 格式数据：{x}")
             return False
         try:
             # 使用 chat 模板计算 token 数，add_generation_prompt=True 表示补齐 assistant 起始标记
@@ -77,19 +77,19 @@ def filter_on_length(data: Dataset, max_length: int, tokenizer_name: str) -> Dat
             return tokenized_len <= max_length
         except Exception as e:
             # 遇到异常（例如非法字符/格式），保守丢弃该样本
-            print(f"Warning: Error tokenizing prompt, skipping row. Error: {e}, Prompt: {x['prompt']}")
+            print(f"警告：对 prompt 分词失败，已跳过。错误：{e}，Prompt：{x['prompt']}")
             return False
 
     len_before = len(data)
     data = data.filter(check_length)
     len_after = len(data)
-    print(f"Samples before length filtering: {len_before}, samples after: {len_after}")
+    print(f"长度过滤前样本数：{len_before}，过滤后：{len_after}")
 
     # 提示过滤比例，防止误设阈值导致样本被过度丢弃
     if len_after == 0 and len_before > 0:
-        print("Warning: All samples were filtered out. Check MAX_PROMPT_LENGTH and tokenizer.")
+        print("警告：所有样本均被过滤。请检查 MAX_PROMPT_LENGTH 与分词器设置。")
     elif len_after < len_before * 0.5:
-        print(f"Warning: More than 50% of samples filtered out ({len_before - len_after} samples).")
+        print(f"警告：超过 50% 的样本被过滤（{len_before - len_after} 条）。")
     return data
 
 
@@ -112,7 +112,7 @@ async def load_data(
     - 使用 @cache.cache() 装饰器缓存函数结果，避免重复拉取与处理，同参数下二次调用会复用。
     - min_score 可用于下游数据选择（由 pull_data 内部决定如何应用）。
     """
-    print(f"Loading data for split: {split}, max_items: {max_items}, tokenizer: {tokenizer_name}")
+    print(f"加载数据：split={split}，max_items={max_items}，tokenizer={tokenizer_name}")
     data = pull_data(split=split, max_items=max_items, min_score=min_score)
     if not data:
         raise ValueError(f"No data loaded for split {split}. Check pull_data function.")
@@ -174,14 +174,14 @@ async def check_title_matches_body(client: openai.AsyncOpenAI, body: str, title:
                 return 0
             else:
                 # 未按预期返回 True/False，保守视为不匹配
-                print(f"Warning: Unexpected validation response: '{content}'. Defaulting to mismatch (0).")
+                print(f"警告：校验返回了非预期结果：'{content}'。默认判为不匹配（0）。")
                 return 0
         else:
-            print("Warning: Empty validation response. Defaulting to mismatch (0).")
+            print("警告：校验返回为空。默认判为不匹配（0）。")
             return 0
     except Exception as e:
         # 校验失败时不阻断训练流程，返回不匹配，避免奖励错误扩大
-        print(f"Error during title validation API call: {e}. Defaulting to mismatch (0).")
+        print(f"错误：标题一致性校验 API 调用失败：{e}。默认判为不匹配（0）。")
         return 0
 
 
@@ -217,7 +217,7 @@ async def rollout(
     generated_title = choice.message.content
     if not generated_title:
         # 极端情况下返回空，避免后续抛异常
-        print("Warning: Empty title generated.")
+        print("警告：生成的标题为空。")
         generated_title = ""
 
     metrics["length"] = len(generated_title)  # 记录长度以便分析
@@ -261,9 +261,9 @@ async def main():
     await model.register(backend)
 
     # 2) 加载训练/验证数据集（含过滤与 prompt 构造）
-    print("Loading training data...")
+    print("正在加载训练集...")
     train_dataset = await load_data("train", TRAINING_DATASET_SIZE, MAX_PROMPT_LENGTH, BASE_MODEL)
-    print("Loading validation data...")
+    print("正在加载验证集...")
     val_dataset = await load_data("val", VAL_SET_SIZE, MAX_PROMPT_LENGTH, BASE_MODEL)
 
     if not train_dataset or not val_dataset:
@@ -273,15 +273,15 @@ async def main():
     val_data_list: List[Dict[str, Any]] = list(val_dataset)
     train_data_list: List[Dict[str, Any]] = list(train_dataset)
 
-    print(f"Training data size: {len(train_data_list)}")
-    print(f"Validation data size: {len(val_data_list)}")
+    print(f"训练集样本数：{len(train_data_list)}")
+    print(f"验证集样本数：{len(val_data_list)}")
 
     # 从 TrainableModel 获取与之绑定的 OpenAI 兼容客户端
     openai_client = model.openai_client()
 
     # 3) 训练循环入口：从上次中断的 step 继续
     start_step = await model.get_step()
-    print(f"Starting training from global step {start_step}")
+    print(f"从全局 step {start_step} 开始训练")
 
     # iterate_dataset 会按 epoch/group 切分数据，并提供进度条
     data_iterator = iterate_dataset(
@@ -312,7 +312,7 @@ async def main():
                 valid_train_groups.append(valid_group)
 
         if not valid_train_groups:
-            print(f"Warning: No valid trajectories generated for step {batch.step}. Skipping tune step.")
+            print(f"警告：第 {batch.step} 步未生成有效轨迹，跳过参数更新。")
             continue
 
         # 6) 用有效轨迹更新模型参数（策略改进）
@@ -320,7 +320,7 @@ async def main():
 
         # 7) 周期性评估：对验证集逐条 rollout，并记录日志与清理旧 checkpoint
         if batch.step > 0 and batch.step % EVAL_STEPS == 0:
-            print(f"\n--- Evaluating at Step {batch.step} ---")
+            print(f"\n--- 在第 {batch.step} 步进行评估 ---")
             val_trajectories = await art.gather_trajectories(
                 (
                     rollout(openai_client, MODEL_NAME, item["prompt"], item["row"], batch.step, batch.epoch)
@@ -331,7 +331,7 @@ async def main():
             await model.log(val_trajectories)   # 将评估轨迹打点/可视化（ART 内部）
             await model.delete_checkpoints()    # 清理旧的 checkpoint，节省磁盘
 
-    print("Training finished.")
+    print("训练完成。")
 
 
 if __name__ == "__main__":
