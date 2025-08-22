@@ -20,6 +20,7 @@ import art
 
 from checks import check_successful
 from utils import get_content_text
+from prompt import rollout_system_prompt
 
 load_dotenv()
 
@@ -60,12 +61,7 @@ async def rollout(
         scenario=scenario,
     )
 
-    system_prompt = (
-        f"You are an MCP (Model Context Protocol) agent.\n"
-        f"You have access to MCP tools through the server. Use them to complete your task.\n"
-        f"You have a total of {scenario.max_turns} turns. Only use tool calls.\n"
-        f"Call 'complete_task' when finished."
-    )
+    system_prompt = rollout_system_prompt.format(max_turns=scenario.max_turns)
 
     try:
         print(f"[INFO] 连接 MCP 服务器...")

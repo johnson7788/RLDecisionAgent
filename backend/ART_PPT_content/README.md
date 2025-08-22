@@ -25,5 +25,11 @@ python data_convert.py
 
 
 ## 训练模型
+
+## 修改prompt
+[prompt.py](train_test_model%2Fprompt.py)
+
+## 训练模型
 [train_test_model](train_test_model)
 python -m train_test_model.model_train
+
