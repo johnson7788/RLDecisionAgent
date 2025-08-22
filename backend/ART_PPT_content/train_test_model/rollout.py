@@ -20,7 +20,7 @@ import art
 
 from checks import check_successful
 from utils import get_content_text
-from prompt import rollout_system_prompt
+from prompt import rollout_system_prompt,rollout_system_prompt_prefix
 
 load_dotenv()
 
@@ -62,6 +62,7 @@ async def rollout(
     )
 
     system_prompt = rollout_system_prompt.format(max_turns=scenario.max_turns)
+    system_prompt = rollout_system_prompt_prefix + system_prompt
 
     try:
         print(f"[INFO] 连接 MCP 服务器...")

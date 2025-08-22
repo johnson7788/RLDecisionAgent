@@ -49,14 +49,16 @@ def main(port: int, transport: str) -> int:
         try:
             if name == "search_news":
                 keyword = arguments["keyword"]
+                keyword_split = keyword.split()
                 for article in news_data:
-                    if keyword in article["content"]:
-                        return [
-                            types.TextContent(
-                                type="text",
-                                text=f"Found news: {article['url']}\n\n{article['content']}",
-                            )
-                        ]
+                    for word in keyword_split:
+                        if word in article["content"]:
+                            return [
+                                types.TextContent(
+                                    type="text",
+                                    text=f"Found news: {article['url']}\n\n{article['content']}",
+                                )
+                            ]
                 return [types.TextContent(type="text", text="No news found.")]
             else:
                 raise ValueError(f"Unknown tool: {name}")

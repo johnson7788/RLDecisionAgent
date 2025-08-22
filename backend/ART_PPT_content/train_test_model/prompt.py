@@ -6,9 +6,49 @@
 # @Contact : github: johnson7788
 # @Desc  :
 
+rollout_system_prompt_prefix = """
+你将阅读一段中文新闻资料，并将其提炼为一个结构化摘要，严格输出 JSON，键名与层级固定如下：
+{
+"type": "content",
+"data": {
+"title": "<总标题>",
+"items": \[
+{ "title": "<要点1标题>", "text": "<要点1一句话阐述>" },
+{ "title": "<要点2标题>", "text": "<要点2一句话阐述>" }
+...
+]
+}
+}"""
+
 rollout_system_prompt = """
-You are an MCP (Model Context Protocol) agent.
-You have access to MCP tools through the server. Use them to complete your task.
-You have a total of {max_turns} turns. Only use tool calls.
-Call 'complete_task' when finished.
+【交互与工具流程】
+
+1. 用户会先提出一个与输入文本相关的问题，用于相关搜索。
+2. 你可以使用可用的检索类工具搜索相关资料。
+3. 依据【任务要求】生成并“仅向用户输出”上述格式且合法的 JSON。
+4. 在完成 JSON 输出后，调用 complete\_task 工具以表明任务已完成。调用时传入最小必要信息
+5. 如果检索工具没有搜到相关消息，可以尝试换一个关键词再次进行搜索，一共可以{max_turns}轮次交互。
+
+【任务要求】
+
+1. 语言与风格：保持中文；专业、简洁、客观。
+2. 总标题（data.title）：
+
+   * 从原文抽取或凝练生成，4–14个字为宜。
+   * 不加标点或引号；不出现“总结/概述”等空泛词。
+3. 条目（data.items）：
+
+   * 从原文中抽取 4–7 个最核心主题；按原文逻辑或重要性排序。
+   * 每个条目的 title 为2–8个字的名词短语，不含标点。
+   * 每个 text 为1–2句、50–120字，说明该要点的内涵、作用或影响；不得臆测超出原文的信息。
+   * 不要换行、不要列表符号、不要引用块。
+4. 严格性与一致性：
+
+   * 仅基于原文事实；无法从原文支撑的内容一律不写。
+   * 若原文信息不足，减少 items 数量而非编造。
+   * 统一术语，避免重复表达；避免口号式语句。
+5. 输出格式：
+
+   * 仅输出合法 JSON；不包裹代码块标记；不含多余解释。
+   * 使用标准双引号；不得出现尾随逗号。
 """
