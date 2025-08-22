@@ -82,18 +82,17 @@ def call_llm(client: OpenAI, model: str, content: str, max_retries: int = 3, tem
 
 def process_file(input_path: str, output_path: str, model: str):
     client = build_client()
-
     total, success, failed = 0, 0, 0
 
     # 若输出文件已存在，支持在其后追加（也可自行改为覆盖）
     out_f = open(output_path, "a", encoding="utf-8")
-
     try:
         with open(input_path, "r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
                 if not line:
                     continue
+                print(f"正在处理第 {total} 条数据")
                 total += 1
                 try:
                     item = json.loads(line)
