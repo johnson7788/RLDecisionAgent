@@ -682,3 +682,23 @@ uant_storage': 'uint8', 'bnb_4bit_quant_type': 'nf4', 'bnb_4bit_use_double_quant
 [rank0]:     raise RuntimeError(error)
 [rank0]: RuntimeError: Sleep mode can only be used for one instance per process.
 [rank0]:[W821 20:01:54.081613048 ProcessGroupNCCL.cpp:1496] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+
+
+#
+  File "/workspace/verl/backend/ART_PPT_content/train_test_model/generate_benchmarks.py", line 64, in score_group
+    scored_group = await ruler_score_group(
+  File "/workspace/verl/ART/src/art/rewards/ruler.py", line 256, in ruler_score_group
+    scores = await ruler(
+  File "/workspace/verl/ART/src/art/rewards/ruler.py", line 152, in ruler
+    response = await acompletion(
+  File "/usr/local/lib/python3.10/dist-packages/litellm/utils.py", line 1492, in wrapper_async
+    raise e
+  File "/usr/local/lib/python3.10/dist-packages/litellm/utils.py", line 1353, in wrapper_async
+    result = await original_function(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/litellm/main.py", line 531, in acompletion
+    raise exception_type(
+  File "/usr/local/lib/python3.10/dist-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 2239, in exception_type
+    raise e
+  File "/usr/local/lib/python3.10/dist-packages/litellm/litellm_core_utils/exception_mapping_utils.py", line 474, in exception_type
+    raise APIError(
+litellm.exceptions.APIError: litellm.APIError: APIError: OpenAIException - 'str' object has no attribute 'model_dump'
