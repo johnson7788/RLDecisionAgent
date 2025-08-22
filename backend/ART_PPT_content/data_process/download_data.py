@@ -30,8 +30,8 @@ else:
 df = df[["url", "content"]]
 
 # 导出为 JSONL（utf-8，不转义中文）
-df.to_json("./mcp_search/train_url_content.jsonl", orient="records", lines=True, force_ascii=False)
+df.to_json("./train_url_content.jsonl", orient="records", lines=True, force_ascii=False)
 
-print("已导出到 ./mcp_search/train_url_content.jsonl")
+print("已导出到 ./train_url_content.jsonl")
 
 

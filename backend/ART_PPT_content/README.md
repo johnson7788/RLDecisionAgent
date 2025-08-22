@@ -1,6 +1,6 @@
 # 使用强化学习训练模型生成PPT的内容
 
-## 数据集
+## 数据集[data_process](data_process)目录
 使用中文新闻数据DavideTHU/chinese_news_dataset
 包含3个字段，100条训练数据，url和output有用，instruction无用
 {'url': 'https://www.toutiao.com/article/7360031367012385318', 
@@ -14,12 +14,10 @@ python download_data.py
 
 ## 生成问题场景，覆盖现有场景
 python generate_questions.py
-cd scenarios
 python data_convert.py
 输出文件,训练数据和测试数据
-[questions.jsonl](mcp_search%2Fquestions.jsonl)
-[scenarios.jsonl](mcp_search%2Fscenarios.jsonl)
-[scenarios](mcp_search%2Fscenarios)
+[questions.jsonl](questions.jsonl)
+[scenarios.jsonl](scenarios.jsonl)
 
 
 ## MCP工具

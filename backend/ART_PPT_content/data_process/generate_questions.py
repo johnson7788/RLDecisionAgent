@@ -126,7 +126,7 @@ def process_file(input_path: str, output_path: str, model: str):
 def parse_args():
     parser = argparse.ArgumentParser(description="从 train.jsonl 生成一句话总结与问句")
     parser.add_argument("--in", dest="input_path", default="train_url_content.jsonl", help="输入 JSONL 文件路径")
-    parser.add_argument("--out", dest="output_path", default="./mcp/search/questions.jsonl", help="输出 JSONL 文件路径")
+    parser.add_argument("--out", dest="output_path", default="questions.jsonl", help="输出 JSONL 文件路径")
     parser.add_argument("--model", dest="model", default="qwen-plus", help="模型名称（如 qwen-plus / qwen-turbo 等）")
     return parser.parse_args()
 
