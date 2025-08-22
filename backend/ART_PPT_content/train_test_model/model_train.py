@@ -76,7 +76,7 @@ async def train_mcp_agent(model: art.TrainableModel, use_skypilot: bool = False)
         )
 
     # Load pre-split scenarios from scenarios directory
-    scenarios_dir = f"servers/python/{mcp_server_name}/scenarios"
+    scenarios_dir = f"{mcp_server_name}/scenarios"
     print(f"[INFO] 加载训练和验证场景文件 from {scenarios_dir}")
 
     with open(f"{scenarios_dir}/train.jsonl") as f:

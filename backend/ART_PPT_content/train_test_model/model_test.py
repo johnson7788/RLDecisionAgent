@@ -11,15 +11,14 @@ import asyncio
 from dotenv import load_dotenv
 import art
 from art.local import LocalBackend
-
-from mcp_rl.rollout import McpScenario, rollout
+from .rollout import McpScenario, rollout
 # 使用不同的mcp工具的配置
-from servers.python.mcp_caculator.server_params import server_params
+from .mcp_caculator.server_params import server_params
 
 load_dotenv()
 
-MODEL_NAME = "mcp-14b-alpha-001"
-PROJECT_NAME = "mcp_alphavantage"
+MODEL_NAME = "ppt_agent_01"
+PROJECT_NAME = "ppt_project_01"
 
 async def main():
     model = art.TrainableModel(name=MODEL_NAME, project=PROJECT_NAME, base_model="Qwen/Qwen2.5-0.5B-Instruct")
@@ -27,7 +26,7 @@ async def main():
     await model.register(backend)
 
     #准备的测试数据，准备了2条
-    raw_val_scenarios = [{"task": "Calculate (10 - 9) * 3."},  {"task": "Calculate 400 / (10 + 10)."}]
+    raw_val_scenarios = [{"task": "中国情趣用品市场经历了怎样的发展与观念变迁？"},  {"task": "一群退休大爷如何在大棚中追求爱情与体现自我价值？"}]
     val_scenarios = [McpScenario(task_description=s["task"], server_params=server_params) for s in raw_val_scenarios]
 
     for i, scenario in enumerate(val_scenarios):

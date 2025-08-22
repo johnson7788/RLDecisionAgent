@@ -26,3 +26,4 @@ python data_convert.py
 
 ## 训练模型
 [train_test_model](train_test_model)
+python -m train_test_model.model_train

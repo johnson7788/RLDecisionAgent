@@ -16,7 +16,7 @@ class McpPolicyConfig(BaseModel):
 models: dict = {
     "ppt_agent_01": art.TrainableModel(
         name="ppt_agent_01",
-        project="mcp-agent-training",
+        project="ppt_project_01",
         base_model="Qwen/Qwen2.5-0.5B-Instruct",
         config=McpPolicyConfig(num_epochs=4),
     ),
