@@ -1,7 +1,7 @@
 import asyncio
 import json
 from typing import Any, Dict
-
+from pathlib import Path
 import click
 import mcp.types as types
 from mcp.server.lowlevel import Server
@@ -20,8 +20,11 @@ def main(port: int, transport: str) -> int:
     app = Server("mcp-search")
 
     # Load the news data from the jsonl file
+    # 计算与当前脚本同目录的 JSONL 路径
+    script_dir = Path(__file__).resolve().parent
+    jsonl_path = script_dir / "train_url_content.jsonl"
     news_data = []
-    with open('train_url_content.jsonl', 'r', encoding='utf-8') as f:
+    with open(jsonl_path, 'r', encoding='utf-8') as f:
         for line in f:
             news_data.append(json.loads(line))
 
