@@ -1,4 +1,5 @@
 # 标题生成的训练任务， 对比不同的训练方法
+给hacker news生成新闻标题。
 
 ## 使用trl框架训练GRPO
 [reference_grpo_trainer.py](reference_grpo_trainer.py)
@@ -152,6 +153,8 @@ REWARD_MODEL_URL=http://127.0.0.1:7000/score
 python check_dataset.py
 
 5. 启动训练
+export CUDA_VISIBLE_DEVICES=1
+export HF_ENDPOINT=https://hf-mirror.com
 python train.py
 
 6. 进行测试

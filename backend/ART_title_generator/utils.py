@@ -17,7 +17,7 @@
 注意：
 - 代码中对 `cache_db_path` / `cache` 有一次重复定义，如非必要可以保留一次即可。
 """
-
+import subprocess
 import math
 import os
 from datetime import datetime
@@ -134,6 +134,37 @@ REWARD_MODEL_URL = os.getenv(
 
 print(f"使用的奖励模型服务 URL: {REWARD_MODEL_URL}")
 
+def check_url(url):
+    """
+    使用 curl 测试 URL 是否联通
+    """
+    print(f"正在测试 URL: {url}")
+    try:
+        # 使用 -sL 参数进行静默跟随重定向
+        result = subprocess.run(
+            ["curl", "-sL", "-o", "/dev/null", "-w", "%{http_code}", url],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        http_code = result.stdout.strip()
+        print(f"URL {url} 返回的 HTTP 状态码是: {http_code}")
+
+        if http_code.startswith('2') or http_code.startswith('3') or http_code.startswith('4'):
+            print("✅ 成功：URL 联通且返回了有效的 HTTP 状态码。")
+            return True
+        else:
+            print(f"❌ 失败：URL 联通，但返回了非成功的 HTTP 状态码: {http_code}")
+            return False
+    except subprocess.CalledProcessError as e:
+        print(f"❌ 失败：无法联通 URL {url}")
+        print(f"错误信息: {e.stderr.strip()}")
+        return False
+    except FileNotFoundError:
+        print("❌ 错误：未找到 curl 命令。请确保您的系统已安装 curl。")
+        return False
+
+assert check_url(REWARD_MODEL_URL), "REWARD_MODEL_URL出现问题了，没打开"
 
 @cache.cache()  # 使用 SQLite 缓存函数输出，避免对同一输入重复请求远端服务
 async def score_title(
