@@ -202,7 +202,6 @@ def heuristic_score(title: str, body: str, url: Optional[str]) -> float:
 
 def hf_sst2_score(title: str, body: str) -> float:
     """使用 HuggingFace sentiment pipeline 给出 0-10 的情感强度分数。
-    （仅作示例，非严格的“质量”度量。）
     """
     global _hf_pipeline
     if _hf_pipeline is None:
