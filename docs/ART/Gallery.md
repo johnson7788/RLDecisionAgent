@@ -351,7 +351,7 @@ model, tok = FastLanguageModel.from_pretrained(
 * **Unsloth 梯度检查点**：`"unsloth"` 方案更省显存、适合长上下文任务；官方示例在 RL/DPO 教程里也默认这么设。([Unsloth 文档][9])
 * **token 登录**：私有模型/推送到 Hub 时需要 HF token。([Unsloth 文档][5])
 
-如果你给我你现在的**显卡型号/显存**和**目的（微调/推理/多模态？）**，我可以把上面的小抄进一步改成“可直接跑”的最小脚本。
+如果你给我你现在的**显卡型号/显存**和**目的（微调/推理/多模态？）**，
 
 [1]: https://huggingface.co/docs/peft/v0.10.0/en/package_reference/peft_model?utm_source=chatgpt.com "Models - Hugging Face"
 [2]: https://docs.unsloth.ai/get-started/fine-tuning-llms-guide?utm_source=chatgpt.com "Fine-tuning LLMs Guide | Unsloth Documentation"
@@ -368,3 +368,518 @@ model, tok = FastLanguageModel.from_pretrained(
 [13]: https://docs.unsloth.ai/basics/vision-fine-tuning?utm_source=chatgpt.com "Vision Fine-tuning | Unsloth Documentation"
 [14]: https://blog.csdn.net/raozhongbo/article/details/149329645?utm_source=chatgpt.com "使用unsloth模型微调过程_unsloth微调全流程-CSDN博客"
 [15]: https://huggingface.co/docs/transformers/v4.48.0/en/quantization/bitsandbytes?utm_source=chatgpt.com "bitsandbytes"
+
+
+# 训练模型的保存结果
+解释下面的ART模型训练的保存的信息
+tree /workspace/verl/ART/.art/hn_title_generation/
+/workspace/verl/ART/.art/hn_title_generation/
+└── models
+    └── 001
+        ├── checkpoints
+        │   ├── 0251
+        │   │   ├── README.md
+        │   │   ├── adapter_config.json
+        │   │   ├── adapter_model.safetensors
+        │   │   ├── added_tokens.json
+        │   │   ├── chat_template.jinja
+        │   │   ├── merges.txt
+        │   │   ├── special_tokens_map.json
+        │   │   ├── tokenizer.json
+        │   │   ├── tokenizer_config.json
+        │   │   ├── training_args.bin
+        │   │   └── vocab.json
+        │   ├── 0252
+        │   │   ├── README.md
+        │   │   ├── adapter_config.json
+        │   │   ├── adapter_model.safetensors
+        │   │   ├── added_tokens.json
+        │   │   ├── chat_template.jinja
+        │   │   ├── merges.txt
+        │   │   ├── special_tokens_map.json
+        │   │   ├── tokenizer.json
+        │   │   ├── tokenizer_config.json
+        │   │   ├── training_args.bin
+        │   │   └── vocab.json
+        │   ├── 0253
+        │   │   ├── README.md
+        │   │   ├── adapter_config.json
+        │   │   ├── adapter_model.safetensors
+        │   │   ├── added_tokens.json
+        │   │   ├── chat_template.jinja
+        │   │   ├── merges.txt
+        │   │   ├── special_tokens_map.json
+        │   │   ├── tokenizer.json
+        │   │   ├── tokenizer_config.json
+        │   │   ├── training_args.bin
+        │   │   └── vocab.json
+        │   ├── 0254
+        │   │   ├── README.md
+        │   │   ├── adapter_config.json
+        │   │   ├── adapter_model.safetensors
+        │   │   ├── added_tokens.json
+        │   │   ├── chat_template.jinja
+        │   │   ├── merges.txt
+        │   │   ├── special_tokens_map.json
+        │   │   ├── tokenizer.json
+        │   │   ├── tokenizer_config.json
+        │   │   ├── training_args.bin
+        │   │   └── vocab.json
+        │   ├── 0255
+        │   │   ├── README.md
+        │   │   ├── adapter_config.json
+        │   │   ├── adapter_model.safetensors
+        │   │   ├── added_tokens.json
+        │   │   ├── chat_template.jinja
+        │   │   ├── merges.txt
+        │   │   ├── special_tokens_map.json
+        │   │   ├── tokenizer.json
+        │   │   ├── tokenizer_config.json
+        │   │   ├── training_args.bin
+        │   │   └── vocab.json
+        │   ├── 0256
+        │   │   ├── README.md
+        │   │   ├── adapter_config.json
+        │   │   ├── adapter_model.safetensors
+        │   │   ├── added_tokens.json
+        │   │   ├── chat_template.jinja
+        │   │   ├── merges.txt
+        │   │   ├── special_tokens_map.json
+        │   │   ├── tokenizer.json
+        │   │   ├── tokenizer_config.json
+        │   │   ├── training_args.bin
+        │   │   └── vocab.json
+        │   ├── 0257
+        │   │   ├── README.md
+        │   │   ├── adapter_config.json
+        │   │   ├── adapter_model.safetensors
+        │   │   ├── added_tokens.json
+        │   │   ├── chat_template.jinja
+        │   │   ├── merges.txt
+        │   │   ├── special_tokens_map.json
+        │   │   ├── tokenizer.json
+        │   │   ├── tokenizer_config.json
+        │   │   ├── training_args.bin
+        │   │   └── vocab.json
+        │   ├── 0258
+        │   │   ├── README.md
+        │   │   ├── adapter_config.json
+        │   │   ├── adapter_model.safetensors
+        │   │   ├── added_tokens.json
+        │   │   ├── chat_template.jinja
+        │   │   ├── merges.txt
+        │   │   ├── special_tokens_map.json
+        │   │   ├── tokenizer.json
+        │   │   ├── tokenizer_config.json
+        │   │   ├── training_args.bin
+        │   │   └── vocab.json
+        │   ├── 0259
+        │   │   ├── README.md
+        │   │   ├── adapter_config.json
+        │   │   ├── adapter_model.safetensors
+        │   │   ├── added_tokens.json
+        │   │   ├── chat_template.jinja
+        │   │   ├── merges.txt
+        │   │   ├── special_tokens_map.json
+        │   │   ├── tokenizer.json
+        │   │   ├── tokenizer_config.json
+        │   │   ├── training_args.bin
+        │   │   └── vocab.json
+        │   ├── 0260
+        │   │   ├── README.md
+        │   │   ├── adapter_config.json
+        │   │   ├── adapter_model.safetensors
+        │   │   ├── added_tokens.json
+        │   │   ├── chat_template.jinja
+        │   │   ├── merges.txt
+        │   │   ├── special_tokens_map.json
+        │   │   ├── tokenizer.json
+        │   │   ├── tokenizer_config.json
+        │   │   ├── training_args.bin
+        │   │   └── vocab.json
+        │   ├── 0261
+        │   │   ├── README.md
+        │   │   ├── adapter_config.json
+        │   │   ├── adapter_model.safetensors
+        │   │   ├── added_tokens.json
+        │   │   ├── chat_template.jinja
+        │   │   ├── merges.txt
+        │   │   ├── special_tokens_map.json
+        │   │   ├── tokenizer.json
+        │   │   ├── tokenizer_config.json
+        │   │   ├── training_args.bin
+        │   │   └── vocab.json
+        │   ├── 0262
+        │   │   ├── README.md
+        │   │   ├── adapter_config.json
+        │   │   ├── adapter_model.safetensors
+        │   │   ├── added_tokens.json
+        │   │   ├── chat_template.jinja
+        │   │   ├── merges.txt
+        │   │   ├── special_tokens_map.json
+        │   │   ├── tokenizer.json
+        │   │   ├── tokenizer_config.json
+        │   │   ├── training_args.bin
+        │   │   └── vocab.json
+        │   ├── 0263
+        │   │   ├── README.md
+        │   │   ├── adapter_config.json
+        │   │   ├── adapter_model.safetensors
+        │   │   ├── added_tokens.json
+        │   │   ├── chat_template.jinja
+        │   │   ├── merges.txt
+        │   │   ├── special_tokens_map.json
+        │   │   ├── tokenizer.json
+        │   │   ├── tokenizer_config.json
+        │   │   ├── training_args.bin
+        │   │   └── vocab.json
+        │   ├── 0264
+        │   │   ├── README.md
+        │   │   ├── adapter_config.json
+        │   │   ├── adapter_model.safetensors
+        │   │   ├── added_tokens.json
+        │   │   ├── chat_template.jinja
+        │   │   ├── merges.txt
+        │   │   ├── special_tokens_map.json
+        │   │   ├── tokenizer.json
+        │   │   ├── tokenizer_config.json
+        │   │   ├── training_args.bin
+        │   │   └── vocab.json
+        │   ├── 0265
+        │   │   ├── README.md
+        │   │   ├── adapter_config.json
+        │   │   ├── adapter_model.safetensors
+        │   │   ├── added_tokens.json
+        │   │   ├── chat_template.jinja
+        │   │   ├── merges.txt
+        │   │   ├── special_tokens_map.json
+        │   │   ├── tokenizer.json
+        │   │   ├── tokenizer_config.json
+        │   │   ├── training_args.bin
+        │   │   └── vocab.json
+        │   ├── 0266
+        │   │   ├── README.md
+        │   │   ├── adapter_config.json
+        │   │   ├── adapter_model.safetensors
+        │   │   ├── added_tokens.json
+        │   │   ├── chat_template.jinja
+        │   │   ├── merges.txt
+        │   │   ├── special_tokens_map.json
+        │   │   ├── tokenizer.json
+        │   │   ├── tokenizer_config.json
+        │   │   ├── training_args.bin
+        │   │   └── vocab.json
+        │   ├── 0267
+        │   │   ├── README.md
+        │   │   ├── adapter_config.json
+        │   │   ├── adapter_model.safetensors
+        │   │   ├── added_tokens.json
+        │   │   ├── chat_template.jinja
+        │   │   ├── merges.txt
+        │   │   ├── special_tokens_map.json
+        │   │   ├── tokenizer.json
+        │   │   ├── tokenizer_config.json
+        │   │   ├── training_args.bin
+        │   │   └── vocab.json
+        │   ├── 0268
+        │   │   ├── README.md
+        │   │   ├── adapter_config.json
+        │   │   ├── adapter_model.safetensors
+        │   │   ├── added_tokens.json
+        │   │   ├── chat_template.jinja
+        │   │   ├── merges.txt
+        │   │   ├── special_tokens_map.json
+        │   │   ├── tokenizer.json
+        │   │   ├── tokenizer_config.json
+        │   │   ├── training_args.bin
+        │   │   └── vocab.json
+        │   ├── 0269
+        │   │   ├── README.md
+        │   │   ├── adapter_config.json
+        │   │   ├── adapter_model.safetensors
+        │   │   ├── added_tokens.json
+        │   │   ├── chat_template.jinja
+        │   │   ├── merges.txt
+        │   │   ├── special_tokens_map.json
+        │   │   ├── tokenizer.json
+        │   │   ├── tokenizer_config.json
+        │   │   ├── training_args.bin
+        │   │   └── vocab.json
+        │   ├── 0270
+        │   │   ├── README.md
+        │   │   ├── adapter_config.json
+        │   │   ├── adapter_model.safetensors
+        │   │   ├── added_tokens.json
+        │   │   ├── chat_template.jinja
+        │   │   ├── merges.txt
+        │   │   ├── special_tokens_map.json
+        │   │   ├── tokenizer.json
+        │   │   ├── tokenizer_config.json
+        │   │   ├── training_args.bin
+        │   │   └── vocab.json
+        │   ├── 0271
+        │   │   ├── README.md
+        │   │   ├── adapter_config.json
+        │   │   ├── adapter_model.safetensors
+        │   │   ├── added_tokens.json
+        │   │   ├── chat_template.jinja
+        │   │   ├── merges.txt
+        │   │   ├── special_tokens_map.json
+        │   │   ├── tokenizer.json
+        │   │   ├── tokenizer_config.json
+        │   │   ├── training_args.bin
+        │   │   └── vocab.json
+        │   ├── 0272
+        │   │   ├── README.md
+        │   │   ├── adapter_config.json
+        │   │   ├── adapter_model.safetensors
+        │   │   ├── added_tokens.json
+        │   │   ├── chat_template.jinja
+        │   │   ├── merges.txt
+        │   │   ├── special_tokens_map.json
+        │   │   ├── tokenizer.json
+        │   │   ├── tokenizer_config.json
+        │   │   ├── training_args.bin
+        │   │   └── vocab.json
+        │   ├── 0273
+        │   │   ├── README.md
+        │   │   ├── adapter_config.json
+        │   │   ├── adapter_model.safetensors
+        │   │   ├── added_tokens.json
+        │   │   ├── chat_template.jinja
+        │   │   ├── merges.txt
+        │   │   ├── special_tokens_map.json
+        │   │   ├── tokenizer.json
+        │   │   ├── tokenizer_config.json
+        │   │   ├── training_args.bin
+        │   │   └── vocab.json
+        │   ├── 0274
+        │   │   ├── README.md
+        │   │   ├── adapter_config.json
+        │   │   ├── adapter_model.safetensors
+        │   │   ├── added_tokens.json
+        │   │   ├── chat_template.jinja
+        │   │   ├── merges.txt
+        │   │   ├── special_tokens_map.json
+        │   │   ├── tokenizer.json
+        │   │   ├── tokenizer_config.json
+        │   │   ├── training_args.bin
+        │   │   └── vocab.json
+        │   ├── 0275
+        │   │   ├── README.md
+        │   │   ├── adapter_config.json
+        │   │   ├── adapter_model.safetensors
+        │   │   ├── added_tokens.json
+        │   │   ├── chat_template.jinja
+        │   │   ├── merges.txt
+        │   │   ├── special_tokens_map.json
+        │   │   ├── tokenizer.json
+        │   │   ├── tokenizer_config.json
+        │   │   ├── training_args.bin
+        │   │   └── vocab.json
+        │   ├── 0276
+        │   │   ├── README.md
+        │   │   ├── adapter_config.json
+        │   │   ├── adapter_model.safetensors
+        │   │   ├── added_tokens.json
+        │   │   ├── chat_template.jinja
+        │   │   ├── merges.txt
+        │   │   ├── special_tokens_map.json
+        │   │   ├── tokenizer.json
+        │   │   ├── tokenizer_config.json
+        │   │   ├── training_args.bin
+        │   │   └── vocab.json
+        │   ├── 0277
+        │   │   ├── README.md
+        │   │   ├── adapter_config.json
+        │   │   ├── adapter_model.safetensors
+        │   │   ├── added_tokens.json
+        │   │   ├── chat_template.jinja
+        │   │   ├── merges.txt
+        │   │   ├── special_tokens_map.json
+        │   │   ├── tokenizer.json
+        │   │   ├── tokenizer_config.json
+        │   │   ├── training_args.bin
+        │   │   └── vocab.json
+        │   ├── 0278
+        │   │   ├── README.md
+        │   │   ├── adapter_config.json
+        │   │   ├── adapter_model.safetensors
+        │   │   ├── added_tokens.json
+        │   │   ├── chat_template.jinja
+        │   │   ├── merges.txt
+        │   │   ├── special_tokens_map.json
+        │   │   ├── tokenizer.json
+        │   │   ├── tokenizer_config.json
+        │   │   ├── training_args.bin
+        │   │   └── vocab.json
+        │   └── 0279
+        │       ├── README.md
+        │       ├── adapter_config.json
+        │       ├── adapter_model.safetensors
+        │       ├── added_tokens.json
+        │       ├── chat_template.jinja
+        │       ├── merges.txt
+        │       ├── special_tokens_map.json
+        │       ├── tokenizer.json
+        │       ├── tokenizer_config.json
+        │       ├── training_args.bin
+        │       └── vocab.json
+        ├── history.jsonl
+        ├── logs
+        │   └── vllm.log
+        ├── model.json
+        ├── tensors
+        │   ├── advantages.pt
+        │   ├── assistant_mask.pt
+        │   ├── group_ids.pt
+        │   ├── input_pos.pt
+        │   ├── logprobs.pt
+        │   ├── parent_ids.pt
+        │   ├── tokens.pt
+        │   └── weights.pt
+        └── trajectories
+            ├── train
+            │   ├── 0000.jsonl
+            │   ├── 0001.jsonl
+
+            │   ├── 0273.jsonl
+            │   ├── 0274.jsonl
+            │   ├── 0275.jsonl
+            │   ├── 0276.jsonl
+            │   ├── 0277.jsonl
+            │   └── 0278.jsonl
+            └── val
+                ├── 0051.jsonl
+                ├── 0101.jsonl
+                ├── 0151.jsonl
+                ├── 0201.jsonl
+                └── 0251.jsonl
+
+37 directories, 614 files
+
+推理 / 继续训练 / 导出合并
+
+# 顶层与运行编号
+
+* `.art/hn_title_generation/models/001/`
+  `001`通常是这次实验 / 运行(run)的编号。一个工程里可以有 `002、003…` 表示不同次训练。
+
+* `model.json`
+  记录本次运行的关键信息（例如基座模型名称、适配器类型/路径、超参摘要等）。用来让框架在加载/恢复时知道“我是谁、基于谁”。
+
+* `history.jsonl`
+  按 step 追加的训练日志（JSON Lines）。里面通常包含训练/评估指标（如loss、reward、学习率、步数等）。用它可以画曲线或定位“最佳 step”。
+
+* `logs/vllm.log`
+  推断/采样阶段使用 vLLM 时的日志（端口、吞吐、错误堆栈等）。
+
+# checkpoints：每个保存点一套可复现工件
+
+`checkpoints/0251 ~ 0279/` 这些编号基本就是**全局 step（左侧零填充）**。每个子目录都能独立用于推理或恢复训练，内含：
+
+* `adapter_model.safetensors` + `adapter_config.json`
+  LoRA/QLoRA 等 **PEFT 适配器**权重与配置（如 r、alpha、target\_modules…）。这是“这次训练学到的东西”的主体。
+* `training_args.bin`
+  🤗Transformers 的 `TrainingArguments` 对象序列化，用于**恢复训练超参**。
+* `tokenizer.json / tokenizer_config.json / vocab.json / merges.txt / special_tokens_map.json / added_tokens.json`
+  **分词器**全套文件，保证推理/继续训练时词表与训练时一致。
+* `chat_template.jinja`
+  聊天模板（系统/用户/助手消息如何拼成模型输入）。推理由它确保**提示词格式**与训练一致。
+* `README.md`
+  该 checkpoint 的简要说明（例如创建时间、度量指标摘要）；不同版本内容可能略有差异。
+
+> 选“最佳”checkpoint：
+> 一般参考 `history.jsonl`（看验证集指标）或各 checkpoint 自带的 `README.md` 摘要。若未显式保存“best”，通常取**最后一个**（这里是 `0279`）做推理的起点，然后再按指标回退对比。
+
+# tensors：中间张量缓存（非模型权重）
+
+```
+tensors/
+├── advantages.pt       # PPO/GRPO 一类算法里计算得到的优势 A_t
+├── assistant_mask.pt   # 掩码：哪些 token 属于“assistant”回复段
+├── group_ids.pt        # 样本分组/采样批次的映射
+├── input_pos.pt        # 位置索引（重构序列时用）
+├── logprobs.pt         # 采样得到的对数概率
+├── parent_ids.pt       # 回溯到原始轨迹/样本的索引
+├── tokens.pt           # 实际 token 序列缓存
+└── weights.pt          # 训练用权重（如重要性采样权重等）
+```
+
+这些是**加速继续训练/复现对齐计算**的缓存；**不是**可直接用于推理的模型权重。丢失不会影响用 checkpoint 推理，但会影响“无缝恢复”某些 RL 训练阶段。
+
+# trajectories：训练/验证“轨迹”数据
+
+```
+trajectories/
+├── train/0000.jsonl ~ 0278.jsonl
+└── val/0051.jsonl, 0101.jsonl, ...
+```
+
+* 每个 `.jsonl` 是一个**分片**（shard），行级 JSON 记录一次“对话→模型输出→打分/反馈”的**轨迹**。
+* 常见字段（不同版本会有差别）：`messages`（或 `prompt/completion`）、`response`、`reward(s)`、`scores`、`meta`（温度、采样参数、基座模型哈希、时间戳等）、以及可选的 `logprobs`。
+* `val/` 是验证集轨迹，训练过程用于周期性评估。
+
+# 常见操作速查
+
+## 1) 用某个 checkpoint 做推理（加载 LoRA 适配器）
+
+```python
+from transformers import AutoTokenizer, AutoModelForCausalLM
+from peft import PeftModel
+
+base_model_path = "<你的基座模型路径或HF模型名>"   # 通常可在 models/001/model.json 找到
+ckpt_dir = "/workspace/verl/ART/.art/hn_title_generation/models/001/checkpoints/0279"
+
+tok = AutoTokenizer.from_pretrained(ckpt_dir, use_fast=True)
+base = AutoModelForCausalLM.from_pretrained(base_model_path, torch_dtype="auto", device_map="auto")
+model = PeftModel.from_pretrained(base, ckpt_dir)   # 加载 adapter_model.safetensors
+
+# 如果有 chat_template.jinja，建议按模板构造输入
+text = tok.apply_chat_template(
+    [{"role":"user","content":"帮我为这篇文章写一个Hacker News风格标题：..."}],
+    tokenize=False, add_generation_prompt=True, chat_template=open(f"{ckpt_dir}/chat_template.jinja").read()
+)
+
+inputs = tok(text, return_tensors="pt").to(model.device)
+outputs = model.generate(**inputs, max_new_tokens=64)
+print(tok.decode(outputs[0], skip_special_tokens=True))
+```
+
+## 2) 把 LoRA 合并成“完整权重”（便于独立部署）
+
+```python
+from peft import PeftModel
+from transformers import AutoModelForCausalLM
+
+base = AutoModelForCausalLM.from_pretrained(base_model_path, torch_dtype="auto")
+model = PeftModel.from_pretrained(base, ckpt_dir)
+merged = model.merge_and_unload()                   # 合并 LoRA
+merged.save_pretrained("/path/to/merged_model")
+tok.save_pretrained("/path/to/merged_model")
+```
+
+> 合并后就不再依赖 `adapter_model.safetensors`，部署更简单；但会占用更多磁盘。
+
+## 3) 从某个 checkpoint 恢复继续训练
+
+大多数基于 🤗Trainer/TRL 的脚本支持：
+
+```bash
+python train.py \
+  --resume_from_checkpoint /workspace/verl/ART/.art/hn_title_generation/models/001/checkpoints/0270
+```
+
+它会读取 `training_args.bin` 和该目录内分词器/模板，继续按相同设置训练。
+
+# 清理与归档建议
+
+* **长期保留**：`checkpoints/（最佳或最后一个）`、`model.json`、`history.jsonl`、`chat_template.jinja`。
+* **按需保留**：`trajectories/`（为了论文复现/审计很重要；但体积大）。
+* **可清理**：早期大量 checkpoint 与 `tensors/`（若不再需要从中间 step 精确恢复）。
+* **日志**：`logs/vllm.log` 留作排错，过旧可压缩归档。
+
+---
+
+如果你想，我可以帮你：
+1）根据 `history.jsonl` 自动找出“最佳 step”；2）对比 `0275~0279` 的验证指标并给出推理样例；3）把 LoRA 合并成一份可部署的整模型。
