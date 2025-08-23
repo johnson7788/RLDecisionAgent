@@ -760,3 +760,48 @@ Traceback (most recent call last):
   File "/workspace/verl/ART/src/art/utils/trajectory_logging.py", line 23, in trajectory_group_to_dict
     for trajectory in trajectory_group.trajectories:
 AttributeError: 'list' object has no attribute 'trajectories'
+
+
+#加载模型时，没有指定lora配置
+    model = art.TrainableModel(
+        name=MODEL_NAME,
+        project=PROJECT,
+        base_model=BASE_MODEL,
+        # 关键：为保证加载正确，测试时需提供与训练时相同的内部配置
+        _internal_config=art.dev.InternalModelConfig(
+            init_args=art.dev.InitArgs(gpu_memory_utilization=0.75),
+            peft_args=art.dev.PeftArgs(lora_alpha=8),
+            trainer_args=art.dev.TrainerArgs(max_grad_norm=0.1),
+        ),
+    )
+
+Unsloth 2025.8.6 patched 24 layers with 24 QKV layers, 24 O layers and 24 MLP layers.
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/workspace/verl/backend/ART_title_generator/model_test.py", line 108, in <module>
+[rank0]:     asyncio.run(main())
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/nest_asyncio.py", line 30, in run
+[rank0]:     return loop.run_until_complete(task)
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/nest_asyncio.py", line 98, in run_until_complete
+[rank0]:     return f.result()
+[rank0]:   File "/usr/lib/python3.10/asyncio/futures.py", line 201, in result
+[rank0]:     raise self._exception.with_traceback(self._exception_tb)
+[rank0]:   File "/usr/lib/python3.10/asyncio/tasks.py", line 232, in __step
+[rank0]:     result = coro.send(None)
+[rank0]:   File "/workspace/verl/backend/ART_title_generator/model_test.py", line 45, in main
+[rank0]:     await model.register(backend)
+[rank0]:   File "/workspace/verl/ART/src/art/model.py", line 310, in register
+[rank0]:     base_url, api_key = await backend._prepare_backend_for_training(
+[rank0]:   File "/workspace/verl/ART/src/art/local/backend.py", line 322, in _prepare_backend_for_training
+[rank0]:     await service.start_openai_server(config=config)
+[rank0]:   File "/workspace/verl/ART/src/art/unsloth/service.py", line 87, in start_openai_server
+[rank0]:     engine=self.state.vllm.async_engine,
+[rank0]:   File "/usr/lib/python3.10/functools.py", line 981, in __get__
+[rank0]:     val = self.func(instance)
+[rank0]:   File "/workspace/verl/ART/src/art/unsloth/service.py", line 41, in state
+[rank0]:     return ModelState(self.config)
+[rank0]:   File "/workspace/verl/ART/src/art/unsloth/state.py", line 89, in __init__
+[rank0]:     unsloth.FastLanguageModel.get_peft_model(
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/unsloth/models/llama.py", line 2383, in get_peft_model
+[rank0]:     raise TypeError(
+[rank0]: TypeError: Unsloth: Your model already has LoRA adapters. Your new parameters are different.
+[rank0]:[W823 09:29:26.531051531 ProcessGroupNCCL.cpp:1496] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
