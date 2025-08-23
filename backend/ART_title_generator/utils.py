@@ -194,14 +194,29 @@ def pull_data(
     返回：
         处理后的 Dataset 对象
     """
-    print(f"从 HuggingFace 下载数据集hacker-news-scraped-stories-filtered (max {max_items} items)...")
+    # 打印下载前的日志
+    print(f"开始拉取 HuggingFace 数据集 'OpenPipe/hacker-news-scraped-stories-filtered'...")
+    print(f"设置参数：split='{split}', max_items={max_items}, min_score={min_score}")
+
     dataset: Dataset = load_dataset(
         "OpenPipe/hacker-news-scraped-stories-filtered", split=split
     )  # type: ignore
     # 过滤低分样本
+    # 打印初始数据集大小
+    initial_count = len(dataset)
+    print(f"数据集 '{split}' 分割拉取成功，初始样本数: {initial_count}")
+    # 过滤低分样本
+    print(f"开始过滤，仅保留 score >= {min_score} 的样本...")
     dataset = dataset.filter(lambda x: x["score"] >= min_score)
+    filtered_count = len(dataset)
+    print(f"过滤完成，剩余样本数: {filtered_count}")
+
+    # 截取前 max_items 条
+    print(f"开始截取前 {max_items} 条样本...")
     # 截取前 max_items 条
     dataset = dataset.select(range(max_items))
+    final_count = len(dataset)
+    print(f"数据处理完成，最终样本数: {final_count}")
     return dataset
 
 

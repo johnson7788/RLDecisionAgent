@@ -262,9 +262,9 @@ async def main():
 
     # 2) 加载训练/验证数据集（含过滤与 prompt 构造）
     print("正在加载训练集...")
-    train_dataset = await load_data("train", TRAINING_DATASET_SIZE, MAX_PROMPT_LENGTH, BASE_MODEL)
+    train_dataset = await load_data(split="train", max_items=TRAINING_DATASET_SIZE, max_length=MAX_PROMPT_LENGTH, tokenizer_name=BASE_MODEL)
     print("正在加载验证集...")
-    val_dataset = await load_data("val", VAL_SET_SIZE, MAX_PROMPT_LENGTH, BASE_MODEL)
+    val_dataset = await load_data("val", max_items=VAL_SET_SIZE, max_length=MAX_PROMPT_LENGTH, tokenizer_name=BASE_MODEL)
 
     if not train_dataset or not val_dataset:
         raise ValueError("Failed to load datasets. Exiting.")
