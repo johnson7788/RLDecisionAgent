@@ -1,4 +1,4 @@
-# 使用强化学习训练模型生成PPT的内容
+# 使用强化学习训练模型生成PPT的内容(测试中,未完成)
 
 ## 数据集[data_process](data_process)目录
 使用中文新闻数据DavideTHU/chinese_news_dataset
