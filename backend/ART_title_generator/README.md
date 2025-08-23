@@ -136,3 +136,22 @@ for each epoch/step batch:
   if step % EVAL_STEPS == 0:
     val_trajectories = rollout on all val items
     model.log(val_trajectories); model.delete_checkpoints()
+
+
+# 训练
+1. 启动本地奖励模型
+python local_reward.py
+
+2. 测试本地奖励模型是否OK
+python reward_local_test.py
+
+3. 在.env中加上
+REWARD_MODEL_URL=http://127.0.0.1:7000/score
+
+4. 测试数据加载是否正常
+python check_dataset.py
+
+5. 启动训练
+python train.py
+
+6. 进行测试

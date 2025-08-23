@@ -307,9 +307,9 @@ async def main():
         # 5) 过滤无效轨迹（例如生成失败/类型异常等），并仅保留至少包含 2 条轨迹的 group
         valid_train_groups = []
         for group in train_groups:
-            valid_group = [traj for traj in group if isinstance(traj, art.Trajectory)]
-            if len(valid_group) > 1:
-                valid_train_groups.append(valid_group)
+            valid_trajectories = [traj for traj in group if isinstance(traj, art.Trajectory)]
+            if len(valid_trajectories) > 1:
+                valid_train_groups.append(art.TrajectoryGroup(valid_trajectories))
 
         if not valid_train_groups:
             print(f"警告：第 {batch.step} 步未生成有效轨迹，跳过参数更新。")

@@ -725,3 +725,38 @@ Traceback (most recent call last):
   File "/workspace/verl/ART/src/art/model.py", line 131, in backend
     raise ValueError(
 ValueError: Model is not registered with the Backend. You must call `model.register()` first.
+
+
+# 报错 model.train需要使用TrajectoryGroup的形成的列表
+        for group in train_groups:
+            valid_trajectories = [traj for traj in group if isinstance(traj, art.Trajectory)]
+            if len(valid_trajectories) > 1:
+                valid_train_groups.append(art.TrajectoryGroup(valid_trajectories))
+
+[gather_trajectory_groups] Finished.
+Traceback (most recent call last):
+  File "/workspace/verl/backend/ART_title_generator/train.py", line 339, in <module>
+    asyncio.run(main())
+  File "/usr/local/lib/python3.10/dist-packages/nest_asyncio.py", line 30, in run
+    return loop.run_until_complete(task)
+  File "/usr/local/lib/python3.10/dist-packages/nest_asyncio.py", line 98, in run_until_complete
+    return f.result()
+  File "/usr/lib/python3.10/asyncio/futures.py", line 201, in result
+    raise self._exception.with_traceback(self._exception_tb)
+  File "/usr/lib/python3.10/asyncio/tasks.py", line 232, in __step
+    result = coro.send(None)
+  File "/workspace/verl/backend/ART_title_generator/train.py", line 319, in main
+    await model.train(valid_train_groups, config=art.TrainConfig(learning_rate=LEARNING_RATE))
+  File "/workspace/verl/ART/src/art/model.py", line 356, in train
+    async for _ in self.backend()._train_model(
+  File "/workspace/verl/ART/src/]/local/backend.py", line 422, in _train_model
+    await self._log(model, trajectory_groups, "train")
+  File "/workspace/verl/ART/src/art/local/backend.py", line 352, in _log
+    f.write(serialize_trajectory_groups(trajectory_groups))
+  File "/workspace/verl/ART/src/art/utils/trajectory_logging.py", line 13, in serialize_trajectory_groups
+    group_dicts = [
+  File "/workspace/verl/ART/src/art/utils/trajectory_logging.py", line 14, in <listcomp>
+    trajectory_group_to_dict(trajectory_group)
+  File "/workspace/verl/ART/src/art/utils/trajectory_logging.py", line 23, in trajectory_group_to_dict
+    for trajectory in trajectory_group.trajectories:
+AttributeError: 'list' object has no attribute 'trajectories'
