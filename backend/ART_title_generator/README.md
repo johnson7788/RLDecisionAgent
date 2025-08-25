@@ -159,3 +159,5 @@ python train.py
 
 6. 进行测试
 python model_test.py
+
+7. wandb监控信息

@@ -21,7 +21,7 @@ HN 标题生成（Hacker News Title Generation）- 使用 ART 做强化学习微
 import asyncio
 from datetime import datetime  # 可保留以备进一步自定义日志
 from typing import Any, Dict, Iterable, List
-
+import wandb
 import openai
 from datasets import Dataset
 from dotenv import load_dotenv
@@ -234,6 +234,11 @@ async def rollout(
     # Step 4: 组合奖励策略：若不匹配则零奖励，否则使用 RM 分数
     final_reward = 0.0 if title_matches == 0 else rm_score
 
+    # === 新增：把关键指标也放进 metrics，便于后续统一聚合/打点 ===
+    metrics["reward"] = float(final_reward)
+    metrics["step"] = int(global_step)
+    metrics["epoch"] = int(epoch)
+
     # 打包为 ART 轨迹对象（仍保留 messages 与 choice 供训练/审计）
     messages_and_choices = [*prompt, choice]
     trajectory = art.Trajectory(
@@ -246,6 +251,29 @@ async def rollout(
 
 # --- 主训练循环 ---
 async def main():
+    # === wandb 初始化（在做任何训练前调用）===
+    run = wandb.init(
+        project=PROJECT,
+        name=f"{MODEL_NAME}-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
+        config=dict(
+            MODEL_NAME=MODEL_NAME,
+            BASE_MODEL=BASE_MODEL,
+            MAX_COMPLETION_LENGTH=MAX_COMPLETION_LENGTH,
+            MAX_PROMPT_LENGTH=MAX_PROMPT_LENGTH,
+            LEARNING_RATE=LEARNING_RATE,
+            GROUPS_PER_STEP=GROUPS_PER_STEP,
+            EVAL_STEPS=EVAL_STEPS,
+            VAL_SET_SIZE=VAL_SET_SIZE,
+            TRAINING_DATASET_SIZE=TRAINING_DATASET_SIZE,
+            NUM_EPOCHS=NUM_EPOCHS,
+            NUM_GENERATIONS=NUM_GENERATIONS,
+        ),
+    )
+    # 统一 step 轴，让图表更干净
+    wandb.define_metric("global_step")
+    wandb.define_metric("train/*", step_metric="global_step")
+    wandb.define_metric("val/*", step_metric="global_step")
+
     # 1) 初始化 ART 本地后端与可训练模型
     backend = LocalBackend()
     model = art.TrainableModel(
@@ -262,12 +290,19 @@ async def main():
 
     # 2) 加载训练/验证数据集（含过滤与 prompt 构造）
     print("正在加载训练集...")
-    train_dataset = await load_data(split="train", max_items=TRAINING_DATASET_SIZE, max_length=MAX_PROMPT_LENGTH, tokenizer_name=BASE_MODEL)
+    train_dataset = await load_data(
+        split="train",
+        max_items=TRAINING_DATASET_SIZE,
+        max_length=MAX_PROMPT_LENGTH,
+        tokenizer_name=BASE_MODEL,
+    )
     print("正在加载验证集...")
-    val_dataset = await load_data("val", max_items=VAL_SET_SIZE, max_length=MAX_PROMPT_LENGTH, tokenizer_name=BASE_MODEL)
-
-    if not train_dataset or not val_dataset:
-        raise ValueError("Failed to load datasets. Exiting.")
+    val_dataset = await load_data(
+        "val",
+        max_items=VAL_SET_SIZE,
+        max_length=MAX_PROMPT_LENGTH,
+        tokenizer_name=BASE_MODEL,
+    )
 
     # 转为列表方便迭代/分组
     val_data_list: List[Dict[str, Any]] = list(val_dataset)
@@ -293,7 +328,6 @@ async def main():
     )
 
     for batch in data_iterator:
-        # 4) 对 batch 中的每个样本，生成 NUM_GENERATIONS 个候选标题
         train_groups = await art.gather_trajectory_groups(
             (
                 art.TrajectoryGroup(
@@ -311,6 +345,30 @@ async def main():
             if len(valid_trajectories) > 1:
                 valid_train_groups.append(art.TrajectoryGroup(valid_trajectories))
 
+        # === 对本 step 训练轨迹做聚合并打点 ===
+        all_train_trajs = [traj for g in valid_train_groups for traj in g]  # 展平
+        if all_train_trajs:
+            rewards = [float(t.reward) for t in all_train_trajs]
+            rms = [float(t.metrics.get("rm", 0.0)) for t in all_train_trajs]
+            matches = [int(t.metrics.get("matches", 0)) for t in all_train_trajs]
+            lengths = [int(t.metrics.get("length", 0)) for t in all_train_trajs]
+
+            log_dict = {
+                "global_step": int(batch.step),
+                "train/reward/mean": sum(rewards) / len(rewards),
+                "train/reward/max": max(rewards),
+                "train/reward/min": min(rewards),
+                "train/rm/mean": sum(rms) / len(rms),
+                "train/match_rate": sum(matches) / len(matches),
+                "train/length/mean": sum(lengths) / len(lengths) if lengths else 0,
+                "train/num_groups": len(valid_train_groups),
+                "train/num_trajs": len(all_train_trajs),
+                # 直方图（在 UI 里看分布）
+                "train/reward/hist": wandb.Histogram(rewards),
+                "train/rm/hist": wandb.Histogram(rms),
+            }
+            wandb.log(log_dict)
+
         if not valid_train_groups:
             print(f"警告：第 {batch.step} 步未生成有效轨迹，跳过参数更新。")
             continue
@@ -318,7 +376,23 @@ async def main():
         # 6) 用有效轨迹更新模型参数（策略改进）
         await model.train(valid_train_groups, config=art.TrainConfig(learning_rate=LEARNING_RATE))
 
-        # 7) 周期性评估：对验证集逐条 rollout，并记录日志与清理旧 checkpoint
+        # === 可选：每隔一段步数记录几个样例到表格（避免过频打点）
+        if batch.step % max(10, EVAL_STEPS) == 0 and all_train_trajs:
+            table = wandb.Table(columns=["step", "epoch", "title", "rm", "match", "reward"])
+            # 取前 8 个样例
+            for t in all_train_trajs[:8]:
+                table.add_data(
+                    int(batch.step),
+                    int(batch.epoch),
+                    # 取消息里最后一个 assistant 的内容（已在 rollout 里放在 choice.message）
+                    getattr(t.messages_and_choices[-1].message, "content", "") if hasattr(t.messages_and_choices[-1], "message") else "",
+                    float(t.metrics.get("rm", 0.0)),
+                    int(t.metrics.get("matches", 0)),
+                    float(t.reward),
+                )
+            wandb.log({"global_step": int(batch.step), "train/examples": table})
+
+        # 7) 周期性评估
         if batch.step > 0 and batch.step % EVAL_STEPS == 0:
             print(f"\n--- 在第 {batch.step} 步进行评估 ---")
             val_trajectories = await art.gather_trajectories(
@@ -328,12 +402,35 @@ async def main():
                 ),
                 pbar_desc="val",
             )
-            await model.log(val_trajectories)   # 将评估轨迹打点/可视化（ART 内部）
-            await model.delete_checkpoints()    # 清理旧的 checkpoint，节省磁盘
+            await model.log(val_trajectories)
+            await model.delete_checkpoints()
+
+            # === 验证集聚合与打点 ===
+            val_trajs = [t for t in val_trajectories if isinstance(t, art.Trajectory)]
+            if val_trajs:
+                v_rewards = [float(t.reward) for t in val_trajs]
+                v_rms = [float(t.metrics.get("rm", 0.0)) for t in val_trajs]
+                v_matches = [int(t.metrics.get("matches", 0)) for t in val_trajs]
+                v_lengths = [int(t.metrics.get("length", 0)) for t in val_trajs]
+                wandb.log(
+                    {
+                        "global_step": int(batch.step),
+                        "val/reward/mean": sum(v_rewards) / len(v_rewards),
+                        "val/reward/max": max(v_rewards),
+                        "val/reward/min": min(v_rewards),
+                        "val/rm/mean": sum(v_rms) / len(v_rms),
+                        "val/match_rate": sum(v_matches) / len(v_matches),
+                        "val/length/mean": sum(v_lengths) / len(v_lengths) if v_lengths else 0,
+                        "val/num_trajs": len(val_trajs),
+                        "val/reward/hist": wandb.Histogram(v_rewards),
+                        "val/rm/hist": wandb.Histogram(v_rms),
+                    }
+                )
 
     print("训练完成。")
+    # === 新增：优雅收尾 ===
+    wandb.finish()
 
 
 if __name__ == "__main__":
-    # 异步入口：启动主训练任务
     asyncio.run(main())
