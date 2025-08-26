@@ -34,7 +34,18 @@
 - **更多信息:** [agent-lightning/README.md](./agent-lightning/README.md)
 
 ### 4. verl
+VERL (Volcano Engine Reinforcement Learning for LLMs)
+* **简介:** `VERL` 是由字节跳动 Seed 团队发起、社区维护的面向大语言模型后训练的强化学习框架（HybridFlow 的开源实现）。它强调“灵活、高效、可用于生产”，可在少量代码中拼装出各类 RL 数据流。 ([GitHub][1], [Verl][2])
+* **主要特点:**
 
+  * **HybridFlow 编程模型：** 通过混合控制器（single/multi-controller）抽象，快速构建如 PPO、GRPO 等复杂后训练数据流。 ([GitHub][1], [Verl][2])
+  * **生态与后端：** 训练后端支持 **FSDP / FSDP2 / Megatron-LM**；rollout 引擎支持 **vLLM、SGLang、HF Transformers**；可无缝对接 Hugging Face/ModelScope 上的主流开源模型（Qwen、Llama、Gemma、DeepSeek 等）。 ([GitHub][1])
+  * **性能优化：** 集成 **3D-HybridEngine** 以在训练与生成阶段间高效重分片，降低内存冗余与通信开销；具备 SOTA 级吞吐。 ([GitHub][1], [Verl][2])
+  * **可扩展并行：** 提供灵活设备映射与多机多卡扩展，内置多节点训练与 Ray 调试、性能调优指南。 ([Verl][2])
+  * **算法与 Recipes：** 内置 **PPO、GRPO、GSPO、ReMax、REINFORCE++、RLOO、PRIME、DAPO、DrGRPO、KL\_Cov / Clip\_Cov、OPO、GPG** 等，并配套 **SPIN、SPPO** 等实用 recipe。 ([GitHub][1], [Verl][2])
+  * **Agentic RL 支持：** 支持**服务器端异步 rollout**、**多轮对话与工具调用**，并提供 Agent Loop / 与 Agent 框架集成示例（如基于 LangGraph）。 ([GitHub][3], [Verl][2])
+  * **硬件/平台：** 支持 **AMD ROCm** 与 **华为昇腾 Ascend**；Megatron 后端已用于大规模 **MoE**（如 DeepSeek-671B、Qwen3-236B）训练/推理场景。 ([Verl][2], [GitHub][1])
+  * **工程能力：** 提供断点续训/容错检查点、RoPE scaling 覆写、LoRA、Profiler 与 Nsight 指南及 FAQ。 ([Verl][2])
 
 ### 5. AgentEvolutionRL
 
