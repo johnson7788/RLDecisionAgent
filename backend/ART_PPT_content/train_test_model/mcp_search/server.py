@@ -77,12 +77,19 @@ def main(port: int, transport: str) -> int:
         """
         兼容性格式化：尽量提取常见字段，提取不到就直接 JSON pretty 打印。
         """
+        def safe_json_dumps(data):
+            # Safely dump data to JSON, converting objects to their dict representation.
+            return json.dumps(data, ensure_ascii=False, indent=2, default=lambda o: getattr(o, '__dict__', str(o)))
+
         try:
             results = []
             items = None
 
-            # 可能的返回结构尝试
-            if isinstance(resp, dict):
+            # ZhipuAI SDK v2 returns an object with a 'data' attribute list.
+            if hasattr(resp, 'data') and isinstance(resp.data, list):
+                items = resp.data
+            # Handle dict-based or list-based responses for compatibility.
+            elif isinstance(resp, dict):
                 for k in ("data", "results", "items", "documents"):
                     if k in resp and isinstance(resp[k], list):
                         items = resp[k]
@@ -91,27 +98,28 @@ def main(port: int, transport: str) -> int:
                 items = resp
 
             if not items:
-                # 兜底：直接返回 JSON
-                return json.dumps(resp, ensure_ascii=False, indent=2)
+                return safe_json_dumps(resp)
 
             for idx, it in enumerate(items[: max_items], start=1):
-                title = (
-                    (isinstance(it, dict) and (it.get("title") or it.get("page_title") or it.get("name")))
-                    or "Untitled"
-                )
-                url = (isinstance(it, dict) and (it.get("url") or it.get("source_url") or it.get("link"))) or ""
-                snippet = (
-                    (isinstance(it, dict) and (it.get("content") or it.get("summary") or it.get("snippet")))
-                    or ""
-                )
+                is_dict = isinstance(it, dict)
+                
+                # Extract title, url, and snippet, trying multiple keys/attributes.
+                title = (is_dict and (it.get("title") or it.get("page_title") or it.get("name"))) or \
+                        getattr(it, "title", getattr(it, "page_title", getattr(it, "name", "Untitled")))
+                
+                url = (is_dict and (it.get("url") or it.get("source_url") or it.get("link"))) or \
+                      getattr(it, "url", getattr(it, "source_url", getattr(it, "link", "")))
+
+                snippet = (is_dict and (it.get("content") or it.get("summary") or it.get("snippet"))) or \
+                          getattr(it, "content", getattr(it, "summary", getattr(it, "snippet", "")))
 
                 block = f"{idx}. {title}\n{url}\n{snippet}".strip()
                 results.append(block)
 
-            return "\n\n".join(results) if results else json.dumps(resp, ensure_ascii=False, indent=2)
+            return "\n\n".join(results) if results else safe_json_dumps(resp)
         except Exception:
-            # 再次兜底
-            return json.dumps(resp, ensure_ascii=False, indent=2)
+            # Fallback for any other unexpected errors.
+            return safe_json_dumps(resp)
 
     @app.call_tool()
     async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
