@@ -33,7 +33,10 @@
     - **支持多种算法:** 不仅限于强化学习，还支持自动提示优化（Automatic Prompt Optimization）等。
 - **更多信息:** [agent-lightning/README.md](./agent-lightning/README.md)
 
-### 4. AgentEvolutionRL
+### 4. verl
+
+
+### 5. AgentEvolutionRL
 
 - **简介:** 这是一个总括性的项目，代表了本仓库的最终目标：通过强化学习训练和进化具备复杂决策能力的Agent大模型。
 - **更多信息:** [AgentEvolutionRL/README.md](./AgentEvolutionRL/README.md)
