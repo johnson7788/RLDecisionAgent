@@ -4,19 +4,13 @@
 pip install -r requirements.txt
 
 ## 数据集
+## MCP工具准备，搜索工具
+[mcp_search](mcp_search)
 使用智谱的web搜索,添加搜索缓存
 https://docs.bigmodel.cn/cn/guide/tools/web-search#mcp-server
 
-## 生成问题场景，覆盖现有场景
-python generate_questions.py
-python data_convert.py
-输出文件,训练数据和测试数据
-[questions.jsonl](questions.jsonl)
-[scenarios.jsonl](scenarios.jsonl)
-
-
-## MCP工具准备，搜索工具
-[mcp_search](mcp_search)
+## 问题场景
+[scenarios](train_test_model%2Fmcp_search%2Fscenarios)
 
 
 ## 训练模型
