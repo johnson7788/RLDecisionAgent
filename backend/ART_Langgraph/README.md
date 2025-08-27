@@ -26,3 +26,6 @@ python train.py
 
 ## 测试
 python model_test.py
+
+## wandb日志
+http://192.168.100.8:3005/johnson/web-search-agent-training
