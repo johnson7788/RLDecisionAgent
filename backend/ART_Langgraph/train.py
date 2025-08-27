@@ -22,7 +22,6 @@ import asyncio
 from statistics import mean
 from textwrap import dedent
 from typing import List, Optional
-
 import dotenv
 import art
 from art.langgraph import init_chat_model, wrap_rollout
