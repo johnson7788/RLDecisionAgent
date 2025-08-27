@@ -31,6 +31,8 @@ from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 from tenacity import retry, stop_after_attempt
 from litellm import acompletion
+from zai import ZhipuAiClient
+
 # ---------- 配置 ----------
 # 任选一个可训练且支持 tools 的基础模型（Qwen2.5 系列在文档中常被用作示例）
 MODEL_NAME = os.getenv("ART_MODEL", "Qwen/Qwen2.5-7B-Instruct")
@@ -39,6 +41,9 @@ USE_LOCAL_BACKEND = os.getenv("ART_BACKEND", "local").lower() == "local"
 
 # RULER 评估模型（可选；需相应 API Key）
 RULER_MODEL = os.getenv("RULER_MODEL", "openai/o4-mini")
+
+WebSearchClient = ZhipuAiClient(api_key=os.environ["ZHIPU_API_KEY"])
+
 
 # ---------- 数据结构 ----------
 class EmailResult(BaseModel):
@@ -66,8 +71,22 @@ class EmailScenario(BaseModel):
 class ProjectTrajectory(art.Trajectory):
     final_answer: Optional[FinalAnswer] = None
 
-def search_emails(inbox: str, keywords: List[str], sent_before: str) -> List[EmailResult]:
-    # TODO: 接入真实邮箱搜索
+def search_web(keyword:str) -> List[EmailResult]:
+    """
+
+    :param inbox:
+    :param keywords:
+    :param sent_before:
+    :return:
+    """
+    response = WebSearchClient.web_search.web_search(
+        search_engine="search_std",
+        search_query=keyword,
+        count=15,  # 返回结果的条数，范围1-50，默认10
+        search_recency_filter="noLimit",  # 搜索指定日期范围内的内容
+        content_size="high"  # 控制网页摘要的字数，默认medium
+    )
+    ##
     return [EmailResult(
         message_id="msg_123",
         subject=f"Subject containing {keywords[0]}",
