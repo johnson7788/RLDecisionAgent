@@ -81,7 +81,7 @@ async def run_agent_test(model: art.Model):
     res = await agent.ainvoke(
         {"messages": [
             SystemMessage(content=system_prompt),
-            HumanMessage(content="Who is the CEO of NVIDIA?"),
+            HumanMessage(content="Who is the CFO of Tesla?"),
         ]},
         config={"configurable": {"thread_id": str(uuid.uuid4())},
                 "recursion_limit": 10},

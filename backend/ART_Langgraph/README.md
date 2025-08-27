@@ -1,5 +1,6 @@
 # Langgraph ART 训练模型
 
+## 搜索输出
 WebSearchClient = ZhipuAiClient(api_key="your-api-key")
 response = WebSearchClient.web_search.web_search(
         search_engine="search_std",
@@ -19,3 +20,9 @@ response = WebSearchClient.web_search.web_search(
       "publish_date": "2025-08-25"
     }
  ]
+
+## 训练
+python train.py
+
+## 测试
+python model_test.py
