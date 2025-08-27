@@ -4,12 +4,12 @@
 # @File  : train.py
 # @Author: johnson
 # @Contact : github: johnson7788
-# @Desc  :
+# @Desc  : 
 
 # -*- coding: utf-8 -*-
 """
 训练一个使用 LangGraph Tools 的 ReAct Agent（基于 ART 的 GRPO 强化训练）
-- 工具：mock 的邮箱搜索/阅读 + “提交最终答案”工具
+- 工具：的网页搜索 + “提交最终答案”工具
 - 训练：迭代采样 -> 组内相对打分(RULER, 可选) -> model.train()
 依赖：
   uv pip install -U "openpipe-art[backend,langgraph]>=0.4.9" langchain-core pydantic tenacity litellm
@@ -18,7 +18,6 @@
 import os
 import uuid
 import asyncio
-from dataclasses import asdict
 from textwrap import dedent
 from typing import List, Optional
 
@@ -36,7 +35,7 @@ from zai import ZhipuAiClient
 # ---------- 配置 ----------
 # 任选一个可训练且支持 tools 的基础模型（Qwen2.5 系列在文档中常被用作示例）
 MODEL_NAME = os.getenv("ART_MODEL", "Qwen/Qwen2.5-7B-Instruct")
-PROJECT_NAME = os.getenv("ART_PROJECT", "email-agent-training")
+PROJECT_NAME = os.getenv("ART_PROJECT", "web-search-agent-training")
 USE_LOCAL_BACKEND = os.getenv("ART_BACKEND", "local").lower() == "local"
 
 # RULER 评估模型（可选；需相应 API Key）
@@ -46,38 +45,30 @@ WebSearchClient = ZhipuAiClient(api_key=os.environ["ZHIPU_API_KEY"])
 
 
 # ---------- 数据结构 ----------
-class EmailResult(BaseModel):
-    message_id: str
-    subject: str
-    from_address: str
-    date: str
+class WebSearchResult(BaseModel):
+    url: str
+    title: str
     snippet: str
 
 class FinalAnswer(BaseModel):
     answer: str
-    source_ids: List[str]
+    source_urls: List[str]
 
 class Scenario(BaseModel):
     id: str
     question: str
     answer: str
-    inbox_address: str
-    query_date: str
 
-class EmailScenario(BaseModel):
+class WebSearchScenario(BaseModel):
     step: int
     scenario: Scenario
 
 class ProjectTrajectory(art.Trajectory):
     final_answer: Optional[FinalAnswer] = None
 
-def search_web(keyword:str) -> List[EmailResult]:
+async def search_web(keyword: str) -> List[WebSearchResult]:
     """
-
-    :param inbox:
-    :param keywords:
-    :param sent_before:
-    :return:
+    真实的网络搜索函数
     """
     response = WebSearchClient.web_search.web_search(
         search_engine="search_std",
@@ -86,24 +77,13 @@ def search_web(keyword:str) -> List[EmailResult]:
         search_recency_filter="noLimit",  # 搜索指定日期范围内的内容
         content_size="high"  # 控制网页摘要的字数，默认medium
     )
-    ##
-    return [EmailResult(
-        message_id="msg_123",
-        subject=f"Subject containing {keywords[0]}",
-        from_address="sender@example.com",
-        date="2024-01-15",
-        snippet=f"...{keywords[0]}..."
-    )]
-
-def read_email(message_id: str) -> Optional[EmailResult]:
-    # TODO: 接入真实邮箱阅读
-    return EmailResult(
-        message_id=message_id,
-        subject="Full subject",
-        from_address="sender@example.com",
-        date="2024-01-15",
-        snippet="Full email content..."
-    )
+    return [
+        WebSearchResult(
+            url=item['url'],
+            title=item['title'],
+            snippet=item['content']
+        ) for item in response['search_result']
+    ]
 
 # ---------- 可选：正确性评估（仅做指标记录，不参与训练权重更新）----------
 
@@ -128,49 +108,37 @@ async def judge_correctness(s: Scenario, answer: str) -> CorrectnessJudgeRespons
     )
 
 # ---------- rollout：LangGraph + Tools ----------
-async def rollout(model: art.Model, email_scenario: EmailScenario) -> ProjectTrajectory:
-    scenario = email_scenario.scenario
-    MAX_TURNS = 10
+async def rollout(model: art.Model, web_search_scenario: WebSearchScenario) -> ProjectTrajectory:
+    scenario = web_search_scenario.scenario
+    MAX_TURNS = 5
 
     traj = ProjectTrajectory(
         reward=0.0,
         messages_and_choices=[],
-        metadata={"scenario_id": scenario.id, "step": email_scenario.step},
+        metadata={"scenario_id": scenario.id, "step": web_search_scenario.step},
     )
 
     system_prompt = dedent(f"""
-    You are an email search agent. Use tools to search and read emails.
-    User email: {scenario.inbox_address}
-    Today: {scenario.query_date}
-    When done, call return_final_answer_tool(answer, reference_message_ids).
-    """)
+    You are a web search agent. Use tools to search the web.
+    When done, call return_final_answer_tool(answer, source_urls).
+    """ )
 
     final_answer: Optional[FinalAnswer] = None
 
     @tool
-    def search_inbox_tool(keywords: List[str]) -> List[dict]:
-        """Search inbox by keywords and return a list of dicts."""
-        results = search_emails(
-            inbox=scenario.inbox_address,
-            keywords=keywords,
-            sent_before=scenario.query_date,
-        )
-        return [asdict(r) for r in results]
+    async def web_search_tool(query: str) -> List[dict]:
+        """Search the web by a query and return a list of results."""
+        results = await search_web(query)
+        return [result.model_dump() for result in results]
 
     @tool
-    def read_email_tool(message_id: str) -> Optional[dict]:
-        """Read a single email by message id."""
-        email = read_email(message_id)
-        return email.model_dump() if email else None
-
-    @tool
-    def return_final_answer_tool(answer: str, reference_message_ids: List[str]) -> dict:
-        """Return final answer with evidence ids."""
+    def return_final_answer_tool(answer: str, source_urls: List[str]) -> dict:
+        """Return final answer with source URLs."""
         nonlocal final_answer
-        final_answer = FinalAnswer(answer=answer, source_ids=reference_message_ids)
+        final_answer = FinalAnswer(answer=answer, source_urls=source_urls)
         return final_answer.model_dump()
 
-    tools = [search_inbox_tool, read_email_tool, return_final_answer_tool]
+    tools = [web_search_tool, return_final_answer_tool]
 
     # 关键：用 ART 的 init_chat_model 注入可训练/可记录的聊天模型
     chat_model = init_chat_model(MODEL_NAME, temperature=1.0)
@@ -213,17 +181,13 @@ async def main():
     training_scenarios = [
         Scenario(
             id="1",
-            question="Find emails about quarterly budget and summarize key decisions.",
-            answer="Budget meeting scheduled for Q4 review",
-            inbox_address="user@company.com",
-            query_date="2024-01-20",
+            question="Who is the CEO of OpenAI?",
+            answer="Sam Altman",
         ),
         Scenario(
             id="2",
-            question="Look for urgent project updates and cite the message id.",
-            answer="Project deadline moved to next month",
-            inbox_address="user@company.com",
-            query_date="2024-01-20",
+            question="What is the capital of France?",
+            answer="Paris",
         ),
     ]
 
@@ -260,7 +224,7 @@ async def main():
             groups.append(
                 art.TrajectoryGroup(
                     wrap_rollout(model, rollout)(
-                        model, EmailScenario(step=batch.step, scenario=s)
+                        model, WebSearchScenario(step=batch.step, scenario=s)
                     )
                     for _ in range(training_config["rollouts_per_group"])
                 )
