@@ -805,3 +805,37 @@ Unsloth 2025.8.6 patched 24 layers with 24 QKV layers, 24 O layers and 24 MLP la
 [rank0]:     raise TypeError(
 [rank0]: TypeError: Unsloth: Your model already has LoRA adapters. Your new parameters are different.
 [rank0]:[W823 09:29:26.531051531 ProcessGroupNCCL.cpp:1496] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+
+
+# 报错
+[2025-08-27 14:39:08] ERROR base_events.py:1758: Exception in callback LocalBackend._prepare_backend_for_training.<locals>.done_callback(<Task cancell...ckend.py:287>>) at /usr/local/lib/python3.10/dist-packages/art/local/backend.py:278
+handle: <Handle LocalBackend._prepare_backend_for_training.<locals>.done_callback(<Task cancell...ckend.py:287>>) at /usr/local/lib/python3.10/dist-packages/art/local/backend.py:278>
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/asyncio/tasks.py", line 234, in __step
+    result = coro.throw(exc)
+  File "/usr/local/lib/python3.10/dist-packages/mp_actors/move.py", line 102, in _handle_responses
+    response: Response = await loop.run_in_executor(
+  File "/usr/lib/python3.10/asyncio/futures.py", line 285, in __await__
+    yield self  # This tells Task to wait for completion.
+  File "/usr/lib/python3.10/asyncio/tasks.py", line 304, in __wakeup
+    future.result()
+  File "/usr/lib/python3.10/asyncio/futures.py", line 196, in result
+    raise exc
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/asyncio/events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "/usr/local/lib/python3.10/dist-packages/art/local/backend.py", line 279, in done_callback
+    close_proxy(self._services.pop(model.name))
+  File "/usr/local/lib/python3.10/dist-packages/mp_actors/move.py", line 60, in close_proxy
+    getattr(proxy, "close", lambda: None)()
+  File "/usr/local/lib/python3.10/dist-packages/mp_actors/move.py", line 214, in close
+    asyncio.get_event_loop().run_until_complete(self._handle_responses_task)
+  File "/usr/local/lib/python3.10/dist-packages/nest_asyncio.py", line 98, in run_until_complete
+    return f.result()
+  File "/usr/lib/python3.10/asyncio/futures.py", line 196, in result
+    raise exc
+asyncio.exceptions.CancelledError
