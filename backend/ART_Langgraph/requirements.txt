@@ -1,3 +1,2 @@
 zai-sdk
 langgraph
-langgraph-openai
