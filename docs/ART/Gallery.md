@@ -881,5 +881,4 @@ python train.py \
 
 ---
 
-如果你想，我可以帮你：
-1）根据 `history.jsonl` 自动找出“最佳 step”；2）对比 `0275~0279` 的验证指标并给出推理样例；3）把 LoRA 合并成一份可部署的整模型。
+# Art.TrainableModel 和Art.Model
