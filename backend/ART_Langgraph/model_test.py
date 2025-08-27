@@ -60,6 +60,7 @@ from pydantic import BaseModel
 from zai import ZhipuAiClient
 dotenv.load_dotenv()
 # ---------- 与训练保持一致 ----------
+NAME = os.getenv("ART_NAME", "web-search")
 MODEL_NAME = os.getenv("ART_MODEL", "Qwen/Qwen2.5-0.5B-Instruct")
 PROJECT_NAME = os.getenv("ART_PROJECT", "web-search-agent-training")
 USE_LOCAL_BACKEND = os.getenv("ART_BACKEND", "local").lower() == "local"
@@ -101,7 +102,7 @@ async def main():
             gpu=os.getenv("ART_GPU", "A100"),
         )
 
-    model = art.Model(name=MODEL_NAME, project=PROJECT_NAME)
+    model = art.TrainableModel(name=NAME, project=PROJECT_NAME, base_model=MODEL_NAME)
     await model.register(backend)
 
     system_prompt = dedent("""
@@ -118,7 +119,7 @@ async def main():
     tools = [web_search_tool]
 
     # 用 ART 的 init_chat_model 获取可用的聊天模型（后端会加载最近训练好的 LoRA）
-    chat_model = init_chat_model(MODEL_NAME, temperature=0.7)
+    chat_model = init_chat_model(model, temperature=0.7)
     agent = create_react_agent(chat_model, tools)
 
     res = await agent.ainvoke(

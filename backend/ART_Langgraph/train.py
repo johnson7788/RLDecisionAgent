@@ -35,6 +35,7 @@ dotenv.load_dotenv()
 
 # ---------- 配置 ----------
 # 任选一个可训练且支持 tools 的基础模型（Qwen2.5 系列在文档中常被用作示例）
+NAME = os.getenv("ART_NAME", "web-search")
 MODEL_NAME = os.getenv("ART_MODEL", "Qwen/Qwen2.5-0.5B-Instruct")
 PROJECT_NAME = os.getenv("ART_PROJECT", "web-search-agent-training")
 USE_LOCAL_BACKEND = os.getenv("ART_BACKEND", "local").lower() == "local"
@@ -176,7 +177,7 @@ async def main():
         )
 
     # 声明/注册模型（名称/工程名便于组织与复用）
-    model = art.Model(name=MODEL_NAME, project=PROJECT_NAME)
+    model = art.TrainableModel(name=NAME, project=PROJECT_NAME, base_model=MODEL_NAME)
     await model.register(backend)
 
     # 构造小型训练集（替换成你的真实场景）
