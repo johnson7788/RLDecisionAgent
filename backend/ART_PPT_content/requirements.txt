@@ -1,1 +1,12 @@
 zai-sdk
+mcp
+openai
+aiohttp
+tenacity
+python-dotenv
+weave
+wandb
+click
+uvicorn
+starlette
+pydantic

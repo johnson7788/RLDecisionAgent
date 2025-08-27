@@ -83,7 +83,6 @@ https://docs.bigmodel.cn/cn/guide/tools/web-search#mcp-server
 ## 问题场景
 [scenarios](train_test_model%2Fmcp_search%2Fscenarios)
 
-
 ## 训练模型
 
 ## 修改prompt
