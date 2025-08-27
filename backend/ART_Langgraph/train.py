@@ -20,7 +20,7 @@ import uuid
 import asyncio
 from textwrap import dedent
 from typing import List, Optional
-
+import dotenv
 import art
 from art.langgraph import init_chat_model, wrap_rollout
 from art.utils import iterate_dataset
@@ -31,6 +31,7 @@ from pydantic import BaseModel, Field
 from tenacity import retry, stop_after_attempt
 from litellm import acompletion
 from zai import ZhipuAiClient
+dotenv.load_dotenv()
 
 # ---------- 配置 ----------
 # 任选一个可训练且支持 tools 的基础模型（Qwen2.5 系列在文档中常被用作示例）

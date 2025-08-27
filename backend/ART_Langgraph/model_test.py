@@ -50,7 +50,7 @@ import uuid
 import asyncio
 from textwrap import dedent
 from typing import List
-
+import dotenv
 import art
 from art.langgraph import init_chat_model
 from langgraph.prebuilt import create_react_agent
@@ -58,7 +58,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.tools import tool
 from pydantic import BaseModel
 from zai import ZhipuAiClient
-
+dotenv.load_dotenv()
 # ---------- 与训练保持一致 ----------
 MODEL_NAME = os.getenv("ART_MODEL", "Qwen/Qwen2.5-0.5B-Instruct")
 PROJECT_NAME = os.getenv("ART_PROJECT", "web-search-agent-training")
