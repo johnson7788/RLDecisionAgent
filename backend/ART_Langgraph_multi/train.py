@@ -4,7 +4,7 @@
 # @File  : train.py
 # @Author: johnson
 # @Contact : github: johnson7788
-# @Desc  :
+# @Desc  : PPT生成json大纲，然后按大纲数组的每个步骤进行搜索，即得到一个PPT的完整内容
 """
 训练一个使用 LangGraph Tools 的 ReAct Agent（基于 ART 的 GRPO 强化训练）
 - 工具：的网页搜索 + “提交最终答案”工具
@@ -143,7 +143,7 @@ async def judge_correctness(s: Scenario, answer: str) -> CorrectnessJudgeRespons
         resp.choices[0].message.content or "{}"
     )
 
-# ---------- rollout：LangGraph + Tools ----------
+# ---------- rollout：双 Agent（Planner + Researcher） ----------
 async def rollout(model: art.Model, web_search_scenario: WebSearchScenario) -> ProjectTrajectory:
     scenario = web_search_scenario.scenario
     MAX_TURNS = 5
@@ -154,49 +154,133 @@ async def rollout(model: art.Model, web_search_scenario: WebSearchScenario) -> P
         metadata={"scenario_id": scenario.id, "step": web_search_scenario.step},
     )
 
-    system_prompt = dedent(f"""
-    You are a web search agent. Use tools to search the web.
-    When done, call return_final_answer_tool(answer, source_urls).
-    """ )
+    # ===== Agent 1：Planner（无工具，仅产出严格 JSON 大纲）=====
+    planner_system = dedent("""
+    You are a planning agent for creating a presentation outline.
+    Given a presentation title, output a STRICT JSON array. Each item must be:
+      { "id": <int starting from 1>, "title": "<<=12 words>", "queries": ["<search query 1>", "..."] }
+    - Provide 4-6 items covering the topic from overview to specifics (consider adding a Conclusion).
+    - Return ONLY raw JSON. No markdown, no prose.
+    """)
 
-    final_answer: Optional[FinalAnswer] = None
+    planner_model = init_chat_model(MODEL_NAME, temperature=0.2)
+
+    # 产出大纲 JSON
+    plan_msg = await planner_model.ainvoke(
+        [SystemMessage(content=planner_system),
+         HumanMessage(content=f"Presentation title: {scenario.question}")]
+    )
+    plan_text = (getattr(plan_msg, "content", None) or "").strip()
+
+    # 容错解析（截取首尾方括号）
+    import json, re
+    def _parse_plan(txt: str) -> List[PlanItem]:
+        try:
+            data = json.loads(txt)
+        except Exception:
+            m = re.search(r"\[.*\]", txt, flags=re.S)
+            data = json.loads(m.group(0)) if m else []
+        # 兜底：若解析失败或为空，则给一个最小计划
+        if not isinstance(data, list) or not data:
+            data = [
+                {"id": 1, "title": scenario.question, "queries": [scenario.question]},
+                {"id": 2, "title": "Key Facts", "queries": [f"{scenario.question} key facts"]},
+                {"id": 3, "title": "Conclusion", "queries": [f"{scenario.question} summary"]},
+            ]
+        # 规范化
+        items = []
+        for i, it in enumerate(data, start=1):
+            items.append(PlanItem(
+                id=int(it.get("id", i)),
+                title=str(it.get("title", f"Slide {i}")),
+                queries=[str(q) for q in (it.get("queries") or [])][:3] or [scenario.question]
+            ))
+        return items
+
+    plan_items = _parse_plan(plan_text)
+
+    # ===== Agent 2：Researcher（ReAct + 工具；逐项写页）=====
+    slides: List[Slide] = []
 
     @tool
     async def web_search_tool(query: str) -> List[dict]:
         """Search the web by a query and return a list of results."""
         results = await search_web(query)
-        return [result.model_dump() for result in results]
+        return [r.model_dump() for r in results]
+
+    @tool
+    def return_slide_tool(title: str, bullets: List[str], source_urls: List[str]) -> dict:
+        """Return one slide's content."""
+        nonlocal slides
+        slide = Slide(title=title, bullets=bullets, source_urls=source_urls)
+        slides.append(slide)
+        return slide.model_dump()
 
     @tool
     def return_final_answer_tool(answer: str, source_urls: List[str]) -> dict:
         """Return final answer with source URLs."""
-        nonlocal final_answer
-        final_answer = FinalAnswer(answer=answer, source_urls=source_urls)
-        return final_answer.model_dump()
+        # 这里先占位，最终在函数末尾真正赋值；保持工具签名与原版兼容
+        return {"answer": answer, "source_urls": source_urls}
 
-    tools = [web_search_tool, return_final_answer_tool]
+    researcher_tools = [web_search_tool, return_slide_tool, return_final_answer_tool]
+    researcher_system = dedent("""
+    You are the Research & Write agent. For EACH slide:
+    - Use web_search_tool with the given queries to gather facts.
+    - Produce 3-5 concise, factual bullets (15-30 words each). Include specific data/dates.
+    - Collect 2-4 reliable source URLs that support the bullets.
+    - When done for THIS slide ONLY, call return_slide_tool(title, bullets, source_urls).
+    Rules:
+    - Prefer authoritative sources; avoid duplicates.
+    - Do NOT call return_final_answer_tool here.
+    """)
 
-    # 关键：用 ART 的 init_chat_model 注入可训练/可记录的聊天模型
-    chat_model = init_chat_model(MODEL_NAME, temperature=1.0)
-    agent = create_react_agent(chat_model, tools)
+    researcher_model = init_chat_model(MODEL_NAME, temperature=0.7)
+    researcher_agent = create_react_agent(researcher_model, researcher_tools)
 
-    await agent.ainvoke(
-        {"messages": [SystemMessage(content=system_prompt),
-                      HumanMessage(content=scenario.question)]},
-        config={"configurable": {"thread_id": str(uuid.uuid4())},
-                "recursion_limit": MAX_TURNS},
+    # 逐项执行：每个 PlanItem 作为独立的“写页”任务
+    for item in plan_items:
+        user_payload = dedent(f"""
+        Slide #{item.id}: {item.title}
+        Primary queries (use as you see fit):
+        {chr(10).join('- ' + q for q in item.queries)}
+        """)
+        await researcher_agent.ainvoke(
+            {"messages": [SystemMessage(content=researcher_system),
+                          HumanMessage(content=user_payload)]},
+            config={"configurable": {"thread_id": str(uuid.uuid4())}, "recursion_limit": 6},
+        )
+
+    # ===== Finalizer：基于已生成的 slides，给出简短结论（用于训练打分的一句话答案）=====
+    finalizer_model = init_chat_model(MODEL_NAME, temperature=0.0)
+    slides_text = "\n\n".join(
+        f"### {s.title}\n" + "\n".join(f"- {b}" for b in s.bullets) for s in slides
     )
+    finalizer_sys = "You summarize the slides into ONE short, direct answer to the original question."
+    final_msg = await finalizer_model.ainvoke(
+        [SystemMessage(content=finalizer_sys),
+         HumanMessage(content=f"Question: {scenario.question}\n\nSlides:\n{slides_text}\n\nAnswer in one sentence:")]
+    )
+    short_answer = (getattr(final_msg, "content", None) or "").strip()
 
-    if final_answer:
-        traj.final_answer = final_answer
-        try:
-            judge = await judge_correctness(scenario, final_answer.answer)
-            # 记录一个简单的正确性指标（0/1）
-            traj.metrics["correct"] = float(judge.accept)
-        except Exception:
-            pass
+    # 汇总所有来源（去重）
+    all_srcs = []
+    for s in slides:
+        for u in s.source_urls:
+            if u not in all_srcs:
+                all_srcs.append(u)
+
+    # 写回 Trajectory
+    final_ans = PPTAnswer(answer=short_answer, source_urls=all_srcs, slides=slides)
+    traj.final_answer = final_ans
+
+    # 可选：简单正确性评估（保持你原逻辑）
+    try:
+        judge = await judge_correctness(scenario, final_ans.answer)
+        traj.metrics["correct"] = float(judge.accept)
+    except Exception:
+        pass
+
     return traj
-
 
 # ---------------- wandb: 封装一次性日志函数 ----------------
 def _log_batch_to_wandb(*, batch, finished_groups, use_ruler: bool):
