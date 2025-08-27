@@ -7,8 +7,8 @@
 # @Desc  : PPT生成json大纲，然后按大纲数组的每个步骤进行搜索，即得到一个PPT的完整内容
 """
 训练一个使用 LangGraph Tools 的 ReAct Agent（基于 ART 的 GRPO 强化训练）
-- 工具：的网页搜索 + “提交最终答案”工具
-- 训练：迭代采样 -> 组内相对打分(RULER, 可选) -> model.train()
+- 工具：网页搜索 + “提交最终答案”工具
+- 训练：迭代采样 -> 结构型奖励 -> (可选) RULER 打分 -> 加权融合 -> model.train()
 
 依赖：
   uv pip install -U "openpipe-art[backend,langgraph]>=0.4.9" langchain-core pydantic tenacity litellm
@@ -19,9 +19,11 @@ import os
 import uuid
 import time
 import asyncio
+import json
+import re
 from statistics import mean
 from textwrap import dedent
-from typing import List, Optional
+from typing import List, Optional, Tuple, Dict
 
 import dotenv
 import art
@@ -33,6 +35,7 @@ from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 from tenacity import retry, stop_after_attempt
 from litellm import acompletion
+from urllib.parse import urlparse
 from zai import ZhipuAiClient
 
 # ---------------- wandb: 导入与初始化参数 ----------------
@@ -41,7 +44,6 @@ import wandb
 dotenv.load_dotenv()
 
 # ---------- 配置 ----------
-# 任选一个可训练且支持 tools 的基础模型（Qwen2.5 系列在文档中常被用作示例）
 NAME = os.getenv("ART_NAME", "web-search")
 MODEL_NAME = os.getenv("ART_MODEL", "Qwen/Qwen2.5-0.5B-Instruct")
 PROJECT_NAME = os.getenv("ART_PROJECT", "web-search-agent-training")
@@ -49,10 +51,20 @@ USE_LOCAL_BACKEND = os.getenv("ART_BACKEND", "local").lower() == "local"
 
 # RULER 评估模型（可选；需相应 API Key）
 RULER_MODEL = os.getenv("RULER_MODEL", "openai/o4-mini")
+ALPHA_RULER = float(os.getenv("ALPHA_RULER", "0.6"))  # 融合权重：最终reward = alpha*RULER + (1-alpha)*Structure
 
-# wandb 相关配置（可选）
+# 结构型奖励权重（总和建议=1）
+STRUCT_WEIGHTS = {
+    "slides_count": 0.20,
+    "bullets_per_slide": 0.20,
+    "bullet_length": 0.20,
+    "numbers_dates": 0.15,
+    "sources_count": 0.15,
+    "sources_unique": 0.05,
+    "source_quality": 0.05,
+}
 WANDB_PROJECT = os.getenv("WANDB_PROJECT", PROJECT_NAME)
-WANDB_ENTITY = os.getenv("WANDB_ENTITY")  # 组织名称，可为空
+WANDB_ENTITY = os.getenv("WANDB_ENTITY")
 WANDB_RUN_NAME = os.getenv("WANDB_RUN_NAME", f"{NAME}-{time.strftime('%Y%m%d-%H%M%S')}")
 
 WebSearchClient = ZhipuAiClient(api_key=os.environ["ZHIPU_API_KEY"])
@@ -72,8 +84,8 @@ class FinalAnswer(BaseModel):
 
 class Scenario(BaseModel):
     id: str
-    question: str
-    answer: str
+    question: str  # 用作“演示标题”
+    answer: str    # 一句话论点（Finalizer 风格对齐）
 
 
 class WebSearchScenario(BaseModel):
@@ -82,7 +94,8 @@ class WebSearchScenario(BaseModel):
 
 
 class ProjectTrajectory(art.Trajectory):
-    final_answer: Optional[FinalAnswer] = None
+    final_answer: Optional["PPTAnswer"] = None
+
 
 # ---------- Agent 协作所需的数据结构 ----------
 class PlanItem(BaseModel):
@@ -90,33 +103,34 @@ class PlanItem(BaseModel):
     title: str = Field(..., description="该页的标题，<=12个词")
     queries: List[str] = Field(..., description="用于该页检索的1-3个具体搜索query")
 
+
 class Slide(BaseModel):
     title: str
     bullets: List[str] = Field(..., description="3-5条，15-30词/条，含关键事实、日期或数据")
     source_urls: List[str] = Field(..., description="2-4个支持该页要点的URL")
+
 
 class PPTAnswer(FinalAnswer):
     """向后兼容：保留 answer/source_urls，同时新增 slides"""
     slides: List[Slide] = Field(default_factory=list)
 
 
+# ---------- 工具函数：检索 ----------
 async def search_web(keyword: str) -> List[WebSearchResult]:
-    """
-    真实的网络搜索函数
-    """
     response = WebSearchClient.web_search.web_search(
         search_engine="search_std",
         search_query=keyword,
-        count=15,  # 返回结果的条数，范围1-50，默认10
-        search_recency_filter="noLimit",  # 搜索指定日期范围内的内容
-        content_size="high"  # 控制网页摘要的字数，默认medium
+        count=15,
+        search_recency_filter="noLimit",
+        content_size="high",
     )
     return [
         WebSearchResult(
-            url=item['url'],
-            title=item['title'],
-            snippet=item['content']
-        ) for item in response['search_result']
+            url=item["url"],
+            title=item["title"],
+            snippet=item["content"],
+        )
+        for item in response["search_result"]
     ]
 
 
@@ -143,10 +157,142 @@ async def judge_correctness(s: Scenario, answer: str) -> CorrectnessJudgeRespons
         resp.choices[0].message.content or "{}"
     )
 
+
+# ---------- 结构型奖励计算 ----------
+GOOD_DOMAINS = [
+    "who.int", "un.org", "oecd.org", "nature.com", "science.org", "ft.com",
+    "bbc.com", "nytimes.com", "reuters.com", "ec.europa.eu", "nasa.gov",
+    "noaa.gov",
+]
+
+
+def _host(url: str) -> str:
+    try:
+        return urlparse(url).netloc.lower().split(":")[0]
+    except Exception:
+        return ""
+
+
+def _score_range_closed(minv: int, maxv: int, val: int, soft_center: Optional[int] = None) -> float:
+    """在[minv,maxv]给满分1；否则线性衰减，软中心可增强中心附近权重"""
+    if val is None:
+        return 0.0
+    if minv <= val <= maxv:
+        return 1.0
+    # 距离越远分越低；以区间宽度为尺度
+    width = max(1, maxv - minv)
+    if val < minv:
+        dist = minv - val
+    else:
+        dist = val - maxv
+    base = max(0.0, 1.0 - dist / (width * 2))
+    if soft_center is not None and minv <= soft_center <= maxv:
+        # 在中心附近略微抬升（可选）
+        center_boost = max(0.0, 1.0 - abs(val - soft_center) / width)
+        base = max(base, 0.5 * base + 0.5 * center_boost)
+    return float(base)
+
+
+_WORD_RE = re.compile(r"\w+", flags=re.UNICODE)
+_YEAR_RE = re.compile(r"\b(19|20)\d{2}\b")
+_DIGIT_RE = re.compile(r"\d")
+
+
+def _bullet_len_score(text: str) -> float:
+    """优先按词数(15-30)；若词数<2（如纯中文），则按字符长度(20-80)"""
+    words = _WORD_RE.findall(text)
+    if len(words) >= 2:
+        return _score_range_closed(15, 30, len(words))
+    # fallback: char length
+    chars = len(text.strip())
+    return _score_range_closed(20, 80, chars)
+
+
+def _source_quality_score(urls: List[str]) -> float:
+    if not urls:
+        return 0.0
+    good = 0
+    for u in urls:
+        h = _host(u)
+        if h.endswith(".gov") or h.endswith(".edu"):
+            good += 1
+        elif any(k in h for k in GOOD_DOMAINS):
+            good += 1
+    return min(1.0, good / max(1, len(urls)))  # 比例
+
+
+def compute_structure_reward(slides: List[Slide]) -> Tuple[float, Dict[str, float]]:
+    """返回 (总体结构分, 各子项分)；范围[0,1]"""
+    if not slides:
+        return 0.0, {k: 0.0 for k in STRUCT_WEIGHTS}
+
+    # 1) 页数
+    n_slides = len(slides)
+    s_slides = _score_range_closed(4, 6, n_slides, soft_center=5)
+
+    # 2) 每页要点数（3-5）
+    bullet_counts = [len(s.bullets or []) for s in slides]
+    per_ok = [1.0 if 3 <= c <= 5 else _score_range_closed(3, 5, c) for c in bullet_counts]
+    s_bullets_per_slide = sum(per_ok) / n_slides
+
+    # 3) 要点长度（15-30词 或 20-80字）
+    all_bullets = [b for s in slides for b in (s.bullets or [])]
+    if all_bullets:
+        s_bullet_len = sum(_bullet_len_score(b) for b in all_bullets) / len(all_bullets)
+    else:
+        s_bullet_len = 0.0
+
+    # 4) 含数字/日期比例
+    if all_bullets:
+        with_num = 0
+        for b in all_bullets:
+            if _DIGIT_RE.search(b) or _YEAR_RE.search(b):
+                with_num += 1
+        ratio = with_num / len(all_bullets)
+        s_numbers_dates = min(1.0, ratio / 0.5)  # ≥50%给满分
+    else:
+        s_numbers_dates = 0.0
+
+    # 5) 来源数量（每页 2-4）
+    src_counts = [len(s.source_urls or []) for s in slides]
+    src_ok = [1.0 if 2 <= c <= 4 else _score_range_closed(2, 4, c) for c in src_counts]
+    s_sources_count = sum(src_ok) / n_slides
+
+    # 6) 来源唯一性（去重率）
+    all_src = [u for s in slides for u in (s.source_urls or [])]
+    if all_src:
+        unique_src = list(dict.fromkeys(all_src))
+        s_sources_unique = len(unique_src) / len(all_src)
+    else:
+        s_sources_unique = 0.0
+
+    # 7) 来源权威度（按每页均值）
+    if slides:
+        s_source_quality = sum(_source_quality_score(s.source_urls or []) for s in slides) / n_slides
+    else:
+        s_source_quality = 0.0
+
+    subs = {
+        "slides_count": s_slides,
+        "bullets_per_slide": s_bullets_per_slide,
+        "bullet_length": s_bullet_len,
+        "numbers_dates": s_numbers_dates,
+        "sources_count": s_sources_count,
+        "sources_unique": s_sources_unique,
+        "source_quality": s_source_quality,
+    }
+
+    # 归一化权重
+    wsum = sum(max(0.0, float(w)) for w in STRUCT_WEIGHTS.values()) or 1.0
+    weights = {k: max(0.0, float(STRUCT_WEIGHTS.get(k, 0.0))) / wsum for k in subs.keys()}
+
+    total = sum(subs[k] * weights[k] for k in subs.keys())
+    return float(total), {**subs, **{f"w_{k}": weights[k] for k in subs.keys()}}
+
+
 # ---------- rollout：双 Agent（Planner + Researcher） ----------
 async def rollout(model: art.Model, web_search_scenario: WebSearchScenario) -> ProjectTrajectory:
     scenario = web_search_scenario.scenario
-    MAX_TURNS = 5
 
     traj = ProjectTrajectory(
         reward=0.0,
@@ -165,7 +311,6 @@ async def rollout(model: art.Model, web_search_scenario: WebSearchScenario) -> P
 
     planner_model = init_chat_model(MODEL_NAME, temperature=0.2)
 
-    # 产出大纲 JSON
     plan_msg = await planner_model.ainvoke(
         [SystemMessage(content=planner_system),
          HumanMessage(content=f"Presentation title: {scenario.question}")]
@@ -173,21 +318,18 @@ async def rollout(model: art.Model, web_search_scenario: WebSearchScenario) -> P
     plan_text = (getattr(plan_msg, "content", None) or "").strip()
 
     # 容错解析（截取首尾方括号）
-    import json, re
     def _parse_plan(txt: str) -> List[PlanItem]:
         try:
             data = json.loads(txt)
         except Exception:
             m = re.search(r"\[.*\]", txt, flags=re.S)
             data = json.loads(m.group(0)) if m else []
-        # 兜底：若解析失败或为空，则给一个最小计划
         if not isinstance(data, list) or not data:
             data = [
                 {"id": 1, "title": scenario.question, "queries": [scenario.question]},
                 {"id": 2, "title": "Key Facts", "queries": [f"{scenario.question} key facts"]},
                 {"id": 3, "title": "Conclusion", "queries": [f"{scenario.question} summary"]},
             ]
-        # 规范化
         items = []
         for i, it in enumerate(data, start=1):
             items.append(PlanItem(
@@ -219,7 +361,6 @@ async def rollout(model: art.Model, web_search_scenario: WebSearchScenario) -> P
     @tool
     def return_final_answer_tool(answer: str, source_urls: List[str]) -> dict:
         """Return final answer with source URLs."""
-        # 这里先占位，最终在函数末尾真正赋值；保持工具签名与原版兼容
         return {"answer": answer, "source_urls": source_urls}
 
     researcher_tools = [web_search_tool, return_slide_tool, return_final_answer_tool]
@@ -237,7 +378,7 @@ async def rollout(model: art.Model, web_search_scenario: WebSearchScenario) -> P
     researcher_model = init_chat_model(MODEL_NAME, temperature=0.7)
     researcher_agent = create_react_agent(researcher_model, researcher_tools)
 
-    # 逐项执行：每个 PlanItem 作为独立的“写页”任务
+    # 逐页执行
     for item in plan_items:
         user_payload = dedent(f"""
         Slide #{item.id}: {item.title}
@@ -250,15 +391,18 @@ async def rollout(model: art.Model, web_search_scenario: WebSearchScenario) -> P
             config={"configurable": {"thread_id": str(uuid.uuid4())}, "recursion_limit": 6},
         )
 
-    # ===== Finalizer：基于已生成的 slides，给出简短结论（用于训练打分的一句话答案）=====
+    # ===== Finalizer：从 slides 生成一句话论点（与标注风格对齐）=====
     finalizer_model = init_chat_model(MODEL_NAME, temperature=0.0)
     slides_text = "\n\n".join(
         f"### {s.title}\n" + "\n".join(f"- {b}" for b in s.bullets) for s in slides
     )
-    finalizer_sys = "You summarize the slides into ONE short, direct answer to the original question."
+    finalizer_sys = (
+        "You write ONE crisp thesis sentence that directly states the key takeaway "
+        "of the slides, without prefixes like 'In summary' or hedging language."
+    )
     final_msg = await finalizer_model.ainvoke(
         [SystemMessage(content=finalizer_sys),
-         HumanMessage(content=f"Question: {scenario.question}\n\nSlides:\n{slides_text}\n\nAnswer in one sentence:")]
+         HumanMessage(content=f"Presentation title: {scenario.question}\n\nSlides:\n{slides_text}\n\nThesis (one sentence):")]
     )
     short_answer = (getattr(final_msg, "content", None) or "").strip()
 
@@ -269,11 +413,19 @@ async def rollout(model: art.Model, web_search_scenario: WebSearchScenario) -> P
             if u not in all_srcs:
                 all_srcs.append(u)
 
-    # 写回 Trajectory
     final_ans = PPTAnswer(answer=short_answer, source_urls=all_srcs, slides=slides)
     traj.final_answer = final_ans
 
-    # 可选：简单正确性评估（保持你原逻辑）
+    # ===== 结构型奖励计算 =====
+    struct_score, subs = compute_structure_reward(slides)
+    traj.reward = float(struct_score)
+    # 写入 metrics（便于 wandb 分项观测）
+    traj.metrics = getattr(traj, "metrics", {}) or {}
+    traj.metrics["structure_score"] = struct_score
+    for k, v in subs.items():
+        traj.metrics[f"structure/{k}"] = float(v)
+
+    # 可选：简单正确性评估（与数据集中一句话论点对齐）
     try:
         judge = await judge_correctness(scenario, final_ans.answer)
         traj.metrics["correct"] = float(judge.accept)
@@ -282,20 +434,14 @@ async def rollout(model: art.Model, web_search_scenario: WebSearchScenario) -> P
 
     return traj
 
-# ---------------- wandb: 封装一次性日志函数 ----------------
+
+# ---------------- wandb: 日志封装 ----------------
 def _log_batch_to_wandb(*, batch, finished_groups, use_ruler: bool):
-    """
-    根据 gather_trajectory_groups 的结果整理并写入 wandb。
-    兼容不同 art 版本中 TrajectoryGroup 的访问方式。
-    """
-    # 尝试尽可能地展开所有轨迹
     trajectories = []
     for g in finished_groups:
-        # 优先使用属性
         if hasattr(g, "trajectories"):
             trajectories.extend(getattr(g, "trajectories"))
         else:
-            # 某些实现中 group 可能是可迭代的
             try:
                 trajectories.extend(list(g))
             except Exception:
@@ -303,29 +449,35 @@ def _log_batch_to_wandb(*, batch, finished_groups, use_ruler: bool):
 
     num_traj = len(trajectories)
     num_with_final = sum(1 for t in trajectories if getattr(t, "final_answer", None))
-    correct_vals = []
+
+    correct_vals, struct_vals = [], []
+    subs_avg: Dict[str, List[float]] = {}
     for t in trajectories:
         m = getattr(t, "metrics", None)
-        if isinstance(m, dict) and "correct" in m:
-            try:
-                correct_vals.append(float(m["correct"]))
-            except Exception:
-                pass
+        if isinstance(m, dict):
+            if "correct" in m:
+                try: correct_vals.append(float(m["correct"]))
+                except Exception: pass
+            if "structure_score" in m:
+                try: struct_vals.append(float(m["structure_score"]))
+                except Exception: pass
+            for k, v in m.items():
+                if k.startswith("structure/") and not k.startswith("structure/w_"):
+                    subs_avg.setdefault(k, []).append(float(v))
 
     correct_rate = mean(correct_vals) if correct_vals else 0.0
+    struct_mean = mean(struct_vals) if struct_vals else 0.0
     coverage = (num_with_final / num_traj) if num_traj else 0.0
 
-    # 生成一个表用于检查 rollouts 的样例
+    # rollouts 样例表
     try:
         table = wandb.Table(columns=["scenario_id", "question", "ref_answer", "final_answer", "sources"])
-        for t in trajectories[:50]:  # 避免过大
+        for t in trajectories[:50]:
             meta = getattr(t, "metadata", {}) or {}
             s_id = meta.get("scenario_id", "")
-            # 我们把 question/ref 从 messages 或 meta 中尽量拿到；若拿不到就跳过
             q = ""
             ref = ""
             try:
-                # 在本脚本中，来源在 batch.items 中；构个索引
                 for s in batch.items:
                     if s.id == s_id:
                         q, ref = s.question, s.answer
@@ -346,11 +498,14 @@ def _log_batch_to_wandb(*, batch, finished_groups, use_ruler: bool):
         "data/num_trajectories": num_traj,
         "data/final_answer_coverage": coverage,
         "eval/simple_correct_rate": correct_rate,
+        "reward/structure_mean": struct_mean,
     }
     if table is not None:
         log_dict["samples/rollouts"] = table
+    # 子项平均
+    for k, arr in subs_avg.items():
+        log_dict[f"reward/{k}_mean"] = mean(arr) if arr else 0.0
 
-    # 注意：设置 step 以便曲线按 step 展示
     wandb.log(log_dict, step=batch.step)
 
 
@@ -367,10 +522,11 @@ async def main():
             "base_model": MODEL_NAME,
             "backend": "local" if USE_LOCAL_BACKEND else "skypilot",
             "ruler_model": RULER_MODEL,
+            "alpha_ruler": ALPHA_RULER,
+            "struct_weights": STRUCT_WEIGHTS,
         },
-        settings=wandb.Settings(start_method="thread"),  # 与 asyncio 更兼容
+        settings=wandb.Settings(start_method="thread"),
     )
-    # 让所有指标使用统一的 step
     wandb.define_metric("*", step_metric="train/step")
 
     # 选择后端
@@ -388,18 +544,44 @@ async def main():
     model = art.TrainableModel(name=NAME, project=PROJECT_NAME, base_model=MODEL_NAME)
     await model.register(backend)
 
-    # 构造小型训练集（替换成你的真实场景）
+    # ========== 训练集 ==========
     training_scenarios = [
-        Scenario(
-            id="1",
-            question="Who is the CEO of OpenAI?",
-            answer="Sam Altman",
-        ),
-        Scenario(
-            id="2",
-            question="What is the capital of France?",
-            answer="Paris",
-        ),
+        Scenario(id="p1",
+            question="PPT 生成 Agent 的双角色协作范式（Planner·Researcher）",
+            answer="将规划与检索写作解耦，能稳定提升结构完整性与可验证性，比单体大模型更可靠。"),
+        Scenario(id="p2",
+            question="从大纲到成稿：检索驱动的演示文稿工作流",
+            answer="标准化大纲、可追溯引用与逐页写作循环是生成高质量演示文稿的核心。"),
+        Scenario(id="p3",
+            question="RAG 与传统网页检索在生成演示中的分工",
+            answer="网页检索覆盖广度与时效，RAG提供域内深度与一致性，二者互补最优。"),
+        Scenario(id="p4",
+            question="信息源可信度与引用规范在演示中的作用",
+            answer="来源权威性与可复核性直接决定演示的说服力与可传播性。"),
+        Scenario(id="p5",
+            question="为业务评审制作的执行摘要写作要点",
+            answer="清晰结论先行、关键证据最少充分、指标口径一致是高质量执行摘要的三要素。"),
+        Scenario(id="p6",
+            question="A/B 测试方法论的入门演示",
+            answer="A/B 测试以因果推断为目标，前提是随机化、样本量与指标单一清晰。"),
+        Scenario(id="p7",
+            question="零信任网络的五个落地要点",
+            answer="以身份为边界、最小权限、持续验证与可观测性是零信任落地的四根支柱。"),
+        Scenario(id="p8",
+            question="数据可观察性的三层模型",
+            answer="数据质量、管道健康与业务语义三层协同，才能定位根因并量化影响。"),
+        Scenario(id="p9",
+            question="Kubernetes 成本优化清单",
+            answer="容量基线、自动扩缩与资源请求设置比按供应商议价更先见效。"),
+        Scenario(id="p10",
+            question="RAG 系统的效果评估指标",
+            answer="答案正确性、引用完整性与可追溯性需统一衡量，单纯 BLEU/ROUGE 不足够。"),
+        Scenario(id="p11",
+            question="OKR 的常见反模式",
+            answer="以任务充当关键结果、季度中频繁改口径与缺少证据链是三大反模式。"),
+        Scenario(id="p12",
+            question="面向非技术受众解释大模型推理",
+            answer="用可视化链路、错误示例与不确定性提示比公式推导更有效。"),
     ]
 
     # 训练参数
@@ -436,6 +618,19 @@ async def main():
     except Exception:
         use_ruler = False
 
+    # ------ 融合函数：把 RULER reward 与结构分融合 ------
+    def blend_rewards_inplace(orig_groups, judged_groups, alpha: float):
+        for og, jg in zip(orig_groups, judged_groups):
+            try:
+                olist = getattr(og, "trajectories") if hasattr(og, "trajectories") else list(og)
+                jlist = getattr(jg, "trajectories") if hasattr(jg, "trajectories") else list(jg)
+                for ot, jt in zip(olist, jlist):
+                    struct_r = float(getattr(ot, "reward", 0.0) or 0.0)  # rollout 中的结构分
+                    ruler_r = float(getattr(jt, "reward", 0.0) or 0.0)   # RULER 打分
+                    jt.reward = alpha * ruler_r + (1.0 - alpha) * struct_r
+            except Exception:
+                continue
+
     for batch in it:
         print(f"[train] step={batch.step} epoch={batch.epoch}")
 
@@ -449,32 +644,34 @@ async def main():
                 )
             )
 
-        # 收集轨迹
+        # 收集轨迹（此时 reward=结构分）
         finished = await art.gather_trajectory_groups(
             groups, pbar_desc="gather",
             max_exceptions=training_config["rollouts_per_group"] * len(batch.items),
         )
 
-        # ---------------- wandb: 收集到的 rollouts 即刻记录 ----------------
+        # 记录 rollouts 与结构分
         _log_batch_to_wandb(batch=batch, finished_groups=finished, use_ruler=use_ruler)
 
         # 打分 & 训练
         if use_ruler:
-            extra_litellm_params = {"api_base": "http://localhost:6688", "api_key": os.environ["OPENAI_API_KEY"]}
+            extra_litellm_params = {"api_base": "http://localhost:6688", "api_key": os.environ.get("OPENAI_API_KEY", "")}
             judged = []
             for g in finished:
                 jg = await ruler_score_group(g, RULER_MODEL, extra_litellm_params=extra_litellm_params, debug=True)
                 judged.append(jg)
 
-            # 注意：art 的 train 返回值在不同版本可能不同，这里不强依赖返回值，只在 wandb 中标注一次
+            # 融合：alpha*RULER + (1-alpha)*STRUCTURE
+            blend_rewards_inplace(finished, judged, ALPHA_RULER)
+
             await model.train(
                 judged,
                 config=art.TrainConfig(learning_rate=training_config["learning_rate"]),
                 _config={"logprob_calculation_chunk_size": 8},
             )
-
-            wandb.log({"train/used_judged_groups": 1}, step=batch.step)
+            wandb.log({"train/used_judged_groups": 1, "reward/alpha_ruler": ALPHA_RULER}, step=batch.step)
         else:
+            # 无 RULER：直接用结构分作为 reward
             await model.train(
                 finished,
                 config=art.TrainConfig(learning_rate=training_config["learning_rate"]),
@@ -484,7 +681,6 @@ async def main():
         if batch.step >= training_config["max_steps"]:
             break
 
-    # ---------------- wandb: 结束 ----------------
     wandb.finish()
 
 
