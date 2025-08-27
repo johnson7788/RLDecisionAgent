@@ -57,9 +57,10 @@ from langgraph.prebuilt import create_react_agent
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.tools import tool
 from pydantic import BaseModel
+from zai import ZhipuAiClient
 
 # ---------- 与训练保持一致 ----------
-MODEL_NAME = os.getenv("ART_MODEL", "Qwen/Qwen2.5-7B-Instruct")
+MODEL_NAME = os.getenv("ART_MODEL", "Qwen/Qwen2.5-0.5B-Instruct")
 PROJECT_NAME = os.getenv("ART_PROJECT", "web-search-agent-training")
 USE_LOCAL_BACKEND = os.getenv("ART_BACKEND", "local").lower() == "local"
 WebSearchClient = ZhipuAiClient(api_key=os.environ["ZHIPU_API_KEY"])

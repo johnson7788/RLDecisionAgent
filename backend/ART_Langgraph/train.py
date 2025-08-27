@@ -34,7 +34,7 @@ from zai import ZhipuAiClient
 
 # ---------- 配置 ----------
 # 任选一个可训练且支持 tools 的基础模型（Qwen2.5 系列在文档中常被用作示例）
-MODEL_NAME = os.getenv("ART_MODEL", "Qwen/Qwen2.5-7B-Instruct")
+MODEL_NAME = os.getenv("ART_MODEL", "Qwen/Qwen2.5-0.5B-Instruct")
 PROJECT_NAME = os.getenv("ART_PROJECT", "web-search-agent-training")
 USE_LOCAL_BACKEND = os.getenv("ART_BACKEND", "local").lower() == "local"
 
