@@ -1,4 +1,4 @@
-# Langgraph ART 训练模型, 单Agent结构
+# Langgraph ART 训练模型, 多Agent结构
 
 ## 搜索输出
 WebSearchClient = ZhipuAiClient(api_key="your-api-key")

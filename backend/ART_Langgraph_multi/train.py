@@ -84,6 +84,21 @@ class WebSearchScenario(BaseModel):
 class ProjectTrajectory(art.Trajectory):
     final_answer: Optional[FinalAnswer] = None
 
+# ---------- Agent 协作所需的数据结构 ----------
+class PlanItem(BaseModel):
+    id: int = Field(..., description="从1开始的顺序编号")
+    title: str = Field(..., description="该页的标题，<=12个词")
+    queries: List[str] = Field(..., description="用于该页检索的1-3个具体搜索query")
+
+class Slide(BaseModel):
+    title: str
+    bullets: List[str] = Field(..., description="3-5条，15-30词/条，含关键事实、日期或数据")
+    source_urls: List[str] = Field(..., description="2-4个支持该页要点的URL")
+
+class PPTAnswer(FinalAnswer):
+    """向后兼容：保留 answer/source_urls，同时新增 slides"""
+    slides: List[Slide] = Field(default_factory=list)
+
 
 async def search_web(keyword: str) -> List[WebSearchResult]:
     """
