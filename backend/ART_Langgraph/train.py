@@ -5,8 +5,6 @@
 # @Author: johnson
 # @Contact : github: johnson7788
 # @Desc  : 
-
-# -*- coding: utf-8 -*-
 """
 训练一个使用 LangGraph Tools 的 ReAct Agent（基于 ART 的 GRPO 强化训练）
 - 工具：的网页搜索 + “提交最终答案”工具

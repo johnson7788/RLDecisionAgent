@@ -17,42 +17,11 @@
 import os
 import uuid
 import asyncio
-from dataclasses import asdict
-from textwrap import dedent
-from typing import List, Optional
-
-import art
-from art.langgraph import init_chat_model
-from langgraph.prebuilt import create_react_agent
-from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_core.tools import tool
-from pydantic import BaseModel
-
-# ---------- 与训练保持一致 ----------
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# @Date  : 2025/8/27 11:41
-# @File  : model_test.py
-# @Author: johnson
-# @Contact : github: johnson7788
-# @Desc  :
-
-# -*- coding: utf-8 -*-
-"""
-用训练过的同名模型跑一次 ReAct 推理测试（同样走 LangGraph tools）
-注意：
-- 若你在同一后端进程中连续训练->测试，后端已加载最近的 LoRA。
-- 若在新进程测试，请保持相同的 model.name / project，并连接到相同后端（本地或 SkyPilot）。
-"""
-
-import os
-import uuid
-import asyncio
 from textwrap import dedent
 from typing import List
 import dotenv
 import art
-from art.langgraph import init_chat_model
+from art.langgraph import init_chat_model, wrap_rollout
 from langgraph.prebuilt import create_react_agent
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.tools import tool
@@ -90,25 +59,12 @@ def search_web(keyword: str) -> List[WebSearchResult]:
         ) for item in response['search_result']
     ]
 
-async def main():
-    # 连接与注册后端
-    if USE_LOCAL_BACKEND:
-        from art.local.backend import LocalBackend
-        backend = LocalBackend()
-    else:
-        from art.skypilot.backend import SkyPilotBackend
-        backend = await SkyPilotBackend.initialize_cluster(
-            cluster_name=os.getenv("ART_SKYPILOT_CLUSTER", "art-cluster"),
-            gpu=os.getenv("ART_GPU", "A100"),
-        )
 
-    model = art.TrainableModel(name=NAME, project=PROJECT_NAME, base_model=MODEL_NAME)
-    await model.register(backend)
-
-    system_prompt = dedent("""
+async def run_agent_test(model: art.Model):
+    system_prompt = dedent('''
     You are a web search agent. Use tools to find information on the web.
     When done, provide a concise answer.
-    """)
+    ''')
 
     @tool
     def web_search_tool(query: str) -> List[dict]:
@@ -130,7 +86,28 @@ async def main():
         config={"configurable": {"thread_id": str(uuid.uuid4())},
                 "recursion_limit": 10},
     )
+    print(f"测试的输出结果: {res}")
     print("[TEST] agent finished. See backend logs / tracing for details.")
+
+
+async def main():
+    # 连接与注册后端
+    if USE_LOCAL_BACKEND:
+        from art.local.backend import LocalBackend
+        backend = LocalBackend()
+    else:
+        from art.skypilot.backend import SkyPilotBackend
+        backend = await SkyPilotBackend.initialize_cluster(
+            cluster_name=os.getenv("ART_SKYPILOT_CLUSTER", "art-cluster"),
+            gpu=os.getenv("ART_GPU", "A100"),
+        )
+
+    model = art.TrainableModel(name=NAME, project=PROJECT_NAME, base_model=MODEL_NAME)
+    await model.register(backend)
+
+    # 关键：用 wrap_rollout 包装推理函数，确保 ART 上下文正确设置
+    wrapped_test_func = wrap_rollout(model, run_agent_test)
+    await wrapped_test_func(model)
 
 if __name__ == "__main__":
     asyncio.run(main())
