@@ -100,6 +100,7 @@ async def judge_correctness(s: Scenario, answer: str) -> CorrectnessJudgeRespons
     ]
     resp = await acompletion(
         model="openai/gpt-4o-mini",
+        base_url="http://127.0.0.1:6688",
         messages=messages,
         response_format=CorrectnessJudgeResponse,
     )
@@ -238,9 +239,10 @@ async def main():
 
         # 打分 & 训练
         if use_ruler:
+            extra_litellm_params = {"api_base": "http://localhost:6688", "api_key": os.environ["OPENAI_API_KEY"]}
             judged = []
             for g in finished:
-                jg = await ruler_score_group(g, RULER_MODEL, debug=True)
+                jg = await ruler_score_group(g, RULER_MODEL, extra_litellm_params=extra_litellm_params, debug=True)
                 judged.append(jg)
             await model.train(
                 judged,
