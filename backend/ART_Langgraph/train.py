@@ -9,15 +9,20 @@
 训练一个使用 LangGraph Tools 的 ReAct Agent（基于 ART 的 GRPO 强化训练）
 - 工具：的网页搜索 + “提交最终答案”工具
 - 训练：迭代采样 -> 组内相对打分(RULER, 可选) -> model.train()
+
 依赖：
   uv pip install -U "openpipe-art[backend,langgraph]>=0.4.9" langchain-core pydantic tenacity litellm
+  pip install wandb
 """
 
 import os
 import uuid
+import time
 import asyncio
+from statistics import mean
 from textwrap import dedent
 from typing import List, Optional
+
 import dotenv
 import art
 from art.langgraph import init_chat_model, wrap_rollout
@@ -29,6 +34,10 @@ from pydantic import BaseModel, Field
 from tenacity import retry, stop_after_attempt
 from litellm import acompletion
 from zai import ZhipuAiClient
+
+# ---------------- wandb: 导入与初始化参数 ----------------
+import wandb
+
 dotenv.load_dotenv()
 
 # ---------- 配置 ----------
@@ -41,6 +50,11 @@ USE_LOCAL_BACKEND = os.getenv("ART_BACKEND", "local").lower() == "local"
 # RULER 评估模型（可选；需相应 API Key）
 RULER_MODEL = os.getenv("RULER_MODEL", "openai/o4-mini")
 
+# wandb 相关配置（可选）
+WANDB_PROJECT = os.getenv("WANDB_PROJECT", PROJECT_NAME)
+WANDB_ENTITY = os.getenv("WANDB_ENTITY")  # 组织名称，可为空
+WANDB_RUN_NAME = os.getenv("WANDB_RUN_NAME", f"{NAME}-{time.strftime('%Y%m%d-%H%M%S')}")
+
 WebSearchClient = ZhipuAiClient(api_key=os.environ["ZHIPU_API_KEY"])
 
 
@@ -50,21 +64,26 @@ class WebSearchResult(BaseModel):
     title: str
     snippet: str
 
+
 class FinalAnswer(BaseModel):
     answer: str
     source_urls: List[str]
+
 
 class Scenario(BaseModel):
     id: str
     question: str
     answer: str
 
+
 class WebSearchScenario(BaseModel):
     step: int
     scenario: Scenario
 
+
 class ProjectTrajectory(art.Trajectory):
     final_answer: Optional[FinalAnswer] = None
+
 
 async def search_web(keyword: str) -> List[WebSearchResult]:
     """
@@ -85,11 +104,12 @@ async def search_web(keyword: str) -> List[WebSearchResult]:
         ) for item in response['search_result']
     ]
 
-# ---------- 可选：正确性评估（仅做指标记录，不参与训练权重更新）----------
 
+# ---------- 可选：正确性评估（仅做指标记录，不参与训练权重更新）----------
 class CorrectnessJudgeResponse(BaseModel):
     reasoning: str = Field(description="why")
     accept: bool = Field(description="accept or not")
+
 
 @retry(stop=stop_after_attempt(3))
 async def judge_correctness(s: Scenario, answer: str) -> CorrectnessJudgeResponse:
@@ -107,6 +127,7 @@ async def judge_correctness(s: Scenario, answer: str) -> CorrectnessJudgeRespons
     return CorrectnessJudgeResponse.model_validate_json(
         resp.choices[0].message.content or "{}"
     )
+
 
 # ---------- rollout：LangGraph + Tools ----------
 async def rollout(model: art.Model, web_search_scenario: WebSearchScenario) -> ProjectTrajectory:
@@ -156,14 +177,105 @@ async def rollout(model: art.Model, web_search_scenario: WebSearchScenario) -> P
         traj.final_answer = final_answer
         try:
             judge = await judge_correctness(scenario, final_answer.answer)
+            # 记录一个简单的正确性指标（0/1）
             traj.metrics["correct"] = float(judge.accept)
         except Exception:
             pass
     return traj
 
+
+# ---------------- wandb: 封装一次性日志函数 ----------------
+def _log_batch_to_wandb(*, batch, finished_groups, use_ruler: bool):
+    """
+    根据 gather_trajectory_groups 的结果整理并写入 wandb。
+    兼容不同 art 版本中 TrajectoryGroup 的访问方式。
+    """
+    # 尝试尽可能地展开所有轨迹
+    trajectories = []
+    for g in finished_groups:
+        # 优先使用属性
+        if hasattr(g, "trajectories"):
+            trajectories.extend(getattr(g, "trajectories"))
+        else:
+            # 某些实现中 group 可能是可迭代的
+            try:
+                trajectories.extend(list(g))
+            except Exception:
+                pass
+
+    num_traj = len(trajectories)
+    num_with_final = sum(1 for t in trajectories if getattr(t, "final_answer", None))
+    correct_vals = []
+    for t in trajectories:
+        m = getattr(t, "metrics", None)
+        if isinstance(m, dict) and "correct" in m:
+            try:
+                correct_vals.append(float(m["correct"]))
+            except Exception:
+                pass
+
+    correct_rate = mean(correct_vals) if correct_vals else 0.0
+    coverage = (num_with_final / num_traj) if num_traj else 0.0
+
+    # 生成一个表用于检查 rollouts 的样例
+    try:
+        table = wandb.Table(columns=["scenario_id", "question", "ref_answer", "final_answer", "sources"])
+        for t in trajectories[:50]:  # 避免过大
+            meta = getattr(t, "metadata", {}) or {}
+            s_id = meta.get("scenario_id", "")
+            # 我们把 question/ref 从 messages 或 meta 中尽量拿到；若拿不到就跳过
+            q = ""
+            ref = ""
+            try:
+                # 在本脚本中，来源在 batch.items 中；构个索引
+                for s in batch.items:
+                    if s.id == s_id:
+                        q, ref = s.question, s.answer
+                        break
+            except Exception:
+                pass
+            fa = getattr(t, "final_answer", None)
+            ans = getattr(fa, "answer", "") if fa else ""
+            srcs = ", ".join(getattr(fa, "source_urls", []) if fa else [])
+            table.add_data(s_id, q, ref, ans, srcs)
+    except Exception:
+        table = None
+
+    log_dict = {
+        "train/step": batch.step,
+        "train/epoch": batch.epoch,
+        "ruler/enabled": int(bool(use_ruler)),
+        "data/num_trajectories": num_traj,
+        "data/final_answer_coverage": coverage,
+        "eval/simple_correct_rate": correct_rate,
+    }
+    if table is not None:
+        log_dict["samples/rollouts"] = table
+
+    # 注意：设置 step 以便曲线按 step 展示
+    wandb.log(log_dict, step=batch.step)
+
+
 # ---------- 训练主程序 ----------
 async def main():
-    # 选择后端：本地 GPU 或远端 SkyPilot（无本地 GPU 时）
+    # ---------------- wandb: 初始化 ----------------
+    wandb.init(
+        project=WANDB_PROJECT,
+        entity=WANDB_ENTITY if WANDB_ENTITY else None,
+        name=WANDB_RUN_NAME,
+        config={
+            "art_project": PROJECT_NAME,
+            "art_name": NAME,
+            "base_model": MODEL_NAME,
+            "backend": "local" if USE_LOCAL_BACKEND else "skypilot",
+            "ruler_model": RULER_MODEL,
+        },
+        settings=wandb.Settings(start_method="thread"),  # 与 asyncio 更兼容
+    )
+    # 让所有指标使用统一的 step
+    wandb.define_metric("*", step_metric="train/step")
+
+    # 选择后端
     if USE_LOCAL_BACKEND:
         from art.local.backend import LocalBackend
         backend = LocalBackend()
@@ -174,7 +286,7 @@ async def main():
             gpu=os.getenv("ART_GPU", "A100"),
         )
 
-    # 声明/注册模型（名称/工程名便于组织与复用）
+    # 声明/注册模型
     model = art.TrainableModel(name=NAME, project=PROJECT_NAME, base_model=MODEL_NAME)
     await model.register(backend)
 
@@ -201,6 +313,16 @@ async def main():
         "max_steps": 5,
     }
 
+    # ---------------- wandb: 记录超参与数据概览 ----------------
+    wandb.config.update(training_config)
+    try:
+        scen_table = wandb.Table(columns=["id", "question", "ref_answer"])
+        for s in training_scenarios:
+            scen_table.add_data(s.id, s.question, s.answer)
+        wandb.log({"data/training_scenarios": scen_table}, step=0)
+    except Exception:
+        pass
+
     # 训练数据迭代器
     it = iterate_dataset(
         training_scenarios,
@@ -209,7 +331,7 @@ async def main():
         initial_step=await model.get_step(),
     )
 
-    # 是否使用 RULER（无 judge key 时自动回退为“直接训练已完成的轨迹”）
+    # 是否使用 RULER（无 judge key 时自动回退）
     try:
         from art.rewards import ruler_score_group
         use_ruler = True
@@ -224,18 +346,19 @@ async def main():
         for s in batch.items:
             groups.append(
                 art.TrajectoryGroup(
-                    wrap_rollout(model, rollout)(
-                        model, WebSearchScenario(step=batch.step, scenario=s)
-                    )
+                    wrap_rollout(model, rollout)(model, WebSearchScenario(step=batch.step, scenario=s))
                     for _ in range(training_config["rollouts_per_group"])
                 )
             )
 
-        # 收集轨迹（ART 会自动串联推理与训练，后端保存并加载最新 LoRA）
+        # 收集轨迹
         finished = await art.gather_trajectory_groups(
             groups, pbar_desc="gather",
             max_exceptions=training_config["rollouts_per_group"] * len(batch.items),
         )
+
+        # ---------------- wandb: 收集到的 rollouts 即刻记录 ----------------
+        _log_batch_to_wandb(batch=batch, finished_groups=finished, use_ruler=use_ruler)
 
         # 打分 & 训练
         if use_ruler:
@@ -244,20 +367,28 @@ async def main():
             for g in finished:
                 jg = await ruler_score_group(g, RULER_MODEL, extra_litellm_params=extra_litellm_params, debug=True)
                 judged.append(jg)
+
+            # 注意：art 的 train 返回值在不同版本可能不同，这里不强依赖返回值，只在 wandb 中标注一次
             await model.train(
                 judged,
                 config=art.TrainConfig(learning_rate=training_config["learning_rate"]),
                 _config={"logprob_calculation_chunk_size": 8},
             )
+
+            wandb.log({"train/used_judged_groups": 1}, step=batch.step)
         else:
-            # 没有 RULER 的情况下，也可以直接训练（若你在 rollout 中自己设置了 reward）
             await model.train(
                 finished,
                 config=art.TrainConfig(learning_rate=training_config["learning_rate"]),
             )
+            wandb.log({"train/used_judged_groups": 0}, step=batch.step)
 
         if batch.step >= training_config["max_steps"]:
             break
+
+    # ---------------- wandb: 结束 ----------------
+    wandb.finish()
+
 
 if __name__ == "__main__":
     asyncio.run(main())
