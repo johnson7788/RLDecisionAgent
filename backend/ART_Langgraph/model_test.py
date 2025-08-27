@@ -70,7 +70,7 @@ class WebSearchResult(BaseModel):
     url: str
     title: str
     snippet: str
-def search_web(query: str) -> List[WebSearchResult]:
+def search_web(keyword: str) -> List[WebSearchResult]:
     """
     真实的网络搜索函数
     """
