@@ -806,8 +806,7 @@ Unsloth 2025.8.6 patched 24 layers with 24 QKV layers, 24 O layers and 24 MLP la
 [rank0]: TypeError: Unsloth: Your model already has LoRA adapters. Your new parameters are different.
 [rank0]:[W823 09:29:26.531051531 ProcessGroupNCCL.cpp:1496] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
 
-
-# 报错
+# 报错, 正常的结束的报错
 [2025-08-27 14:39:08] ERROR base_events.py:1758: Exception in callback LocalBackend._prepare_backend_for_training.<locals>.done_callback(<Task cancell...ckend.py:287>>) at /usr/local/lib/python3.10/dist-packages/art/local/backend.py:278
 handle: <Handle LocalBackend._prepare_backend_for_training.<locals>.done_callback(<Task cancell...ckend.py:287>>) at /usr/local/lib/python3.10/dist-packages/art/local/backend.py:278>
 Traceback (most recent call last):
