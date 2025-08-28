@@ -129,6 +129,7 @@ async def judge_correctness(s: Scenario, answer: str) -> CorrectnessJudgeRespons
 
 # ---------- rollout：LangGraph + Tools ----------
 async def rollout(model: art.Model, web_search_scenario: WebSearchScenario) -> ProjectTrajectory:
+    print(f"Rollout scenario step {web_search_scenario.step}")
     scenario = web_search_scenario.scenario
     MAX_TURNS = 5
 
@@ -342,6 +343,7 @@ async def main():
         # 组装 TrajectoryGroup：每个样本 rollout 多条轨迹
         groups = []
         for s in batch.items:
+            print(f"开始训练场景：{s.id}")
             groups.append(
                 art.TrajectoryGroup(
                     wrap_rollout(model, rollout)(model, WebSearchScenario(step=batch.step, scenario=s))
