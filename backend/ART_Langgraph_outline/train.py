@@ -211,7 +211,9 @@ async def rollout(model: art.Model, web_search_scenario: WebSearchScenario) -> P
     @tool
     async def web_search_tool(query: str) -> List[dict]:
         """进行网络搜索并返回结果列表。"""
+        print(f"[tool:web_search] scenario_id={scenario.id} step={web_search_scenario.step} query={query}")
         results = await search_web(query)
+        print(f"[tool:web_search] results={results}")
         return [r.model_dump() for r in results]
 
     @tool
@@ -226,6 +228,7 @@ async def rollout(model: art.Model, web_search_scenario: WebSearchScenario) -> P
     # 用 ART 的 init_chat_model 注入可训练聊天模型
     chat_model = init_chat_model(MODEL_NAME, temperature=0.4)
     agent = create_react_agent(chat_model, tools)
+    print(f"[rollout] START scenario_id={scenario.id} step={web_search_scenario.step} topic={scenario.topic}")
 
     await agent.ainvoke(
         {
@@ -240,11 +243,15 @@ async def rollout(model: art.Model, web_search_scenario: WebSearchScenario) -> P
 
     if final_outline:
         traj.final_outline = final_outline
+        print("[rollout] OUTLINE_PREVIEW ↓↓↓")
+        print(f"final_outline: {final_outline}")
+        print("[rollout] SOURCES:", ", ".join(final_outline.source_urls))
         try:
             judge = await judge_correctness(scenario, final_outline.outline)
             traj.metrics["pass_structure"] = float(judge.accept)
             # 将规则分也记录到 metrics，便于 wandb 可视化
             traj.metrics["rule_score"] = _structure_score_cn(final_outline.outline)
+            print(f"[rollout] METRICS pass_structure={traj.metrics['pass_structure']} rule_score={traj.metrics['rule_score']:.2f}")
         except Exception:
             pass
 
