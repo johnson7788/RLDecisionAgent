@@ -1,4 +1,4 @@
-# Langgraph ART 训练模型, 多Agent结构，报错 ValueError: Additional histories are not supported by RULER yet.
+# Langgraph ART 训练模型, 单Agent结构
 
 ## 搜索输出
 WebSearchClient = ZhipuAiClient(api_key="your-api-key")
@@ -22,8 +22,6 @@ response = WebSearchClient.web_search.web_search(
  ]
 
 ## 训练
-export CUDA_VISIBLE_DEVICES=1
-export HF_ENDPOINT=https://hf-mirror.com
 python train.py
 
 ## 测试
@@ -31,3 +29,28 @@ python model_test.py
 
 ## wandb日志
 http://192.168.100.8:3005/johnson/web-search-agent-training
+
+
+# 1) 格式奖励（format_reward，0~1）
+
+衡量输出是否严格保持原大纲结构并充分填充 text：
+
+结构一致性（0.40）：task 的数组长度、各元素 type 一致；cover/transition 的 data.title 不变；content 的 data.title 与 items 长度、每个 item.title 不变；
+
+填充完整度（0.30）：所有 text 不再是默认“Detailed content…”或空；长度≥120字；
+
+引用标注覆盖（0.20）：≥80% 的 text 含至少一个 [n] 引用（对应 sources 中的 URL 编号）；
+
+JSON 合法性（0.10）：能被严格反序列化为与输入等价的 schema。
+
+# 2) 搜索内容奖励（search_reward，0~1）
+
+衡量信息扎实可核验与搜索质量：
+
+来源数量与多样性（0.35）：sources 中有效 URL 数量（去重）与域名多样性评分；
+
+证据化/具体化（0.35）：含数字/百分比/时间点等“可核验特征”的 text 占比；
+
+引用一致性（0.20）：text 中引用的 [n] 均能在 sources[n-1] 找到，且 URL 合法；
+
+新近性启发（0.10）：如 text 含 2023/2024/2025 等显式年份或“Q1/Q2”等时间线信号（启发式）。

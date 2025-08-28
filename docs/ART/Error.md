@@ -838,3 +838,66 @@ Traceback (most recent call last):
   File "/usr/lib/python3.10/asyncio/futures.py", line 196, in result
     raise exc
 asyncio.exceptions.CancelledError
+
+
+#  报错
+LiteLLM completion() model= gpt-4o-mini; provider = openai
+[2025-08-27 21:19:45] INFO _client.py:1740: HTTP Request: POST http://127.0.0.1:6688/chat/completions "HTTP/1.1 200 OK"
+21:19:47 - LiteLLM:INFO: cost_calculator.py:655 - selected model name for cost calculation: openai/gpt-4o-mini-2024-07-18
+[2025-08-27 21:19:47] INFO cost_calculator.py:655: selected model name for cost calculation: openai/gpt-4o-mini-2024-07-18
+21:19:47 - LiteLLM:INFO: cost_calculator.py:655 - selected model name for cost calculation: openai/gpt-4o-mini-2024-07-18
+[2025-08-27 21:19:47] INFO cost_calculator.py:655: selected model name for cost calculation: openai/gpt-4o-mini-2024-07-18
+gather:  25%|▎| 2/8 [00:44<02:14, 22.47s/it, exceptions=6, reward=0.263, structure_score=0.263, structure/slides_count=0.25
+[2025-08-27 21:19:47] ERROR base_events.py:1758: Exception in callback LocalBackend._prepare_backend_for_training.<locals>.done_callback(<Task cancell...ckend.py:287>>) at /usr/local/lib/python3.10/dist-packages/art/local/backend.py:278
+handle: <Handle LocalBackend._prepare_backend_for_training.<locals>.done_callback(<Task cancell...ckend.py:287>>) at /usr/local/lib/python3.10/dist-packages/art/local/backend.py:278>
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/asyncio/runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "/usr/lib/python3.10/asyncio/base_events.py", line 649, in run_until_complete
+    return future.result()
+  File "/workspace/verl/backend/ART_Langgraph_multi/train.py", line 637, in main
+    jg = await ruler_score_group(g, RULER_MODEL, extra_litellm_params=extra_litellm_params, debug=True)
+  File "/usr/local/lib/python3.10/dist-packages/art/rewards/ruler.py", line 232, in ruler_score_group
+    raise ValueError("Additional histories are not supported by RULER yet.")
+ValueError: Additional histories are not supported by RULER yet.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/asyncio/events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "/usr/local/lib/python3.10/dist-packages/art/local/backend.py", line 279, in done_callback
+    close_proxy(self._services.pop(model.name))
+  File "/usr/local/lib/python3.10/dist-packages/mp_actors/move.py", line 60, in close_proxy
+    getattr(proxy, "close", lambda: None)()
+  File "/usr/local/lib/python3.10/dist-packages/mp_actors/move.py", line 214, in close
+    asyncio.get_event_loop().run_until_complete(self._handle_responses_task)
+  File "/usr/local/lib/python3.10/dist-packages/nest_asyncio.py", line 98, in run_until_complete
+    return f.result()
+  File "/usr/lib/python3.10/asyncio/futures.py", line 196, in result
+    raise exc
+asyncio.exceptions.CancelledError
+Traceback (most recent call last):
+  File "/workspace/verl/backend/ART_Langgraph_multi/train.py", line 664, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.10/asyncio/runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "/usr/lib/python3.10/asyncio/base_events.py", line 649, in run_until_complete
+    return future.result()
+  File "/workspace/verl/backend/ART_Langgraph_multi/train.py", line 637, in main
+    jg = await ruler_score_group(g, RULER_MODEL, extra_litellm_params=extra_litellm_params, debug=True)
+  File "/usr/local/lib/python3.10/dist-packages/art/rewards/ruler.py", line 232, in ruler_score_group
+    raise ValueError("Additional histories are not supported by RULER yet.")
+ValueError: Additional histories are not supported by RULER yet.
+Traceback (most recent call last):
+  File "/workspace/verl/backend/ART_Langgraph_multi/train.py", line 664, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.10/asyncio/runners.py", line 44, in run
+    return loop.run_until_complete(main)
+  File "/usr/lib/python3.10/asyncio/base_events.py", line 649, in run_until_complete
+    return future.result()
+  File "/workspace/verl/backend/ART_Langgraph_multi/train.py", line 637, in main
+    jg = await ruler_score_group(g, RULER_MODEL, extra_litellm_params=extra_litellm_params, debug=True)
+  File "/usr/local/lib/python3.10/dist-packages/art/rewards/ruler.py", line 232, in ruler_score_group
+    raise ValueError("Additional histories are not supported by RULER yet.")
+ValueError: Additional histories are not supported by RULER yet.
