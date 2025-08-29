@@ -1,7 +1,7 @@
 # Langgraph ART 训练模型, 单Agent结构
 
 ## 搜索输出
-WebSearchClient = ZhipuAiClient(api_key="your-api-key")
+WebSearchClient = ZhipuAiClient(api_key=os.environ["ZHIPU_API_KEY"])
 response = WebSearchClient.web_search.web_search(
         search_engine="search_std",
         search_query="搜索2025年4月的财经新闻",

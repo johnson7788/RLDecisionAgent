@@ -97,12 +97,16 @@ async def search_web(keyword: str) -> List[WebSearchResult]:
         search_recency_filter="noLimit",  # 搜索指定日期范围内的内容
         content_size="high"  # 控制网页摘要的字数，默认medium
     )
+    if not response.search_result:
+        return []
+
     return [
         WebSearchResult(
-            url=item['url'],
-            title=item['title'],
-            snippet=item['content']
-        ) for item in response['search_result']
+            url=sr.link,
+            title=sr.title,
+            snippet=sr.content
+        )
+        for sr in response.search_result
     ]
 
 
