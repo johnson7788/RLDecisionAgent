@@ -46,6 +46,8 @@ MODEL_NAME = os.getenv("ART_MODEL", "Qwen/Qwen2.5-0.5B-Instruct")
 PROJECT_NAME = os.getenv("ART_PROJECT", "web-search-agent-training")
 USE_LOCAL_BACKEND = os.getenv("ART_BACKEND", "local").lower() == "local"
 
+print(f"{NAME} - {MODEL_NAME} - {PROJECT_NAME}")
+
 # RULER 评估模型（可选；需相应 API Key）
 RULER_MODEL = os.getenv("RULER_MODEL", "openai/o4-mini")
 
@@ -358,11 +360,12 @@ async def main():
     # 训练参数
     training_config = {
         "groups_per_step": 2,
-        "num_epochs": 2,
+        "num_epochs": int(os.environ.get("NUM_EPOCHS", "2")),
         "rollouts_per_group": 4,
         "learning_rate": 1e-5,
         "max_steps": 5,
     }
+    print(f"训练参数: {training_config}")
 
     # ---------------- wandb: 记录超参与数据概览 ----------------
     wandb.config.update(training_config)
