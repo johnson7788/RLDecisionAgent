@@ -301,8 +301,60 @@ async def main():
             question="What is the capital of France?",
             answer="Paris",
         ),
+        Scenario(
+            id="3",
+            question="What is the largest planet in our Solar System?",
+            answer="Jupiter",
+        ),
+        Scenario(
+            id="4",
+            question="What is the chemical symbol for gold?",
+            answer="Au",
+        ),
+        Scenario(
+            id="5",
+            question="Who wrote '1984'?",
+            answer="George Orwell",
+        ),
+        Scenario(
+            id="6",
+            question="What is the capital of Japan?",
+            answer="Tokyo",
+        ),
+        Scenario(
+            id="7",
+            question="What is 9 × 7?",
+            answer="63",
+        ),
+        Scenario(
+            id="8",
+            question="What is the boiling point of water at sea level in Celsius?",
+            answer="100°C",
+        ),
+        Scenario(
+            id="9",
+            question="What is the largest ocean on Earth?",
+            answer="The Pacific Ocean",
+        ),
+        Scenario(
+            id="10",
+            question="Who painted the Mona Lisa?",
+            answer="Leonardo da Vinci",
+        ),
+        Scenario(
+            id="11",
+            question="What gas do plants primarily absorb for photosynthesis?",
+            answer="Carbon dioxide",
+        ),
+        Scenario(
+            id="12",
+            question="In computing, what does 'CPU' stand for?",
+            answer="Central Processing Unit",
+        )
     ]
-
+    if os.environ.get("MINI_DATA", "true") == "true":
+        training_scenarios = training_scenarios[:2]
+        print(f"使用迷你数据集进行训练，只有2条数据")
     # 训练参数
     training_config = {
         "groups_per_step": 2,
