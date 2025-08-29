@@ -901,3 +901,172 @@ Traceback (most recent call last):
   File "/usr/local/lib/python3.10/dist-packages/art/rewards/ruler.py", line 232, in ruler_score_group
     raise ValueError("Additional histories are not supported by RULER yet.")
 ValueError: Additional histories are not supported by RULER yet.
+
+
+# 训练时报错，看exceptions数量增加，说明rollout出现问题
+Unsloth: Just some info: will skip parsing ['k_norm', 'q_norm', 'post_feedforward_layernorm', 'pre_feedforward_layernorm']
+Unsloth: Just some info: will skip parsing ['k_norm', 'q_norm', 'post_feedforward_layernorm', 'pre_feedforward_layernorm']
+Unsloth 2025.8.6 patched 24 layers with 24 QKV layers, 24 O layers and 24 MLP layers.
+/home/wac/johnson/.pycharm_helpers/pydev/pydevd_plugins/__init__.py:2: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  __import__('pkg_resources').declare_namespace(__name__)
+Iterating dataset:   0%|                               | 0/2 [00:00<?, ?batch/s][train] step=0 epoch=0
+开始训练场景：1
+开始训练场景：2
+gather:   0%|                                             | 0/8 [00:00<?, ?it/s]Rollout scenario step 0
+Rollout scenario step 0
+Rollout scenario step 0
+Rollout scenario step 0
+Rollout scenario step 0
+Rollout scenario step 0
+Rollout scenario step 0
+Rollout scenario step 0
+gather:   0%|                                             | 0/8 [00:06<?, ?it/s]
+gather:   0%|                               | 0/8 [00:06<?, ?it/s, exceptions=1]
+gather:   0%|                               | 0/8 [00:06<?, ?it/s, exceptions=2]
+gather:   0%|                               | 0/8 [00:06<?, ?it/s, exceptions=3]
+gather:   0%|                               | 0/8 [00:06<?, ?it/s, exceptions=3]
+gather:   0%|                               | 0/8 [00:06<?, ?it/s, exceptions=4]
+gather:   0%|                               | 0/8 [00:06<?, ?it/s, exceptions=4]
+gather:   0%|                               | 0/8 [00:06<?, ?it/s, exceptions=5]
+gather:   0%|                               | 0/8 [00:06<?, ?it/s, exceptions=6]
+gather:   0%|                               | 0/8 [00:07<?, ?it/s, exceptions=6]
+gather:   0%|                               | 0/8 [00:07<?, ?it/s, exceptions=7]
+gather:   0%|                               | 0/8 [00:07<?, ?it/s, exceptions=8]
+Skipping tuning as there is no suitable data. This can happen when all the trajectories in the same group have the same reward and thus no advantage to train on.
+Advanced step from 0 to 1 (no training occurred)
+Iterating dataset:  50%|███████████▌           | 1/2 [00:08<00:08,  8.81s/batch][train] step=1 epoch=1
+开始训练场景：2
+开始训练场景：1
+gather:   0%|                                             | 0/8 [00:00<?, ?it/s]Rollout scenario step 1
+Rollout scenario step 1
+Rollout scenario step 1
+Rollout scenario step 1
+Rollout scenario step 1
+Rollout scenario step 1
+Rollout scenario step 1
+Rollout scenario step 1
+gather:   0%|                                             | 0/8 [00:04<?, ?it/s]
+gather:   0%|                               | 0/8 [00:04<?, ?it/s, exceptions=1]
+gather:   0%|                               | 0/8 [00:04<?, ?it/s, exceptions=1]
+gather:   0%|                               | 0/8 [00:04<?, ?it/s, exceptions=2]
+gather:   0%|                               | 0/8 [00:05<?, ?it/s, exceptions=2]
+gather:   0%|                               | 0/8 [00:05<?, ?it/s, exceptions=3]
+gather:   0%|                               | 0/8 [00:05<?, ?it/s, exceptions=3]
+gather:   0%|                               | 0/8 [00:05<?, ?it/s, exceptions=4]
+gather:   0%|                               | 0/8 [00:05<?, ?it/s, exceptions=5]
+gather:   0%|                               | 0/8 [00:05<?, ?it/s, exceptions=6]
+gather:   0%|                               | 0/8 [00:05<?, ?it/s, exceptions=7]
+gather:   0%|                               | 0/8 [00:08<?, ?it/s, exceptions=7]
+gather:   0%|                               | 0/8 [00:08<?, ?it/s, exceptions=8]
+Skipping tuning as there is no suitable data. This can happen when all the trajectories in the same group have the same reward and thus no advantage to train on.
+Advanced step from 1 to 2 (no training occurred)
+Iterating dataset: 100%|███████████████████████| 2/2 [00:17<00:00,  8.89s/batch]
+
+# 加载模型和运行模型不一致，请修改NAME字段，确保它们是唯一的，否则会加载已有的模型（即以前运行过的配置)
+import sys; print('Python %s on %s' % (sys.version, sys.platform)) /home/wac/johnson/anaconda3/bin/conda run -n gpt --no-capture-output python /home/wac/johnson/.pycharm_helpers/pydev/pydevd.py --multiprocess --qt-support=auto --client localhost --port 35877 --file /media/wac/backup/john/johnson/RLDecisionAgent/backend/ART_Langgraph/model_test.py /home/wac/johnson/.pycharm_helpers/pydev/pydevd_plugins/__init__.py:2: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. 
+The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81. __import__('pkg_resources').declare_namespace(__name__) Connected to pydev debugger (build 241.18968.29) 测试项目名：web-search-agent-training, 模型名：Qwen/Qwen2.5-7B-Instruct, Name: web-search wandb: Currently logged in as: johnson to http://192.168.100.8:3005. Use wandb login --relogin to force relogin wandb: Tracking run with wandb version 0.21.0 wandb: Run data is saved locally in /media/wac/backup/john/johnson/RLDecisionAgent/backend/ART_Langgraph/wandb/run-20250829_130637-web-search wandb: Run wandb offline to turn off syncing. wandb: Resuming run web-search wandb: ⭐️ View project at http://192.168.100.8:3005/johnson/web-search-agent-training wandb: 🚀 View run at http://192.168.100.8:3005/johnson/web-search-agent-training/runs/web-search /home/wac/johnson/.pycharm_helpers/pydev/pydevd_plugins/__init__.py:2: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81. __import__('pkg_resources').declare_namespace(__name__) INFO 08-29 13:07:00 [importing.py:53] Triton module has been replaced with a placeholder. INFO 08-29 13:07:01 [__init__.py:239] Automatically detected platform cuda. pkill: killing pid 1371838 failed: 不允许的操作 pkill: killing pid 1374550 failed: 不允许的操作 pkill: killing pid 1375701 failed: 不允许的操作 pkill: killing pid 1380895 failed: 不允许的操作 pkill: killing pid 1382211 failed: 不允许的操作 pkill: killing pid 1664622 failed: 不允许的操作 pkill: killing pid 1689565 failed: 不允许的操作 pkill: killing pid 1919148 failed: 不允许的操作 pkill: killing pid 1924921 failed: 不允许的操作 pkill: killing pid 1926362 failed: 不允许的操作 pkill: killing pid 1927119 failed: 不允许的操作 pkill: killing pid 1928272 failed: 不允许的操作 pkill: killing pid 1932568 failed: 不允许的操作 pkill: killing pid 1933265 failed: 不允许的操作 pkill: killing pid 1941779 failed: 不允许的操作 pkill: killing pid 1987523 failed: 不允许的操作 pkill: killing pid 2019284 failed: 不允许的操作 pkill: killing pid 2020696 failed: 不允许的操作 pkill: killing pid 2022043 failed: 不允许的操作 pkill: killing pid 2026203 failed: 不允许的操作 pkill: killing pid 2027261 failed: 不允许的操作 pkill: killing pid 2030732 failed: 不允许的操作 pkill: killing pid 2032536 failed: 不允许的操作 /home/wac/johnson/.pycharm_helpers/pydev/pydevd_plugins/__init__.py:2: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81. __import__('pkg_resources').declare_namespace(__name__) /home/wac/johnson/.pycharm_helpers/pydev/pydevd_plugins/__init__.py:2: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81. __import__('pkg_resources').declare_namespace(__name__) /media/wac/backup/john/johnson/RLDecisionAgent/ART/src/art/__init__.py:10: UserWarning: WARNING: Unsloth should be imported before transformers, peft to ensure all optimizations are applied. Your code may run slower or encounter memory issues without these optimizations. Please restructure your imports with 'import unsloth' at the top of your file. import unsloth # type: ignore # noqa: F401 🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning. INFO 08-29 13:07:30 [importing.py:53] Triton module has been replaced with a placeholder. INFO 08-29 13:07:30 [__init__.py:239] Automatically detected platform cuda. 🦥 Unsloth Zoo will now patch everything to make training faster! 测试项目名：web-search-agent-training, 模型名：Qwen/Qwen2.5-7B-Instruct, Name: web-search Unsloth: Patching vLLM v1 graph capture Unsloth: Patching vLLM v0 graph capture ==((====))== Unsloth 2025.8.6: Fast Qwen2 patching. Transformers: 4.55.2. vLLM: 0.8.5.post1. \\ /| NVIDIA GeForce RTX 4090 D. Num GPUs = 1. Max memory: 23.546 GB. Platform: Linux. O^O/ \_/ \ Torch: 2.6.0+cu124. CUDA: 8.9. CUDA Toolkit: 12.4. Triton: 3.2.0 \ / Bfloat16 = TRUE. FA [Xformers = 0.0.29.post2. FA2 = True] "-____-" Free license: http://github.com/unslothai/unsloth Unsloth: Fast downloading is enabled - ignore downloading bars which are red colored! Unsloth: vLLM loading unsloth/qwen2.5-0.5b-instruct-unsloth-bnb-4bit with actual GPU utilization = 77.65% Unsloth: Your GPU has CUDA compute capability 8.9 with VRAM = 23.55 GB. Unsloth: Using conservativeness = 1.0. Chunked prefill tokens = 32768. Num Sequences = 288. Unsloth: vLLM's KV Cache can use up to 17.81 GB. Also swap space = 6 GB. INFO 08-29 13:08:21 [config.py:717] This model supports multiple tasks: {'generate', 'classify', 'score', 'reward', 'embed'}. Defaulting to 'generate'. Unsloth: vLLM Bitsandbytes config using kwargs = {'load_in_8bit': False, 'load_in_4bit': True, 'bnb_4bit_compute_dtype': 'bfloat16', 'bnb_4bit_quant_storage': 'uint8', 'bnb_4bit_quant_type': 'nf4', 'bnb_4bit_use_double_quant': True, 'llm_int8_enable_fp32_cpu_offload': False, 'llm_int8_has_fp16_weight': False, 'llm_int8_skip_modules': ['lm_head', 'multi_modal_projector', 'merger', 'modality_projection', 'model.layers.0.self_attn', 'model.layers.0.mlp', 'model.layers.2.mlp', 'model.layers.3.mlp', 'model.layers.21.mlp', 'model.layers.0.self_attn.q_proj'], 'llm_int8_threshold': 6.0} INFO 08-29 13:08:21 [llm_engine.py:240] Initializing a V0 LLM engine (v0.8.5.post1) with config: model='unsloth/qwen2.5-0.5b-instruct-unsloth-bnb-4bit', speculative_config=None, tokenizer='unsloth/qwen2.5-0.5b-instruct-unsloth-bnb-4bit', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, override_neuron_config=None, tokenizer_revision=None, trust_remote_code=False, dtype=torch.bfloat16, max_seq_len=32768, download_dir=None, load_format=bitsandbytes, tensor_parallel_size=1, pipeline_parallel_size=1, disable_custom_all_reduce=False, quantization=bitsandbytes, enforce_eager=False, kv_cache_dtype=auto, device_config=cuda:0, decoding_config=DecodingConfig(guided_decoding_backend='auto', reasoning_backend=None), observability_config=ObservabilityConfig(show_hidden_metrics=False, otlp_traces_endpoint=None, collect_model_forward_time=False, collect_model_execute_time=False), seed=0, served_model_name=unsloth/qwen2.5-0.5b-instruct-unsloth-bnb-4bit, num_scheduler_steps=16, multi_step_stream_outputs=True, enable_prefix_caching=True, chunked_prefill_enabled=False, use_async_output_proc=True, disable_mm_preprocessor_cache=False, mm_processor_kwargs=None, pooler_config=None, compilation_config={"level":0,"backend":"inductor","splitting_ops":[],"use_inductor":true,"compile_sizes":[],"inductor_compile_config":{"epilogue_fusion":true,"max_autotune":false,"shape_padding":true,"trace.enabled":false,"triton.cudagraphs":true,"debug":false,"dce":true,"memory_planning":true,"coordinate_descent_tuning":true,"trace.graph_diagram":false,"compile_threads":32,"group_fusion":true,"disable_progress":false,"verbose_progress":true,"triton.multi_kernel":0,"triton.use_block_ptr":true,"triton.enable_persistent_tma_matmul":true,"triton.autotune_at_compile_time":false,"triton.cooperative_reductions":false,"cuda.compile_opt_level":"-O2","cuda.enable_cuda_lto":true,"combo_kernels":false,"benchmark_combo_kernel":true,"combo_kernel_foreach_dynamic_shapes":true,"enable_auto_functionalized_v2":false},"use_cudagraph":true,"cudagraph_num_of_warmups":1,"cudagraph_capture_sizes":[288,280,272,264,256,248,240,232,224,216,208,200,192,184,176,168,160,152,144,136,128,120,112,104,96,88,80,72,64,56,48,40,32,24,16,8,4,2,1],"max_capture_size":288}, use_cached_outputs=False, INFO 08-29 13:08:25 [cuda.py:292] Using Flash Attention backend. INFO 08-29 13:08:25 [parallel_state.py:1004] rank 0 in world size 1 is assigned as DP rank 0, PP rank 0, TP rank 0 INFO 08-29 13:08:25 [model_runner.py:1108] Starting to load model unsloth/qwen2.5-0.5b-instruct-unsloth-bnb-4bit... INFO 08-29 13:08:25 [loader.py:1187] Loading weights with BitsAndBytes quantization. May take a while ... INFO 08-29 13:08:28 [weight_utils.py:265] Using model weights format ['*.safetensors'] INFO 08-29 13:08:29 [weight_utils.py:281] Time spent downloading weights for unsloth/qwen2.5-0.5b-instruct-unsloth-bnb-4bit: 1.145630 seconds INFO 08-29 13:08:30 [weight_utils.py:315] No model.safetensors.index.json found in remote. Loading safetensors checkpoint shards: 0% Completed | 0/1 [00:00<?, ?it/s] Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00, 2.30it/s] Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00, 2.30it/s] Loading safetensors checkpoint shards: 0% Completed | 0/1 [00:00<?, ?it/s] Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00, 2.11it/s] Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00, 2.11it/s] INFO 08-29 13:08:31 [punica_selector.py:18] Using PunicaWrapperGPU. INFO 08-29 13:08:32 [model_runner.py:1140] Model loading took 0.5153 GiB and 6.204724 seconds INFO 08-29 13:08:35 [worker.py:287] Memory profiling takes 2.72 seconds INFO 08-29 13:08:35 [worker.py:287] the current vLLM instance can use total_gpu_memory (23.55GiB) x gpu_memory_utilization (0.78) = 18.28GiB INFO 08-29 13:08:35 [worker.py:287] model weights take 0.52GiB; non_torch_memory takes 0.07GiB; PyTorch activation peak memory takes 1.61GiB; the rest of the memory reserved for KV Cache is 16.09GiB. INFO 08-29 13:08:35 [executor_base.py:112] # cuda blocks: 87853, # CPU blocks: 32768 INFO 08-29 13:08:35 [executor_base.py:117] Maximum concurrency for 32768 tokens per request: 42.90x INFO 08-29 13:08:39 [vllm_utils.py:671] Unsloth: Running patched vLLM v0 capture_model. INFO 08-29 13:08:39 [model_runner.py:1450] Capturing cudagraphs for decoding. This may lead to unexpected consequences if the model is not static. To run the model in eager mode, set 'enforce_eager=True' or use '--enforce-eager' in the CLI. If out-of-memory error occurs during cudagraph capture, consider decreasing gpu_memory_utilization or switching to eager mode. You can also reduce the max_num_seqs as needed to decrease memory usage. Capturing CUDA graph shapes: 100%|██████████████| 39/39 [00:22<00:00, 1.70it/s] INFO 08-29 13:09:02 [model_runner.py:1592] Graph capturing finished in 23 secs, took 0.55 GiB INFO 08-29 13:09:02 [vllm_utils.py:678] Unsloth: Patched vLLM v0 graph capture finished in 23 secs. INFO 08-29 13:09:03 [llm_engine.py:437] init engine (profile, create kv cache, warmup model) took 30.99 seconds Unsloth: Just some info: will skip parsing ['q_norm', 'k_norm', 'pre_feedforward_layernorm', 'post_feedforward_layernorm'] Unsloth: Just some info: will skip parsing ['q_norm', 'k_norm', 'pre_feedforward_layernorm', 'post_feedforward_layernorm'] Unsloth 2025.8.6 patched 24 layers with 24 QKV layers, 24 O layers and 24 MLP layers. Unsloth: Already have LoRA adapters! We shall skip this step. 测试的输出结果: {'messages': [SystemMessage(content='\nYou are a web search agent. Use tools to find information on the web.\nWhen done, provide a concise answer.\n', additional_kwargs={}, response_metadata={}, id='0c93e94c-6578-4ef8-8d6a-4a82cf37fbcb'), HumanMessage(content='Who is the CFO of Tesla?', additional_kwargs={}, response_metadata={}, id='fa6d0e79-137b-44db-af96-0cdc829edab8'), AIMessage(content="To provide you with the most accurate response, I would recommend you to search for specific information. I can check the most recent filings of Tesla or search for the latest press releases for more up-to-date facts on the company's situation.", additional_kwargs={'refusal': None}, response_metadata={'token_usage': {'completion_tokens': 48, 'prompt_tokens': 178, 'total_tokens': 226, 'completion_tokens_details': None, 'prompt_tokens_details': None}, 'model_name': 'web-search', 'system_fingerprint': None, 'id': 'chatcmpl-f552daf13c884b6fafdc3d4db8df6c3a', 'service_tier': None, 'finish_reason': 'stop', 'logprobs': {'content': [{'token': 'token_id:1249', 'bytes': [84, 111], 'logprob': -1.5664010047912598, 'top_logprobs': []}, {'token': 'token_id:3410', 'bytes': [32, 112, 114, 111, 118, 105, 100, 101], 'logprob': -0.20715616643428802, 'top_logprobs': []}, {'token': 'token_id:498', 'bytes': [32, 121, 111, 117], 'logprob': -0.38067907094955444, 'top_logprobs': []}, {'token': 'token_id:448', 'bytes': [32, 119, 105, 116, 104], 'logprob': -0.000169382052263245, 'top_logprobs': []}, {'token': 'token_id:279', 'bytes': [32, 116, 104, 101], 'logprob': -0.4950447678565979, 'top_logprobs': []}, {'token': 'token_id:1429', 'bytes': [32, 109, 111, 115, 116], 'logprob': -0.07142695784568787, 'top_logprobs': []}, {'token': 'token_id:13382', 'bytes': [32, 97, 99, 99, 117, 114, 97, 116, 101], 'logprob': -0.07657865434885025, 'top_logprobs': []}, {'token': 'token_id:2033', 'bytes': [32, 114, 101, 115, 112, 111, 110, 115, 101], 'logprob': -4.804951190948486, 'top_logprobs': []}, {'token': 'token_id:11', 'bytes': [44], 'logprob': -0.03034316562116146, 'top_logprobs': []}, {'token': 'token_id:358', 'bytes': [32, 73], 'logprob': -0.42374667525291443, 'top_logprobs': []}, {'token': 'token_id:1035', 'bytes': [32, 119, 111, 117, 108, 100], 'logprob': -0.8945327997207642, 'top_logprobs': []}, {'token': 'token_id:6934', 'bytes': [32, 114, 101, 99, 111, 109, 109, 101, 110, 100], 'logprob': -1.6517952680587769, 'top_logprobs': []}, {'token': 'token_id:498', 'bytes': [32, 121, 111, 117], 'logprob': -2.6865665912628174, 'top_logprobs': []}, {'token': 'token_id:311', 'bytes': [32, 116, 111], 'logprob': -0.16849109530448914, 'top_logprobs': []}, {'token': 'token_id:2711', 'bytes': [32, 115, 101, 97, 114, 99, 104], 'logprob': -1.4202699661254883, 'top_logprobs': []}, {'token': 'token_id:369', 'bytes': [32, 102, 111, 114], 'logprob': -0.6889943480491638, 'top_logprobs': []}, {'token': 'token_id:3151', 'bytes': [32, 115, 112, 101, 99, 105, 102, 105, 99], 'logprob': -6.388165473937988, 'top_logprobs': []}, {'token': 'token_id:1995', 'bytes': [32, 105, 110, 102, 111, 114, 109, 97, 116, 105, 111, 110], 'logprob': -0.591657280921936, 'top_logprobs': []}, {'token': 'token_id:13', 'bytes': [46], 'logprob': -3.452016830444336, 'top_logprobs': []}, {'token': 'token_id:358', 'bytes': [32, 73], 'logprob': -2.8039393424987793, 'top_logprobs': []}, {'token': 'token_id:646', 'bytes': [32, 99, 97, 110], 'logprob': -0.4983573853969574, 'top_logprobs': []}, {'token': 'token_id:1779', 'bytes': [32, 99, 104, 101, 99, 107], 'logprob': -5.2719407081604, 'top_logprobs': []}, {'token': 'token_id:279', 'bytes': [32, 116, 104, 101], 'logprob': -1.089690089225769, 'top_logprobs': []}, {'token': 'token_id:1429', 'bytes': [32, 109, 111, 115, 116], 'logprob': -2.8323187828063965, 'top_logprobs': []}, {'token': 'token_id:3213', 'bytes': [32, 114, 101, 99, 101, 110, 116], 'logprob': -0.4139953851699829, 'top_logprobs': []}, {'token': 'token_id:67148', 'bytes': [32, 102, 105, 108, 105, 110, 103, 115], 'logprob': -6.299983501434326, 'top_logprobs': []}, {'token': 'token_id:315', 'bytes': [32, 111, 102], 'logprob': -1.4139783382415771, 'top_logprobs': []}, {'token': 'token_id:27199', 'bytes': [32, 84, 101, 115, 108, 97], 'logprob': -0.6949511170387268, 'top_logprobs': []}, {'token': 'token_id:476', 'bytes': [32, 111, 114], 'logprob': -2.472810745239258, 'top_logprobs': []}, {'token': 'token_id:2711', 'bytes': [32, 115, 101, 97, 114, 99, 104], 'logprob': -2.811878204345703, 'top_logprobs': []}, {'token': 'token_id:369', 'bytes': [32, 102, 111, 114], 'logprob': -0.7450668215751648, 'top_logprobs': []}, {'token': 'token_id:279', 'bytes': [32, 116, 104, 101], 'logprob': -1.4107160568237305, 'top_logprobs': []}, {'token': 'token_id:5535', 'bytes': [32, 108, 97, 116, 101, 115, 116], 'logprob': -1.7625718116760254, 'top_logprobs': []}, {'token': 'token_id:3493', 'bytes': [32, 112, 114, 101, 115, 115], 'logprob': -3.589028835296631, 'top_logprobs': []}, {'token': 'token_id:19232', 'bytes': [32, 114, 101, 108, 101, 97, 115, 101, 115], 'logprob': -0.5332621335983276, 'top_logprobs': []}, {'token': 'token_id:369', 'bytes': [32, 102, 111, 114], 'logprob': -1.9575753211975098, 'top_logprobs': []}, {'token': 'token_id:803', 'bytes': [32, 109, 111, 114, 101], 'logprob': -1.9221185445785522, 'top_logprobs': []}, {'token': 'token_id:705', 'bytes': [32, 117, 112], 'logprob': -2.072411060333252, 'top_logprobs': []}, {'token': 'token_id:4686', 'bytes': [45, 116, 111], 'logprob': -0.018792560324072838, 'top_logprobs': []}, {'token': 'token_id:18413', 'bytes': [45, 100, 97, 116, 101], 'logprob': -0.003404774935916066, 'top_logprobs': []}, {'token': 'token_id:13064', 'bytes': [32, 102, 97, 99, 116, 115], 'logprob': -4.90785026550293, 'top_logprobs': []}, {'token': 'token_id:389', 'bytes': [32, 111, 110], 'logprob': -2.095146417617798, 'top_logprobs': []}, {'token': 'token_id:279', 'bytes': [32, 116, 104, 101], 'logprob': -0.23652587831020355, 'top_logprobs': []}, {'token': 'token_id:2813', 'bytes': [32, 99, 111, 109, 112, 97, 110, 121], 'logprob': -2.3276422023773193, 'top_logprobs': []}, {'token': 'token_id:594', 'bytes': [39, 115], 'logprob': -0.1682809740304947, 'top_logprobs': []}, {'token': 'token_id:6534', 'bytes': [32, 115, 105, 116, 117, 97, 116, 105, 111, 110], 'logprob': -7.4729323387146, 'top_logprobs': []}, {'token': 'token_id:13', 'bytes': [46], 'logprob': -0.1643821746110916, 'top_logprobs': []}, {'token': 'token_id:151645', 'bytes': [], 'logprob': -0.4224308729171753, 'top_logprobs': []}], 'refusal': None}}, id='run--afd41a1d-146b-4136-bf07-7f0b1abfd180-0', usage_metadata={'input_tokens': 178, 'output_tokens': 48, 'total_tokens': 226, 'input_token_details': {}, 'output_token_details': {}})]} [TEST] agent finished. See backend logs / tracing for details.
+
+# 不训练错误，直接结束，大部分是继续训练时，num_epochs数量和已经训练的数量相当，就没有在继续训练了，直接结束了，
+可以修改训练的name或者增大numm_epochs数量
+wandb: WARNING `start_method` is deprecated and will be removed in a future version of wandb. This setting is currently non-functional and safely ignored.
+wandb: Currently logged in as: johnson to http://192.168.100.8:3005. Use `wandb login --relogin` to force relogin
+wandb: Tracking run with wandb version 0.21.0
+wandb: Run data is saved locally in /media/wac/backup/john/johnson/RLDecisionAgent/backend/ART_Langgraph/wandb/run-20250829_211336-8gft27rm
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run web-search-20250829-211336
+wandb: ⭐️ View project at http://192.168.100.8:3005/johnson/web-search-agent-training
+wandb: 🚀 View run at http://192.168.100.8:3005/johnson/web-search-agent-training/runs/8gft27rm
+wandb: wandb.init() called while a run is active and reinit is set to 'default', so returning the previous run.
+INFO 08-29 21:13:52 [importing.py:53] Triton module has been replaced with a placeholder.
+INFO 08-29 21:13:52 [__init__.py:239] Automatically detected platform cuda.
+pkill: killing pid 1371838 failed: 不允许的操作
+pkill: killing pid 1374550 failed: 不允许的操作
+pkill: killing pid 1375701 failed: 不允许的操作
+pkill: killing pid 1380895 failed: 不允许的操作
+pkill: killing pid 1382211 failed: 不允许的操作
+pkill: killing pid 1664622 failed: 不允许的操作
+pkill: killing pid 1689565 failed: 不允许的操作
+pkill: killing pid 1919148 failed: 不允许的操作
+pkill: killing pid 1924921 failed: 不允许的操作
+pkill: killing pid 1926362 failed: 不允许的操作
+pkill: killing pid 1927119 failed: 不允许的操作
+pkill: killing pid 1928272 failed: 不允许的操作
+pkill: killing pid 1932568 failed: 不允许的操作
+pkill: killing pid 1933265 failed: 不允许的操作
+pkill: killing pid 1941779 failed: 不允许的操作
+pkill: killing pid 1987523 failed: 不允许的操作
+pkill: killing pid 2019284 failed: 不允许的操作
+pkill: killing pid 2020696 failed: 不允许的操作
+pkill: killing pid 2022043 failed: 不允许的操作
+pkill: killing pid 2026203 failed: 不允许的操作
+pkill: killing pid 2027261 failed: 不允许的操作
+pkill: killing pid 2030732 failed: 不允许的操作
+pkill: killing pid 2032536 failed: 不允许的操作
+/media/wac/backup/john/johnson/RLDecisionAgent/ART/src/art/__init__.py:10: UserWarning: WARNING: Unsloth should be imported before transformers, peft to ensure all optimizations are applied. Your code may run slower or encounter memory issues without these optimizations.
+
+Please restructure your imports with 'import unsloth' at the top of your file.
+  import unsloth  # type: ignore # noqa: F401
+🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning.
+INFO 08-29 21:14:02 [importing.py:53] Triton module has been replaced with a placeholder.
+INFO 08-29 21:14:02 [__init__.py:239] Automatically detected platform cuda.
+🦥 Unsloth Zoo will now patch everything to make training faster!
+Unsloth: Patching vLLM v1 graph capture
+Unsloth: Patching vLLM v0 graph capture
+==((====))==  Unsloth 2025.8.6: Fast Qwen2 patching. Transformers: 4.55.2. vLLM: 0.8.5.post1.
+   \\   /|    NVIDIA GeForce RTX 4090 D. Num GPUs = 1. Max memory: 23.546 GB. Platform: Linux.
+O^O/ \_/ \    Torch: 2.6.0+cu124. CUDA: 8.9. CUDA Toolkit: 12.4. Triton: 3.2.0
+\        /    Bfloat16 = TRUE. FA [Xformers = 0.0.29.post2. FA2 = True]
+ "-____-"     Free license: http://github.com/unslothai/unsloth
+Unsloth: Fast downloading is enabled - ignore downloading bars which are red colored!
+Unsloth: vLLM loading unsloth/qwen2.5-0.5b-instruct-unsloth-bnb-4bit with actual GPU utilization = 77.65%
+Unsloth: Your GPU has CUDA compute capability 8.9 with VRAM = 23.55 GB.
+Unsloth: Using conservativeness = 1.0. Chunked prefill tokens = 32768. Num Sequences = 288.
+Unsloth: vLLM's KV Cache can use up to 17.81 GB. Also swap space = 6 GB.
+INFO 08-29 21:14:36 [config.py:717] This model supports multiple tasks: {'reward', 'generate', 'embed', 'classify', 'score'}. Defaulting to 'generate'.
+Unsloth: vLLM Bitsandbytes config using kwargs = {'load_in_8bit': False, 'load_in_4bit': True, 'bnb_4bit_compute_dtype': 'bfloat16', 'bnb_4bit_quant_storage': 'uint8', 'bnb_4bit_quant_type': 'nf4', 'bnb_4bit_use_double_quant': True, 'llm_int8_enable_fp32_cpu_offload': False, 'llm_int8_has_fp16_weight': False, 'llm_int8_skip_modules': ['lm_head', 'multi_modal_projector', 'merger', 'modality_projection', 'model.layers.0.self_attn', 'model.layers.0.mlp', 'model.layers.2.mlp', 'model.layers.3.mlp', 'model.layers.21.mlp', 'model.layers.0.self_attn.q_proj'], 'llm_int8_threshold': 6.0}
+INFO 08-29 21:14:37 [llm_engine.py:240] Initializing a V0 LLM engine (v0.8.5.post1) with config: model='unsloth/qwen2.5-0.5b-instruct-unsloth-bnb-4bit', speculative_config=None, tokenizer='unsloth/qwen2.5-0.5b-instruct-unsloth-bnb-4bit', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, override_neuron_config=None, tokenizer_revision=None, trust_remote_code=False, dtype=torch.bfloat16, max_seq_len=32768, download_dir=None, load_format=bitsandbytes, tensor_parallel_size=1, pipeline_parallel_size=1, disable_custom_all_reduce=False, quantization=bitsandbytes, enforce_eager=False, kv_cache_dtype=auto,  device_config=cuda:0, decoding_config=DecodingConfig(guided_decoding_backend='auto', reasoning_backend=None), observability_config=ObservabilityConfig(show_hidden_metrics=False, otlp_traces_endpoint=None, collect_model_forward_time=False, collect_model_execute_time=False), seed=0, served_model_name=unsloth/qwen2.5-0.5b-instruct-unsloth-bnb-4bit, num_scheduler_steps=16, multi_step_stream_outputs=True, enable_prefix_caching=True, chunked_prefill_enabled=False, use_async_output_proc=True, disable_mm_preprocessor_cache=False, mm_processor_kwargs=None, pooler_config=None, compilation_config={"level":0,"backend":"inductor","splitting_ops":[],"use_inductor":true,"compile_sizes":[],"inductor_compile_config":{"epilogue_fusion":true,"max_autotune":false,"shape_padding":true,"trace.enabled":false,"triton.cudagraphs":true,"debug":false,"dce":true,"memory_planning":true,"coordinate_descent_tuning":true,"trace.graph_diagram":false,"compile_threads":32,"group_fusion":true,"disable_progress":false,"verbose_progress":true,"triton.multi_kernel":0,"triton.use_block_ptr":true,"triton.enable_persistent_tma_matmul":true,"triton.autotune_at_compile_time":false,"triton.cooperative_reductions":false,"cuda.compile_opt_level":"-O2","cuda.enable_cuda_lto":true,"combo_kernels":false,"benchmark_combo_kernel":true,"combo_kernel_foreach_dynamic_shapes":true,"enable_auto_functionalized_v2":false},"use_cudagraph":true,"cudagraph_num_of_warmups":1,"cudagraph_capture_sizes":[288,280,272,264,256,248,240,232,224,216,208,200,192,184,176,168,160,152,144,136,128,120,112,104,96,88,80,72,64,56,48,40,32,24,16,8,4,2,1],"max_capture_size":288}, use_cached_outputs=False, 
+INFO 08-29 21:14:42 [cuda.py:292] Using Flash Attention backend.
+INFO 08-29 21:14:42 [parallel_state.py:1004] rank 0 in world size 1 is assigned as DP rank 0, PP rank 0, TP rank 0
+INFO 08-29 21:14:42 [model_runner.py:1108] Starting to load model unsloth/qwen2.5-0.5b-instruct-unsloth-bnb-4bit...
+INFO 08-29 21:14:43 [loader.py:1187] Loading weights with BitsAndBytes quantization. May take a while ...
+INFO 08-29 21:14:46 [weight_utils.py:265] Using model weights format ['*.safetensors']
+INFO 08-29 21:14:47 [weight_utils.py:281] Time spent downloading weights for unsloth/qwen2.5-0.5b-instruct-unsloth-bnb-4bit: 1.031381 seconds
+INFO 08-29 21:14:49 [weight_utils.py:315] No model.safetensors.index.json found in remote.
+Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:00<?, ?it/s]
+Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  2.99it/s]
+Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  2.98it/s]
+
+Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:00<?, ?it/s]
+Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  2.74it/s]
+Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00,  2.74it/s]
+
+INFO 08-29 21:14:50 [punica_selector.py:18] Using PunicaWrapperGPU.
+INFO 08-29 21:14:50 [model_runner.py:1140] Model loading took 0.5153 GiB and 7.174856 seconds
+INFO 08-29 21:14:53 [worker.py:287] Memory profiling takes 2.72 seconds
+INFO 08-29 21:14:53 [worker.py:287] the current vLLM instance can use total_gpu_memory (23.55GiB) x gpu_memory_utilization (0.78) = 18.28GiB
+INFO 08-29 21:14:53 [worker.py:287] model weights take 0.52GiB; non_torch_memory takes 0.07GiB; PyTorch activation peak memory takes 1.61GiB; the rest of the memory reserved for KV Cache is 16.09GiB.
+INFO 08-29 21:14:54 [executor_base.py:112] # cuda blocks: 87853, # CPU blocks: 32768
+INFO 08-29 21:14:54 [executor_base.py:117] Maximum concurrency for 32768 tokens per request: 42.90x
+INFO 08-29 21:14:57 [vllm_utils.py:671] Unsloth: Running patched vLLM v0 `capture_model`.
+INFO 08-29 21:14:57 [model_runner.py:1450] Capturing cudagraphs for decoding. This may lead to unexpected consequences if the model is not static. To run the model in eager mode, set 'enforce_eager=True' or use '--enforce-eager' in the CLI. If out-of-memory error occurs during cudagraph capture, consider decreasing `gpu_memory_utilization` or switching to eager mode. You can also reduce the `max_num_seqs` as needed to decrease memory usage.
+Capturing CUDA graph shapes: 100%|██████████████| 39/39 [00:13<00:00,  2.98it/s]
+INFO 08-29 21:15:10 [model_runner.py:1592] Graph capturing finished in 13 secs, took 0.55 GiB
+INFO 08-29 21:15:10 [vllm_utils.py:678] Unsloth: Patched vLLM v0 graph capture finished in 13 secs.
+INFO 08-29 21:15:11 [llm_engine.py:437] init engine (profile, create kv cache, warmup model) took 21.04 seconds
+Unsloth: Just some info: will skip parsing ['k_norm', 'q_norm', 'pre_feedforward_layernorm', 'post_feedforward_layernorm']
+Unsloth: Just some info: will skip parsing ['k_norm', 'q_norm', 'pre_feedforward_layernorm', 'post_feedforward_layernorm']
+Unsloth 2025.8.6 patched 24 layers with 24 QKV layers, 24 O layers and 24 MLP layers.
+Unsloth: Already have LoRA adapters! We shall skip this step.
+Iterating dataset: 6batch [00:00, ?batch/s]
+wandb:                                                                                
+wandb: 
+wandb: Run history:
+wandb: train/step ▁
+wandb: 
+wandb: Run summary:
+wandb: train/step 0
+wandb: 
+wandb: 🚀 View run web-search-20250829-211336 at: http://192.168.100.8:3005/johnson/web-search-agent-training/runs/8gft27rm
+wandb: ⭐️ View project at: http://192.168.100.8:3005/johnson/web-search-agent-training
+wandb: Synced 6 W&B file(s), 1 media file(s), 2 artifact file(s) and 0 other file(s)
+wandb: Find logs at: ./wandb/run-20250829_211336-8gft27rm/logs

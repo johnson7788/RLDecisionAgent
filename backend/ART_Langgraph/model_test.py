@@ -29,11 +29,15 @@ from pydantic import BaseModel
 from zai import ZhipuAiClient
 dotenv.load_dotenv()
 # ---------- 与训练保持一致 ----------
-NAME = os.getenv("ART_NAME", "web-search")
-MODEL_NAME = os.getenv("ART_MODEL", "Qwen/Qwen2.5-0.5B-Instruct")
-PROJECT_NAME = os.getenv("ART_PROJECT", "web-search-agent-training")
+NAME = os.getenv("ART_NAME", "web-search-7b")
+# NAME = os.getenv("ART_NAME", "web-search-0.5b")
+MODEL_NAME = os.getenv("ART_MODEL", "Qwen/Qwen2.5-7B-Instruct")
+PROJECT_NAME = os.getenv("ART_PROJECT", "web-"
+                                        "search-agent-training")
 USE_LOCAL_BACKEND = os.getenv("ART_BACKEND", "local").lower() == "local"
 WebSearchClient = ZhipuAiClient(api_key=os.environ["ZHIPU_API_KEY"])
+
+print(f"测试项目名：{PROJECT_NAME}, 模型名：{MODEL_NAME}, Name: {NAME}")
 
 # ---------- 业务工具（与训练相同或真实实现）----------
 class WebSearchResult(BaseModel):

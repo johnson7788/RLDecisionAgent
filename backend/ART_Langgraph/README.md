@@ -22,6 +22,8 @@ response = WebSearchClient.web_search.web_search(
  ]
 
 ## 训练
+export CUDA_VISIBLE_DEVICES=1
+export HF_ENDPOINT=https://hf-mirror.com
 python train.py
 
 ## 测试
