@@ -882,3 +882,5 @@ python train.py \
 ---
 
 # Art.TrainableModel 和Art.Model
+
+# 单卡24G显存，7B训练卡住，0.5B没问题

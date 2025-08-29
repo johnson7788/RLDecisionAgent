@@ -402,7 +402,7 @@ async def main():
         # 组装 TrajectoryGroup：每个样本 rollout 多条轨迹
         groups = []
         for s in batch.items:
-            print(f"开始训练场景：{s.id}")
+            print(f"开始的数据训练场景id：{s.id}")
             groups.append(
                 art.TrajectoryGroup(
                     wrap_rollout(model, rollout)(model, WebSearchScenario(step=batch.step, scenario=s))
