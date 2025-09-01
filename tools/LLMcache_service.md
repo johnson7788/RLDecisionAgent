@@ -15,9 +15,6 @@ Environment=PYTHONUNBUFFERED=1
 ExecStart=/home/vipuser/miniconda3/bin/python /root/RLDecisionAgent/backend/ART_mcp-rl/LLM_cache.py
 Restart=always
 RestartSec=5
-NoNewPrivileges=true
-PrivateTmp=true
-ProtectSystem=full
 
 [Install]
 WantedBy=multi-user.target
