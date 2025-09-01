@@ -21,6 +21,10 @@ response = WebSearchClient.web_search.web_search(
     }
  ]
 
+## 配置
+cd RLDecisionAgent/backend/ART_mcp-rl
+python LLM_cache.py
+
 ## 训练
 export CUDA_VISIBLE_DEVICES=1
 export HF_ENDPOINT=https://hf-mirror.com

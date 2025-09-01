@@ -684,7 +684,7 @@ uant_storage': 'uint8', 'bnb_4bit_quant_type': 'nf4', 'bnb_4bit_use_double_quant
 [rank0]:[W821 20:01:54.081613048 ProcessGroupNCCL.cpp:1496] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
 
 
-#
+# 检查Openai的网络，或者LLM_cache.py报错了
   File "/workspace/verl/backend/ART_PPT_content/train_test_model/generate_benchmarks.py", line 64, in score_group
     scored_group = await ruler_score_group(
   File "/workspace/verl/ART/src/art/rewards/ruler.py", line 256, in ruler_score_group
