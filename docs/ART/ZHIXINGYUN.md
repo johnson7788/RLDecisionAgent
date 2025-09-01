@@ -96,3 +96,10 @@ python test_vllm_server.py
 
 ## 测试huggingface连通和模型使用
 python load_model.py
+
+
+## 开机自动启动
+docker update verl --restart always
+docker update wandb-local --restart always
+[auto_start_clash.md](..%2F..%2Ftools%2Fauto_start_clash.md)
+[LLMcache_service.md](..%2F..%2Ftools%2FLLMcache_service.md)

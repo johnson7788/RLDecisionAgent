@@ -1070,3 +1070,43 @@ wandb: 🚀 View run web-search-20250829-211336 at: http://192.168.100.8:3005/jo
 wandb: ⭐️ View project at: http://192.168.100.8:3005/johnson/web-search-agent-training
 wandb: Synced 6 W&B file(s), 1 media file(s), 2 artifact file(s) and 0 other file(s)
 wandb: Find logs at: ./wandb/run-20250829_211336-8gft27rm/logs
+
+
+# 迭代到一定进度后意外停止
+wandb: 🚀 View run web-search03-20250901-144200 at: http://192.168.100.8:3005/johnson/web-search-agent-training/runs/aimkca2f
+wandb: ⭐️ View project at: http://192.168.100.8:3005/johnson/web-search-agent-training
+wandb: Synced 6 W&B file(s), 2 media file(s), 4 artifact file(s) and 0 other file(s)
+wandb: Find logs at: ./wandb/run-20250901_144201-aimkca2f/logs
+wandb: WARNING Tried to log to step 7 that is less than the current step 8. Steps must be monotonically increasing, so this data will be ignored. See https://wandb.me/define-metric to log data out of order.
+Iterating dataset:  12%|██████████▌                                                                                | 7/60 [00:43<?, ?batch/s]
+[2025-09-01 14:44:49] ERROR base_events.py:1758: Exception in callback LocalBackend._prepare_backend_for_training.<locals>.done_callback(<Task cancell...ckend.py:287>>) at /usr/local/lib/python3.10/dist-packages/art/local/backend.py:278
+handle: <Handle LocalBackend._prepare_backend_for_training.<locals>.done_callback(<Task cancell...ckend.py:287>>) at /usr/local/lib/python3.10/dist-packages/art/local/backend.py:278>
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/asyncio/tasks.py", line 234, in __step
+    result = coro.throw(exc)
+  File "/usr/local/lib/python3.10/dist-packages/mp_actors/move.py", line 102, in _handle_responses
+    response: Response = await loop.run_in_executor(
+  File "/usr/lib/python3.10/asyncio/futures.py", line 285, in __await__
+    yield self  # This tells Task to wait for completion.
+  File "/usr/lib/python3.10/asyncio/tasks.py", line 304, in __wakeup
+    future.result()
+  File "/usr/lib/python3.10/asyncio/futures.py", line 196, in result
+    raise exc
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/asyncio/events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+  File "/usr/local/lib/python3.10/dist-packages/art/local/backend.py", line 279, in done_callback
+    close_proxy(self._services.pop(model.name))
+  File "/usr/local/lib/python3.10/dist-packages/mp_actors/move.py", line 60, in close_proxy
+    getattr(proxy, "close", lambda: None)()
+  File "/usr/local/lib/python3.10/dist-packages/mp_actors/move.py", line 214, in close
+    asyncio.get_event_loop().run_until_complete(self._handle_responses_task)
+  File "/usr/local/lib/python3.10/dist-packages/nest_asyncio.py", line 98, in run_until_complete
+    return f.result()
+  File "/usr/lib/python3.10/asyncio/futures.py", line 196, in result
+    raise exc
+asyncio.exceptions.CancelledError

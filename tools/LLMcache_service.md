@@ -24,3 +24,6 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now llmcache.service
 systemctl status llmcache.service
 journalctl -u llmcache.service -b
+
+# 查看滚动输出的日志
+sudo journalctl -fu llmcache.service
