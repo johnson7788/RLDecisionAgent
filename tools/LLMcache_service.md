@@ -8,8 +8,8 @@ Requires=clash.service    # 如果强依赖代理，确保 clash 异常退出时
 
 [Service]
 Type=simple
-User=llm
-Group=llm
+User=root
+Group=root
 WorkingDirectory=/root/RLDecisionAgent/backend/ART_mcp-rl
 Environment=PYTHONUNBUFFERED=1
 ExecStart=/home/vipuser/miniconda3/bin/python /root/RLDecisionAgent/backend/ART_mcp-rl/LLM_cache.py
@@ -18,7 +18,6 @@ RestartSec=5
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=full
-ProtectHome=true
 
 [Install]
 WantedBy=multi-user.target

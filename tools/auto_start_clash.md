@@ -8,18 +8,16 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=clash
-Group=clash
+User=root
+Group=root
 WorkingDirectory=/root/clash
-# 按你的二进制与目录调整：
-ExecStart=/root/clash/clash-linux-amd64-v1.10.0 -d /root/clash
+ExecStart=/root/clash/clash-linux-amd64-v1.10.0 -d .
 Restart=always
 RestartSec=3
 LimitNOFILE=1048576
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=full
-ProtectHome=true
 
 [Install]
 WantedBy=multi-user.target
