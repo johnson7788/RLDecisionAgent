@@ -38,7 +38,7 @@ WebSearchClient = ZhipuAiClient(api_key=os.environ["ZHIPU_API_KEY"])
 # ---------------- wandb: 运行配置 ----------------
 NAME = os.getenv("ART_NAME", "outline-webfill")
 MODEL_NAME = os.getenv("ART_MODEL", "Qwen/Qwen2.5-0.5B-Instruct")
-PROJECT_NAME = os.getenv("ART_PROJECT", "outline-training")
+PROJECT_NAME = os.getenv("ART_PROJECT", "content-training")
 USE_LOCAL_BACKEND = os.getenv("ART_BACKEND", "local").lower() == "local"
 
 WANDB_PROJECT = os.getenv("WANDB_PROJECT", PROJECT_NAME)
