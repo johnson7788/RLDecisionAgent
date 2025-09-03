@@ -965,3 +965,15 @@ clearly commit to Leonardo da Vinci, failing to give a straightforward answer.',
         }
     ]
 }
+
+
+# 这个时候正在加载模型到GPU上
+Loading safetensors checkpoint shards:   0% Completed | 0/2 [00:00<?, ?it/s]
+Loading safetensors checkpoint shards:  50% Completed | 1/2 [00:07<00:07,  7.25s/it]
+Loading safetensors checkpoint shards: 100% Completed | 2/2 [00:23<00:00, 12.40s/it]
+Loading safetensors checkpoint shards: 100% Completed | 2/2 [00:23<00:00, 11.63s/it]
+
+Loading safetensors checkpoint shards:   0% Completed | 0/2 [00:00<?, ?it/s]
+Loading safetensors checkpoint shards:  50% Completed | 1/2 [00:00<00:00,  2.15it/s]
+Loading safetensors checkpoint shards: 100% Completed | 2/2 [00:01<00:00,  1.13it/s]
+Loading safetensors checkpoint shards: 100% Completed | 2/2 [00:01<00:00,  1.22it/s]

@@ -180,7 +180,7 @@ async def search_web(keyword: str) -> List[WebSearchResult]:
     response = WebSearchClient.web_search.web_search(
         search_engine="search_std",
         search_query=keyword,
-        count=15,
+        count=4,
         search_recency_filter="noLimit",
         content_size="high"
     )

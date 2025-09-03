@@ -51,7 +51,7 @@ def search_web(keyword: str) -> List[WebSearchResult]:
     response = WebSearchClient.web_search.web_search(
         search_engine="search_std",
         search_query=keyword,
-        count=15,  # 返回结果的条数，范围1-50，默认10
+        count=4,  # 返回结果的条数，范围1-50，默认10
         search_recency_filter="noLimit",  # 搜索指定日期范围内的内容
         content_size="high"  # 控制网页摘要的字数，默认medium
     )
