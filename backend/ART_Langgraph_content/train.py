@@ -43,6 +43,8 @@ WANDB_PROJECT = os.getenv("WANDB_PROJECT", PROJECT_NAME)
 WANDB_ENTITY = os.getenv("WANDB_ENTITY")  # 可空
 WANDB_RUN_NAME = os.getenv("WANDB_RUN_NAME", f"{NAME}-{time.strftime('%Y%m%d-%H%M%S')}")
 
+print(f"{NAME} - {MODEL_NAME} - {PROJECT_NAME} - {os.environ['WANDB_BASE_URL']}")
+
 # ----------------- 数据结构 -----------------
 class WebSearchResult(BaseModel):
     url: str

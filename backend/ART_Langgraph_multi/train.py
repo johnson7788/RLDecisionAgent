@@ -53,6 +53,9 @@ USE_LOCAL_BACKEND = os.getenv("ART_BACKEND", "local").lower() == "local"
 RULER_MODEL = os.getenv("RULER_MODEL", "openai/o4-mini")
 ALPHA_RULER = float(os.getenv("ALPHA_RULER", "0.6"))  # 融合权重：最终reward = alpha*RULER + (1-alpha)*Structure
 
+print(f"{NAME} - {MODEL_NAME} - {PROJECT_NAME} - {os.environ['WANDB_BASE_URL']}")
+
+
 # 结构型奖励权重（总和建议=1）
 STRUCT_WEIGHTS = {
     "slides_count": 0.20,
