@@ -14,7 +14,8 @@
   uv pip install -U "openpipe-art[backend,langgraph]>=0.4.9" langchain-core pydantic tenacity litellm
   pip install wandb
 """
-
+import logging
+logging.basicConfig(level=logging.DEBUG)
 import os
 import uuid
 import time
