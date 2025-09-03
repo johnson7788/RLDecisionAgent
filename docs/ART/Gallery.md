@@ -884,3 +884,84 @@ python train.py \
 # Art.TrainableModel 和Art.Model
 
 # 单卡24G显存，7B训练卡住，0.5B没问题
+
+
+# gather表示正在收集Rollout，收集1个批次的数据，等待训练
+gather:   0%|                                             | 0/8 [00:00<?, ?it/s]Rollout scenario step 0
+Rollout scenario step 0
+Rollout scenario step 0
+Rollout scenario step 0
+Rollout scenario step 0
+Rollout scenario step 0
+Rollout scenario step 0
+Rollout scenario step 0
+gather:  12%|████▋                                | 1/8 [00:09<01:07,  9.58s/it]
+gather:  12%|▊     | 1/8 [00:09<01:07,  9.58s/it, reward=0, completion_tokens=8]
+gather:  25%|█▌    | 2/8 [00:09<00:57,  9.58s/it, reward=0, completion_tokens=8]
+gather:  38%|██▎   | 3/8 [00:10<00:14,  2.95s/it, reward=0, completion_tokens=8]
+gather:  38%|██▎   | 3/8 [00:10<00:14,  2.95s/it, reward=0, completion_tokens=8]
+gather:  50%|███   | 4/8 [00:13<00:10,  2.73s/it, reward=0, completion_tokens=8]
+gather:  50%|█▌ | 4/8 [00:13<00:10,  2.73s/it, reward=0, completion_tokens=15.5]
+gather:  62%|█▉ | 5/8 [00:14<00:06,  2.13s/it, reward=0, completion_tokens=15.5]
+gather:  62%|█▉ | 5/8 [00:14<00:06,  2.13s/it, reward=0, completion_tokens=30.2]
+gather:  75%|██▎| 6/8 [00:14<00:03,  1.70s/it, reward=0, completion_tokens=30.2]
+gather:  75%|██▎| 6/8 [00:14<00:03,  1.70s/it, reward=0, completion_tokens=44.3]
+gather:  88%|██▋| 7/8 [00:14<00:01,  1.70s/it, reward=0, completion_tokens=57.3]
+gather: 100%|███| 8/8 [00:15<00:00,  1.03it/s, reward=0, completion_tokens=57.3]
+gather: 100%|███| 8/8 [00:15<00:00,  1.90s/it, reward=0, completion_tokens=74.4]
+[RULER] Pretty-printed LLM choice JSON:
+{
+    'scores': [
+        {
+            'trajectory_id': '1',
+            'explanation': 'Direct correct answer, efficient.',
+            'score': 1.0
+        },
+        {
+            'trajectory_id': '2',
+            'explanation': 'Direct correct answer, efficient.',
+            'score': 1.0
+        },
+        {
+            'trajectory_id': '3',
+            'explanation': 'Direct correct answer, efficient.',
+            'score': 1.0
+        },
+        {
+            'trajectory_id': '4',
+            'explanation': 'Correct answer but includes unnecessary prompt for a
+search query, less efficient.',
+            'score': 0.8
+        }
+    ]
+}
+[RULER] Pretty-printed LLM choice JSON:
+{
+    'scores': [
+        {
+            'trajectory_id': '1',
+            'explanation': 'Correctly identifies Leonardo da Vinci as the 
+painter, directly answers the question. Minor irrelevant inaccuracies but goal 
+achieved efficiently.',
+            'score': 0.9
+        },
+        {
+            'trajectory_id': '2',
+            'explanation': 'Completely incorrect attribution, fails to identify 
+Leonardo da Vinci.',
+            'score': 0.0
+        },
+        {
+            'trajectory_id': '3',
+            'explanation': 'States Leonardo da Vinci as the painter but includes
+many irrelevant and incorrect details, reducing clarity and efficiency.',
+            'score': 0.7
+        },
+        {
+            'trajectory_id': '4',
+            'explanation': 'Provides conflicting information and does not 
+clearly commit to Leonardo da Vinci, failing to give a straightforward answer.',
+            'score': 0.2
+        }
+    ]
+}

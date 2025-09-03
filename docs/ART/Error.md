@@ -1150,3 +1150,35 @@ Unsloth: Will smartly offload gradients to save VRAM!
 O^O/ \_/ \    Batch size per device = 1 | Gradient accumulation steps = 1
 \        /    Data Parallel GPUs = 1 | Total batch size (1 x 1 x 1) = 1
  "-____-"     Trainable parameters = 20,185,088 of 7,635,801,600 (0.26% trained)
+
+# kill 掉model-service，这个是启动的vllm模型服务，模拟Openai接口
+Traceback (most recent call last):
+  File "/home/wac/johnson/.pycharm_helpers/pydevd_asyncio/pydevd_nest_asyncio.py", line 138, in run
+    return loop.run_until_complete(task)
+  File "/home/wac/johnson/.pycharm_helpers/pydevd_asyncio/pydevd_nest_asyncio.py", line 243, in run_until_complete
+    return f.result()
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/asyncio/futures.py", line 201, in result
+    raise self._exception.with_traceback(self._exception_tb)
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/asyncio/tasks.py", line 232, in __step
+    result = coro.send(None)
+  File "/media/wac/backup/john/johnson/RLDecisionAgent/backend/ART_Langgraph/train.py", line 296, in main
+    await model.register(backend)
+  File "/media/wac/backup/john/johnson/RLDecisionAgent/ART/src/art/model.py", line 322, in register
+    base_url, api_key = await backend._prepare_backend_for_training(
+  File "/media/wac/backup/john/johnson/RLDecisionAgent/ART/src/art/local/backend.py", line 272, in _prepare_backend_for_training
+    await service.start_openai_server(config=config)
+  File "/media/wac/backup/john/johnson/RLDecisionAgent/ART/src/mp_actors/traceback.py", line 26, in async_wrapper
+    raise e.with_traceback(streamlined_traceback())
+  File "/media/wac/backup/john/johnson/RLDecisionAgent/ART/src/art/unsloth/service.py", line 62, in start_openai_server
+    self._openai_server_task = await openai_server_task(
+  File "/media/wac/backup/john/johnson/RLDecisionAgent/ART/src/art/vllm/server.py", line 103, in openai_server_task
+    task.result()
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/asyncio/futures.py", line 201, in result
+    raise self._exception.with_traceback(self._exception_tb)
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/asyncio/tasks.py", line 232, in __step
+    result = coro.send(None)
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/vllm/entrypoints/openai/api_server.py", line 1066, in run_server
+    sock = create_server_socket(sock_addr)
+  File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/vllm/entrypoints/openai/api_server.py", line 1037, in create_server_socket
+    sock.bind(addr)
+OSError: [Errno 98] 地址已在使用
