@@ -5,7 +5,8 @@
 # @Author: johnson
 # @Contact : github: johnson7788
 # @Desc  : 训练“按 topic 搜索并生成 Markdown 大纲”的 LangGraph ReAct Agent（ART GRPO）
-
+import logging
+logging.basicConfig(level=logging.DEBUG)
 import os
 import uuid
 import time

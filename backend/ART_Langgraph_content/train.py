@@ -4,7 +4,8 @@
 # @File  : train_outline_agent.py
 # @Author: johnson
 # @Desc  : 训练一个“遍历大纲→搜索→填充text→保持原格式返回”的 ReAct Agent（ART + LangGraph，GRPO）
-
+import logging
+logging.basicConfig(level=logging.DEBUG)
 import os
 import re
 import json

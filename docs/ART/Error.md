@@ -1169,7 +1169,7 @@ Traceback (most recent call last):
 OSError: [Errno 98] 地址已在使用
 
 
-# 训练卡住，如果在下面的步骤中卡住，那么需要使用export CUDA_VISIBLE_DEVICES=1指定显卡，并确保有显存, 不是这个问题，是src/art/unsloth/train.py的中的函数train的trainer.train()卡住
+# 训练卡住，如果在下面的步骤中卡住，那么需要使用export CUDA_VISIBLE_DEVICES=1指定显卡，并确保有显存, 不是这个问题，是src/art/unsloth/train.py的中的函数train的trainer.train()卡住，在多个显卡是要使用export CUDA_VISIBLE_DEVICES=1指定使用的显卡，否则就会卡住
 [ASYNCGEN] Creating generator for train
 ==((====))==  Unsloth - 2x faster free finetuning | Num GPUs used = 1
    \\   /|    Num examples = 10,000,000 | Num Epochs = 3 | Total steps = 10,000,002
