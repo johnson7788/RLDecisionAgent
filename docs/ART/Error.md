@@ -1182,3 +1182,62 @@ Unsloth: Will smartly offload gradients to save VRAM!
 O^O/ \_/ \    Batch size per device = 3 | Gradient accumulation steps = 1
 \        /    Data Parallel GPUs = 1 | Total batch size (3 x 1 x 1) = 3
  "-____-"     Trainable parameters = 4,399,104 of 498,431,872 (0.88% trained)
+
+
+# 调用本机的vllm的openai模型接口出错，会自动进行重试
+DEBUG:httpcore.http11:send_request_headers.started request=<Request [b'POST']>
+DEBUG:httpcore.http11:response_closed.complete
+DEBUG:openai._base_client:Encountered Exception
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/dist-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/usr/local/lib/python3.10/dist-packages/httpx/_transports/default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+  File "/usr/local/lib/python3.10/dist-packages/httpcore/_async/connection_pool.py", line 216, in handle_async_request
+    raise exc from None
+  File "/usr/local/lib/python3.10/dist-packages/httpcore/_async/connection_pool.py", line 196, in handle_async_request
+    response = await connection.handle_async_request(
+  File "/usr/local/lib/python3.10/dist-packages/httpcore/_async/connection.py", line 101, in handle_async_request
+    return await self._connection.handle_async_request(request)
+  File "/usr/local/lib/python3.10/dist-packages/httpcore/_async/http11.py", line 143, in handle_async_request
+    raise exc
+  File "/usr/local/lib/python3.10/dist-packages/httpcore/_async/http11.py", line 113, in handle_async_request
+    ) = await self._receive_response_headers(**kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/httpcore/_async/http11.py", line 186, in _receive_response_headers
+    event = await self._receive_event(timeout=timeout)
+  File "/usr/local/lib/python3.10/dist-packages/httpcore/_async/http11.py", line 224, in _receive_event
+    data = await self._network_stream.read(
+  File "/usr/local/lib/python3.10/dist-packages/httpcore/_backends/anyio.py", line 32, in read
+    with map_exceptions(exc_map):
+  File "/usr/lib/python3.10/contextlib.py", line 153, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/usr/local/lib/python3.10/dist-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ReadError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/dist-packages/openai/_base_client.py", line 1529, in request
+    response = await self._client.send(
+  File "/usr/local/lib/python3.10/dist-packages/httpx/_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+  File "/usr/local/lib/python3.10/dist-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+  File "/usr/local/lib/python3.10/dist-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+  File "/usr/local/lib/python3.10/dist-packages/httpx/_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+  File "/usr/local/lib/python3.10/dist-packages/httpx/_transports/default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+  File "/usr/lib/python3.10/contextlib.py", line 153, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/usr/local/lib/python3.10/dist-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ReadError
+DEBUG:openai._base_client:2 retries left
+INFO:openai._base_client:Retrying request to /chat/completions in 0.497398 seconds
+DEBUG:httpcore.http11:send_request_headers.complete
+DEBUG:httpcore.http11:send_request_body.started request=<Request [b'POST']>
+DEBUG:httpcore.http11:send_request_body.complete
+DEBUG:httpcore.http11:receive_response_headers.started request=<Request [b'POST']>

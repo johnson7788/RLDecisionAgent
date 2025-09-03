@@ -30,5 +30,87 @@ python model_test.py
 ## wandb日志
 http://192.168.100.8:3005/johnson/web-search-agent-training
 
-
-
+## 训练的模型结果
+PROJECT_NAME = web-search-outline-training
+ART_NAME=ppt-outline05
+/workspace/verl/RLDecisionAgent/ART/.art/web-search-outline-training/models/ppt-outline05/
+├── checkpoints
+│   ├── 0000
+│   │   ├── README.md
+│   │   ├── adapter_config.json
+│   │   ├── adapter_model.safetensors
+│   │   ├── added_tokens.json
+│   │   ├── chat_template.jinja
+│   │   ├── merges.txt
+│   │   ├── special_tokens_map.json
+│   │   ├── tokenizer.json
+│   │   ├── tokenizer_config.json
+│   │   ├── training_args.bin
+│   │   └── vocab.json
+│   ├── 0001
+│   │   ├── README.md
+│   │   ├── adapter_config.json
+│   │   ├── adapter_model.safetensors
+│   │   ├── added_tokens.json
+│   │   ├── chat_template.jinja
+│   │   ├── merges.txt
+│   │   ├── special_tokens_map.json
+│   │   ├── tokenizer.json
+│   │   ├── tokenizer_config.json
+│   │   ├── training_args.bin
+│   │   └── vocab.json
+│   ├── 0002
+│   │   ├── README.md
+│   │   ├── adapter_config.json
+│   │   ├── adapter_model.safetensors
+│   │   ├── added_tokens.json
+│   │   ├── chat_template.jinja
+│   │   ├── merges.txt
+│   │   ├── special_tokens_map.json
+│   │   ├── tokenizer.json
+│   │   ├── tokenizer_config.json
+│   │   ├── training_args.bin
+│   │   └── vocab.json
+│   ├── 0003
+│   │   ├── README.md
+│   │   ├── adapter_config.json
+│   │   ├── adapter_model.safetensors
+│   │   ├── added_tokens.json
+│   │   ├── chat_template.jinja
+│   │   ├── merges.txt
+│   │   ├── special_tokens_map.json
+│   │   ├── tokenizer.json
+│   │   ├── tokenizer_config.json
+│   │   ├── training_args.bin
+│   │   └── vocab.json
+│   └── 0004
+│       ├── README.md
+│       ├── adapter_config.json
+│       ├── adapter_model.safetensors
+│       ├── added_tokens.json
+│       ├── chat_template.jinja
+│       ├── merges.txt
+│       ├── special_tokens_map.json
+│       ├── tokenizer.json
+│       ├── tokenizer_config.json
+│       ├── training_args.bin
+│       └── vocab.json
+├── history.jsonl
+├── logs
+│   └── vllm.log
+├── model.json
+├── tensors
+│   ├── advantages.pt
+│   ├── assistant_mask.pt
+│   ├── group_ids.pt
+│   ├── input_pos.pt
+│   ├── logprobs.pt
+│   ├── parent_ids.pt
+│   ├── tokens.pt
+│   └── weights.pt
+└── trajectories
+    └── train
+        ├── 0000.jsonl
+        ├── 0001.jsonl
+        ├── 0002.jsonl
+        └── 0003.jsonl
