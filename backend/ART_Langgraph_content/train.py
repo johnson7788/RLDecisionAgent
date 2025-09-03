@@ -174,7 +174,7 @@ train_data = [
 
 # ----------------- 工具：web 搜索 -----------------
 async def search_web(keyword: str) -> List[WebSearchResult]:
-    resp = WebSearchClient.web_search.web_search(
+    response = WebSearchClient.web_search.web_search(
         search_engine="search_std",
         search_query=keyword,
         count=15,
@@ -498,7 +498,7 @@ async def main():
 
     training_config = {
         "groups_per_step": 2,
-        "num_epochs": 2,
+        "num_epochs": int(os.environ.get("NUM_EPOCHS", "2")),
         "rollouts_per_group": 3,
         "learning_rate": 1e-5,
         "max_steps": 6,

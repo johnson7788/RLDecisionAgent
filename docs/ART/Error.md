@@ -1072,7 +1072,7 @@ wandb: Synced 6 W&B file(s), 1 media file(s), 2 artifact file(s) and 0 other fil
 wandb: Find logs at: ./wandb/run-20250829_211336-8gft27rm/logs
 
 
-# 迭代到一定进度后意外停止
+# 迭代到一定进度后意外停止， tqdm 默认 leave=True，被打断时会把最后一次进度留在控制台，看起来就像“停在 12%”。其实是训练完成了
 wandb: 🚀 View run web-search03-20250901-144200 at: http://192.168.100.8:3005/johnson/web-search-agent-training/runs/aimkca2f
 wandb: ⭐️ View project at: http://192.168.100.8:3005/johnson/web-search-agent-training
 wandb: Synced 6 W&B file(s), 2 media file(s), 4 artifact file(s) and 0 other file(s)
@@ -1110,3 +1110,43 @@ Traceback (most recent call last):
   File "/usr/lib/python3.10/asyncio/futures.py", line 196, in result
     raise exc
 asyncio.exceptions.CancelledError
+
+
+# 注意reward为0时不会进行训练
+2025-09-03 13:19:00,236 [INFO] httpx:1740 - HTTP Request: POST http://0.0.0.0:8000/v1/chat/completions "HTTP/1.1 200 OK"
+                                                                                                                          2025-09-03 13:19:03,349 [INFO] httpx:1740 - HTTP Request: POST http://0.0.0.0:8000/v1/chat/completions "HTTP/1.1 200 OK"2]
+                                                                                                                          2025-09-03 13:19:19,883 [INFO] httpx:1740 - HTTP Request: POST http://0.0.0.0:8000/v1/chat/completions "HTTP/1.1 200 OK"8]
+                                                                                                                          2025-09-03 13:20:13,070 [INFO] httpx:1740 - HTTP Request: POST http://0.0.0.0:8000/v1/chat/completions "HTTP/1.1 200 OK"5]
+2025-09-03 13:20:14,243 [INFO] httpx:1740 - HTTP Request: POST http://0.0.0.0:8000/v1/chat/completions "HTTP/1.1 200 OK"
+gather: 100%|██████████████████████████████████████████████| 6/6 [01:56<00:00, 19.43s/it, reward=0, completion_tokens=861]
+Skipping tuning as there is no suitable data. This can happen when all the trajectories in the same group have the same reward and thus no advantage to train on.
+Advanced step from 4 to 5 (no training occurred)
+Iterating dataset:  50%|███████████████████████████████▌                               | 5/10 [10:04<09:59, 119.81s/batch][train] step=5 epoch=5
+                                                                                                                          2025-09-03 13:20:22,710 [INFO] httpx:1740 - HTTP Request: POST http://0.0.0.0:8000/v1/chat/completions "HTTP/1.1 200 OK"s]
+                                                                                                                          2025-09-03 13:20:23,113 [INFO] httpx:1740 - HTTP Request: POST http://0.0.0.0:8000/v1/chat/completions "HTTP/1.1 200 OK"0]
+                                                                                                                          2025-09-03 13:21:12,569 [INFO] httpx:1740 - HTTP Request: POST http://0.0.0.0:8000/v1/chat/completions "HTTP/1.1 200 OK"6]
+2025-09-03 13:21:15,248 [INFO] httpx:1025 - HTTP Request: POST https://open.bigmodel.cn/api/paas/v4/web_search "HTTP/1.1 200 OK"
+2025-09-03 13:21:23,061 [INFO] httpx:1740 - HTTP Request: POST http://0.0.0.0:8000/v1/chat/completions "HTTP/1.1 200 OK"
+                                                                                                                          2025-09-03 13:22:35,758 [INFO] httpx:1740 - HTTP Request: POST http://0.0.0.0:8000/v1/chat/completions "HTTP/1.1 200 OK"4]
+                                                                                                                          2025-09-03 13:23:32,361 [INFO] httpx:1740 - HTTP Request: POST http://0.0.0.0:8000/v1/chat/completions "HTTP/1.1 200 OK"5]
+2025-09-03 13:23:37,823 [INFO] httpx:1740 - HTTP Request: POST http://0.0.0.0:8000/v1/chat/completions "HTTP/1.1 200 OK"
+                                                                                                                          2025-09-03 13:25:10,651 [INFO] httpx:1740 - HTTP Request: POST http://0.0.0.0:8000/v1/chat/completions "HTTP/1.1 200 OK"8]
+2025-09-03 13:26:52,312 [INFO] httpx:1740 - HTTP Request: POST http://0.0.0.0:8000/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-03 13:27:02,755 [INFO] httpx:1740 - HTTP Request: POST http://0.0.0.0:8000/v1/completions "HTTP/1.1 200 OK"
+
+
+
+2025-09-03 13:28:52,323 [INFO] httpx:1740 - HTTP Request: POST http://0.0.0.0:8000/v1/chat/completions "HTTP/1.1 200 OK"
+gather: 100%|█| 6/6 [08:37<00:00, 86.33s/it, reward=0.113, format_reward=0.588, search_reward=0.77, sources_count=8, compl
+Packed 3 trajectories into 2 sequences of length 30720.113, format_reward=0.588, search_reward=0.77, sources_count=8, comp
+                                                                                                                          ==((====))==  Unsloth - 2x faster free finetuning | Num GPUs used = 1                               | 0/2 [00:00<?, ?it/s]
+   \\   /|    Num examples = 10,000,000 | Num Epochs = 3 | Total steps = 30,000,000
+O^O/ \_/ \    Batch size per device = 2 | Gradient accumulation steps = 1
+\        /    Data Parallel GPUs = 1 | Total batch size (2 x 1 x 1) = 2
+ "-____-"     Trainable parameters = 20,185,088 of 7,635,801,600 (0.26% trained)
+Unsloth: Will smartly offload gradients to save VRAM!
+==((====))==  Unsloth - 2x faster free finetuning | Num GPUs used = 1
+   \\   /|    Num examples = 10,000,000 | Num Epochs = 3 | Total steps = 60,000,000
+O^O/ \_/ \    Batch size per device = 1 | Gradient accumulation steps = 1
+\        /    Data Parallel GPUs = 1 | Total batch size (1 x 1 x 1) = 1
+ "-____-"     Trainable parameters = 20,185,088 of 7,635,801,600 (0.26% trained)
