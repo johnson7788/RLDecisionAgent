@@ -601,21 +601,6 @@ Traceback (most recent call last):
 AssertionError: 模型回复的内容为空，请检查
 
 
-# 训练卡住，如果在下面的步骤中卡住，那么需要使用export CUDA_VISIBLE_DEVICES=1指定显卡，并确保有显存
-[ASYNCGEN] Creating generator for train
-==((====))==  Unsloth - 2x faster free finetuning | Num GPUs used = 1
-   \\   /|    Num examples = 10,000,000 | Num Epochs = 3 | Total steps = 10,000,002
-O^O/ \_/ \    Batch size per device = 6 | Gradient accumulation steps = 1
-\        /    Data Parallel GPUs = 1 | Total batch size (6 x 1 x 1) = 6
- "-____-"     Trainable parameters = 4,399,104 of 498,431,872 (0.88% trained)
-Unsloth: Will smartly offload gradients to save VRAM!
-==((====))==  Unsloth - 2x faster free finetuning | Num GPUs used = 1
-   \\   /|    Num examples = 10,000,000 | Num Epochs = 3 | Total steps = 20,000,001
-O^O/ \_/ \    Batch size per device = 3 | Gradient accumulation steps = 1
-\        /    Data Parallel GPUs = 1 | Total batch size (3 x 1 x 1) = 3
- "-____-"     Trainable parameters = 4,399,104 of 498,431,872 (0.88% trained)
-
-
 # 报错
 uant_storage': 'uint8', 'bnb_4bit_quant_type': 'nf4', 'bnb_4bit_use_double_quant': True, 'llm_int8_enable_fp32_cpu_offload': False, 'llm_int8_has_fp16_weight': False, 'llm_int8_skip_modules': ['lm_head', 'multi_modal_projector', 'merger', 'modality_projection', 'model.layers.0.self_attn', 'model.layers.0.mlp', 'model.layers.2.mlp', 'model.layers.3.mlp', 'model.layers.21.mlp', 'model.layers.0.self_attn.q_proj'], 'llm_int8_threshold': 6.0}
 [rank0]: Traceback (most recent call last):
@@ -1182,3 +1167,18 @@ Traceback (most recent call last):
   File "/home/wac/johnson/anaconda3/envs/gpt/lib/python3.10/site-packages/vllm/entrypoints/openai/api_server.py", line 1037, in create_server_socket
     sock.bind(addr)
 OSError: [Errno 98] 地址已在使用
+
+
+# 训练卡住，如果在下面的步骤中卡住，那么需要使用export CUDA_VISIBLE_DEVICES=1指定显卡，并确保有显存, 不是这个问题，是src/art/unsloth/train.py的中的函数train的trainer.train()卡住
+[ASYNCGEN] Creating generator for train
+==((====))==  Unsloth - 2x faster free finetuning | Num GPUs used = 1
+   \\   /|    Num examples = 10,000,000 | Num Epochs = 3 | Total steps = 10,000,002
+O^O/ \_/ \    Batch size per device = 6 | Gradient accumulation steps = 1
+\        /    Data Parallel GPUs = 1 | Total batch size (6 x 1 x 1) = 6
+ "-____-"     Trainable parameters = 4,399,104 of 498,431,872 (0.88% trained)
+Unsloth: Will smartly offload gradients to save VRAM!
+==((====))==  Unsloth - 2x faster free finetuning | Num GPUs used = 1
+   \\   /|    Num examples = 10,000,000 | Num Epochs = 3 | Total steps = 20,000,001
+O^O/ \_/ \    Batch size per device = 3 | Gradient accumulation steps = 1
+\        /    Data Parallel GPUs = 1 | Total batch size (3 x 1 x 1) = 3
+ "-____-"     Trainable parameters = 4,399,104 of 498,431,872 (0.88% trained)
