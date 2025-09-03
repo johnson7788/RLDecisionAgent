@@ -17,7 +17,7 @@ HN 标题生成（Hacker News Title Generation）- 使用 ART 做强化学习微
 - MAX_PROMPT_LENGTH + MAX_COMPLETION_LENGTH 不应超过基础模型的最大上下文长度。
 - 本脚本默认以 Qwen2.5-7B-Instruct 作为 BASE_MODEL。
 """
-
+import os
 import asyncio
 from datetime import datetime  # 可保留以备进一步自定义日志
 from typing import Any, Dict, Iterable, List
@@ -37,7 +37,7 @@ from art.utils import iterate_dataset, limit_concurrency
 load_dotenv()
 
 # --- 全局配置参数（可根据需要调整） ---
-MODEL_NAME = "001"                      # 可训练模型的标识（本地实验/版本号）
+MODEL_NAME = os.environ["MODEL_NAME"]                   # 可训练模型的标识（本地实验/版本号）
 BASE_MODEL = "Qwen/Qwen2.5-0.5B-Instruct" # 用于推断/校验的基础指令模型
 MAX_COMPLETION_LENGTH = 100             # 生成标题允许的最大 token 数（输出上限）
 # 预留输出 token 空间后，限制输入 token 的最大长度（防止总长度超上下文）
@@ -47,7 +47,7 @@ GROUPS_PER_STEP = 1                      # 每个训练 step 采样的 group 数
 EVAL_STEPS = 50                          # 每隔多少个 step 做一次验证评估
 VAL_SET_SIZE = 100                       # 验证集大小
 TRAINING_DATASET_SIZE = 5000             # 训练集大小
-PROJECT = "hn_title_generation"         # 项目标识（ART 内部使用）
+PROJECT = os.environ["PROJECT"]            # 项目标识（ART 内部使用）
 NUM_EPOCHS = 1                           # 训练轮数（遍历数据的次数）
 NUM_GENERATIONS = 6                      # 单样本并行生成多少个标题（用于探索）
 
