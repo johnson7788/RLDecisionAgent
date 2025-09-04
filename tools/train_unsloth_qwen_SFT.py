@@ -26,8 +26,8 @@ pip install unsloth
 pip install transformers==4.55.4
 pip install trl datasets
 # PyTorch: 根据 https://pytorch.org/get-started/locally/ 选择正确的命令
-# CUDA 12.1 示例：
-# pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+# CUDA 12.8 示例：
+# pip install torch torchvision torchaudio xformers --index-url https://download.pytorch.org/whl/cu128
 ```
 
 -----
