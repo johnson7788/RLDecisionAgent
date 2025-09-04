@@ -1170,6 +1170,7 @@ OSError: [Errno 98] 地址已在使用
 
 
 # 训练卡住，如果在下面的步骤中卡住，那么需要使用export CUDA_VISIBLE_DEVICES=1指定显卡，并确保有显存, 不是这个问题，是src/art/unsloth/train.py的中的函数train的trainer.train()卡住，在多个显卡是要使用export CUDA_VISIBLE_DEVICES=1指定使用的显卡，否则就会卡住
+卡住的真实原因是本地的vllm的openai报错，模型推理速度太慢，重试3次还是timeout
 [ASYNCGEN] Creating generator for train
 ==((====))==  Unsloth - 2x faster free finetuning | Num GPUs used = 1
    \\   /|    Num examples = 10,000,000 | Num Epochs = 3 | Total steps = 10,000,002
@@ -1243,7 +1244,115 @@ DEBUG:httpcore.http11:send_request_body.complete
 DEBUG:httpcore.http11:receive_response_headers.started request=<Request [b'POST']>
 
 
-# 本地的vllm的openai报错
+# 本地的vllm的openai报错, 7B模型在24G的显卡上还是会卡住，0.5B没问题，好像和显卡有关系？
+日志显示请求发到 http://0.0.0.0:8000/v1/completions，超时时间只有 5s。
+你这边在处理请求时触发了训练代码（[train.py] Entered compute_loss()、Unsloth: Will smartly offload gradients...），并且是 inference_mode: False, no_grad: False，说明在请求路径里启用了带梯度的前向/训练逻辑，耗时会很长，5 秒内收不到响应头就会超时。
+`httpx.ReadTimeout(timeout=5s)` 明显不是走你在 `Model.openai_client()` 里手工配置的那个 **1200s** 超时客户端（那里超时很宽松）。从日志看，请求命中了 **`/v1/completions`**，且 OpenAI SDK 打印的是 `timeout: 5`。这通常出自 **`langchain_openai.ChatOpenAI`** 默认创建的 OpenAI 客户端（或者你代码里另一个没贴出的 `client.completions.create` 路径），而不是 `Model.openai_client()` 返回的那个。
+
+结合你贴的代码，最该改的地方在 **`src/art/langgraph/llm_wrapper.py`**，原因与修改点如下：
+
+---
+
+## 1) 在 `llm_wrapper.py` 中：把 0.0.0.0 归一化为 127.0.0.1，并显式拉高超时
+
+### 问题
+
+* 你把 `model.inference_base_url` 原样塞给了 `ChatOpenAI`，而训练期启动的本地 OpenAI 兼容服务默认 **host=0.0.0.0**。对**客户端**来说，连 `0.0.0.0` 往往是非标准/不可靠的（容易出现连上但不回响应头的怪现象）。
+* `ChatOpenAI(...)` 这里**没有**传超时，LangChain/SDK 会用内部默认（你日志就是 `timeout=5`）。
+
+### 建议修改（最小侵入）
+
+在 `src/art/langgraph/llm_wrapper.py` 里做两处改动：
+
+#### A. 归一化 base\_url（把 0.0.0.0 改成 127.0.0.1）
+
+在文件靠上位置加一个小工具函数，并在 `add_thread()` 里用它：
+
+```python
+# --- add this helper near the top of llm_wrapper.py ---
+def _normalize_base_url(url: str | None) -> str | None:
+    if not url:
+        return url
+    # 将客户端的目标从 0.0.0.0 改成 127.0.0.1，避免连接到“任意地址”的元地址
+    return url.replace("://0.0.0.0", "://127.0.0.1")
+
+# in add_thread(), replace:
+#     "base_url": base_url,
+# with:
+#     "base_url": _normalize_base_url(base_url),
+```
+
+具体改动（替换 `add_thread` 中设置 `CURRENT_CONFIG` 的那块）：
+
+```python
+CURRENT_CONFIG.set(
+    {
+        "logger": FileLogger(log_path),
+        "base_url": _normalize_base_url(base_url),  # ← 关键改动
+        "api_key": api_key,
+        "model": model,
+    }
+)
+```
+
+#### B. 给 ChatOpenAI 显式配置超时（以及可选重试）
+
+在 **`init_chat_model()`** 和 **`with_config()`** 两处创建 `ChatOpenAI` 的地方，加上一个足够大的 `timeout`（例如 600 秒）并视情况禁用 SDK 额外重试（减少叠加等待）：
+
+```python
+from langchain_openai import ChatOpenAI
+
+# in init_chat_model(...)
+return LoggingLLM(
+    ChatOpenAI(
+        base_url=config["base_url"],
+        api_key=config["api_key"],
+        model=config["model"],
+        temperature=1.0,
+        timeout=600,        # ← 关键改动：把 5s 提升到 600s
+        max_retries=0,      # ← 可选：避免 SDK 层自己重试延长等待
+    ),
+    config["logger"],
+)
+
+# in LoggingLLM.with_config(...)
+self.llm = ChatOpenAI(
+    base_url=art_config["base_url"],
+    api_key=art_config["api_key"],
+    model=art_config["model"],
+    temperature=1.0,
+    timeout=600,            # ← 同样加上
+    max_retries=0,          # ← 同样可选
+)
+```
+
+> 这样做可以确保**所有**通过 `ChatOpenAI` 走出来的请求，都不会再使用那个 5 秒读超时。
+
+---
+
+## 2) 在 `vllm/server.py`（可选，但推荐）：测试客户端不要连 0.0.0.0
+
+`src/art/vllm/server.py` 的 `openai_server_task()` 里有一个「自测」客户端：
+
+```python
+client = AsyncOpenAI(
+    api_key=server_args.get("api_key"),
+    base_url=f"http://{server_args.get('host', '0.0.0.0')}:{server_args.get('port', 8000)}/v1",
+)
+```
+
+这里把默认 `'0.0.0.0'` 改成 `'127.0.0.1'`，避免自测阶段也去连 0.0.0.0：
+
+```python
+base_host = server_args.get("host") or "127.0.0.1"   # ← 改这里
+client = AsyncOpenAI(
+    api_key=server_args.get("api_key"),
+    base_url=f"http://{base_host}:{server_args.get('port', 8000)}/v1",
+)
+```
+
+> 服务器继续监听 `0.0.0.0` 没问题；**只有客户端**应该用一个具体 IP（本机就用 127.0.0.1）。
+
 cat /workspace/verl/RLDecisionAgent/ART/.art/outline-training/models/ppt-content03/logs/vllm.log
 ERROR 09-03 23:01:30 [hermes_tool_parser.py:110] Error in extracting tool call from response.
 Traceback (most recent call last):
@@ -1259,6 +1368,111 @@ Traceback (most recent call last):
     obj, end = self.scan_once(s, idx)
 json.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 2 column 604 (char 604)
 
+File "/usr/local/lib/python3.10/dist-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ReadTimeout
+DEBUG:openai._base_client:2 retries left
+INFO:openai._base_client:Retrying request to /completions in 0.411680 seconds
+DEBUG:openai._base_client:Request options: {'method': 'post', 'url': '/completions', 'timeout': 5, 'files': None, 'idempotency_key': 'stainless-python-retry-2db8b6b6-4bdc-46e4-a1b5-1947e57ad7b6', 'json_data': {'model': 'ppt-content04', 'prompt': 'Hi', 'max_tokens': 1}}
+DEBUG:openai._base_client:Sending HTTP Request: POST http://0.0.0.0:8000/v1/completions
+DEBUG:httpcore.connection:connect_tcp.started host='0.0.0.0' port=8000 local_address=None timeout=5 socket_options=None
+DEBUG:httpcore.connection:connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x74ffa1ec9ab0>
+DEBUG:httpcore.http11:send_request_headers.started request=<Request [b'POST']>
+DEBUG:httpcore.http11:send_request_headers.complete
+DEBUG:httpcore.http11:send_request_body.started request=<Request [b'POST']>
+DEBUG:httpcore.http11:send_request_body.complete
+DEBUG:httpcore.http11:receive_response_headers.started request=<Request [b'POST']>
+[train.py] Entered compute_loss()
+[train.py] compute_loss - return_new_logprobs: False
+[train.py] compute_loss - TrainConfig: learning_rate=1e-05 beta=0.0
+[train.py] compute_loss - Input tensor shapes: {key: v.shape for key, v in inputs.items()}
+[train.py] compute_loss - Using dtype: torch.bfloat16
+[train.py] Entered calculate_logprobs() with inference_mode: False, no_grad: False, reference_logprobs: False
+[train.py] calculate_logprobs - Calling trainer.model...
+[train.py] calculate_logprobs - Got hidden_states with shape: torch.Size([1, 1024, 3584])
+[train.py] Entered _calculate_logprobs() with hidden_states shape: torch.Size([1, 1024, 3584]), chunk_size: 1024
+[train.py] _calculate_logprobs - Processing chunk 0 to 1024
+[train.py] Exiting _calculate_logprobs()
+[train.py] Exiting calculate_logprobs()
+[train.py] compute_loss - Calculated loss: 0.0
+[train.py] Exiting compute_loss()
+DEBUG:httpcore.http11:receive_response_headers.failed exception=ReadTimeout(TimeoutError())
+DEBUG:httpcore.http11:response_closed.started
+DEBUG:httpcore.http11:response_closed.complete
+DEBUG:openai._base_client:Encountered httpx.TimeoutException
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/dist-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
+    yield
+  File "/usr/local/lib/python3.10/dist-packages/httpx/_transports/default.py", line 394, in handle_async_request
+    resp = await self._pool.handle_async_request(req)
+  File "/usr/local/lib/python3.10/dist-packages/httpcore/_async/connection_pool.py", line 216, in handle_async_request
+    raise exc from None
+  File "/usr/local/lib/python3.10/dist-packages/httpcore/_async/connection_pool.py", line 196, in handle_async_request
+    response = await connection.handle_async_request(
+  File "/usr/local/lib/python3.10/dist-packages/httpcore/_async/connection.py", line 101, in handle_async_request
+    return await self._connection.handle_async_request(request)
+  File "/usr/local/lib/python3.10/dist-packages/httpcore/_async/http11.py", line 143, in handle_async_request
+    raise exc
+  File "/usr/local/lib/python3.10/dist-packages/httpcore/_async/http11.py", line 113, in handle_async_request
+    ) = await self._receive_response_headers(**kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/httpcore/_async/http11.py", line 186, in _receive_response_headers
+    event = await self._receive_event(timeout=timeout)
+  File "/usr/local/lib/python3.10/dist-packages/httpcore/_async/http11.py", line 224, in _receive_event
+    data = await self._network_stream.read(
+  File "/usr/local/lib/python3.10/dist-packages/httpcore/_backends/anyio.py", line 32, in read
+    with map_exceptions(exc_map):
+  File "/usr/lib/python3.10/contextlib.py", line 153, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/usr/local/lib/python3.10/dist-packages/httpcore/_exceptions.py", line 14, in map_exceptions
+    raise to_exc(exc) from exc
+httpcore.ReadTimeout
+
+The above exception was the direct cause of the following exception:
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/dist-packages/openai/_base_client.py", line 1529, in request
+    response = await self._client.send(
+  File "/usr/local/lib/python3.10/dist-packages/httpx/_client.py", line 1629, in send
+    response = await self._send_handling_auth(
+  File "/usr/local/lib/python3.10/dist-packages/httpx/_client.py", line 1657, in _send_handling_auth
+    response = await self._send_handling_redirects(
+  File "/usr/local/lib/python3.10/dist-packages/httpx/_client.py", line 1694, in _send_handling_redirects
+    response = await self._send_single_request(request)
+  File "/usr/local/lib/python3.10/dist-packages/httpx/_client.py", line 1730, in _send_single_request
+    response = await transport.handle_async_request(request)
+  File "/usr/local/lib/python3.10/dist-packages/httpx/_transports/default.py", line 393, in handle_async_request
+    with map_httpcore_exceptions():
+  File "/usr/lib/python3.10/contextlib.py", line 153, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/usr/local/lib/python3.10/dist-packages/httpx/_transports/default.py", line 118, in map_httpcore_exceptions
+    raise mapped_exc(message) from exc
+httpx.ReadTimeout
+DEBUG:openai._base_client:1 retry left
+INFO:openai._base_client:Retrying request to /completions in 0.863140 seconds
+[train.py] Entered log() with logs: {'loss': 0.0, 'grad_norm': 0.0, 'learning_rate': 5e-06}
+[train.py] log - Pushing metrics to queue: {'loss': 0.0, 'grad_norm': 0.0, 'policy_loss': 0.0, 'entropy': 0.0}
+[train.py] Exiting log()
+Done waiting for a result from the queue or for the training task to, presumably, raise an exception
+DEBUG:openai._base_client:Request options: {'method': 'post', 'url': '/completions', 'timeout': 5, 'files': None, 'idempotency_key': 'stainless-
+python-retry-2db8b6b6-4bdc-46e4-a1b5-1947e57ad7b6', 'json_data': {'model': 'ppt-content04', 'prompt': 'Hi', 'max_tokens': 1}}
+DEBUG:openai._base_client:Sending HTTP Request: POST http://0.0.0.0:8000/v1/completions
+DEBUG:httpcore.connection:connect_tcp.started host='0.0.0.0' port=8000 local_address=None timeout=5 socket_options=None
+DEBUG:httpcore.connection:connect_tcp.complete return_value=<httpcore._backends.anyio.AnyIOStream object at 0x74ffa1ecafb0>
+DEBUG:httpcore.http11:send_request_headers.started request=<Request [b'POST']>
+DEBUG:httpcore.http11:send_request_headers.complete
+DEBUG:httpcore.http11:send_request_body.started request=<Request [b'POST']>
+DEBUG:httpcore.http11:send_request_body.complete
+DEBUG:httpcore.http11:receive_response_headers.started request=<Request [b'POST']>
+[train.py] Entered compute_loss()
+[train.py] compute_loss - return_new_logprobs: False
+[train.py] compute_loss - TrainConfig: learning_rate=1e-05 beta=0.0
+[train.py] compute_loss - Input tensor shapes: {key: v.shape for key, v in inputs.items()}
+[train.py] compute_loss - Using dtype: torch.bfloat16
+[train.py] Entered calculate_logprobs() with inference_mode: False, no_grad: False, reference_logprobs: False
+[train.py] calculate_logprobs - Calling trainer.model...
+Unsloth: Will smartly offload gradients to save VRAM!
+DEBUG:httpcore.http11:receive_response_headers.failed exception=ReadTimeout(TimeoutError())
+DEBUG:httpcore.http11:response_closed.started
+DEBUG:httpcore.http11:response_closed.complete
 DEBUG:openai._base_client:Encountered httpx.TimeoutException
 Traceback (most recent call last):
   File "/usr/local/lib/python3.10/dist-packages/httpx/_transports/default.py", line 101, in map_httpcore_exceptions
