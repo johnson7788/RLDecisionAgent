@@ -4,6 +4,14 @@
 docker create --runtime=nvidia --gpus all --net=host --shm-size="10g" --cap-add=SYS_ADMIN -v .:/workspace/verl -v /etc/localtime:/etc/localtime:ro -v /etc/timezone:/etc/timezone:ro --name areal ghcr.io/inclusionai/areal-runtime:v0.3.0.post2 sleep infinity
 docker start areal
 docker exec -it areal bash
+# 设置pip镜像源
+pip config set global.index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
+cd ART
+pip install .
+pip install ".[backend]"
+pip install 'torchtune @ git+https://github.com/pytorch/torchtune.git'
+pip install 'unsloth-zoo @ git+https://github.com/bradhilton/unsloth-zoo'
+
 
 ## 尝试安装
 https://art.openpipe.ai/getting-started/installation-setup

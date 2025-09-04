@@ -1522,3 +1522,37 @@ Traceback (most recent call last):
     raise mapped_exc(message) from exc
 httpx.ReadTimeout
 DEBUG:openai._base_client:Raising timeout error
+
+
+# 
+Traceback (most recent call last):
+  File "/workspace/verl/backend/ART_Langgraph/train.py", line 454, in <module>
+    asyncio.run(main())
+  File "/usr/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/workspace/verl/backend/ART_Langgraph/train.py", line 297, in main
+    await model.register(backend)
+  File "/workspace/verl/ART/src/art/model.py", line 322, in register
+    base_url, api_key = await backend._prepare_backend_for_training(
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/verl/ART/src/art/local/backend.py", line 271, in _prepare_backend_for_training
+    service = await self._get_service(model)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/verl/ART/src/art/local/backend.py", line 129, in _get_service
+    from ..torchtune.service import TorchtuneService
+  File "/workspace/verl/ART/src/art/torchtune/service.py", line 20, in <module>
+    from ..vllm import get_llm, get_worker, openai_server_task, run_on_workers
+  File "/workspace/verl/ART/src/art/vllm/__init__.py", line 5, in <module>
+    from .engine import (
+  File "/workspace/verl/ART/src/art/vllm/engine.py", line 17, in <module>
+    from .patches import patch_allocator
+  File "/workspace/verl/ART/src/art/vllm/patches.py", line 7, in <module>
+    from vllm.worker.multi_step_model_runner import MultiStepModelRunner
+ModuleNotFoundError: No module named 'vllm.worker.multi_step_model_runner'
