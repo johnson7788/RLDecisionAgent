@@ -6,10 +6,6 @@
 # @Contact : github: johnson7788
 # @Desc  : 来自示例： https://github.com/unslothai/notebooks/blob/main/nb/Kaggle-Qwen3_(4B)-Instruct.ipynb
 """
-这是一个独立训练脚本，由 Jupyter notebook 转换而来，它使用 Unsloth 和 TRL SFTTrainer 对 **Qwen3**（或其他受支持的）模型进行微调。
-
------
-
 ## 主要功能
 
   * **命令行参数**：为常见配置（模型、LoRA、数据、训练、保存）提供命令行参数。
@@ -186,7 +182,7 @@ def prepare_model_and_tokenizer(args: TrainArgs):
 
 
 def load_and_prepare_dataset(args: TrainArgs, tokenizer):
-    logging.info("Loading dataset: %s [%s]", args.dataset_name, args.dataset_split)
+    logging.info("加载数据集: %s [%s]", args.dataset_name, args.dataset_split)
     dataset = load_dataset(args.dataset_name, split=args.dataset_split)
 
     logging.info("Standardizing dataset to conversation format if needed…")

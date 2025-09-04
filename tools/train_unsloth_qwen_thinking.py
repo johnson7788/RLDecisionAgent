@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
+https://github.com/unslothai/notebooks/blob/main/nb/Kaggle-Qwen3_(4B)-Thinking.ipynb
 基于 Unsloth + TRL 的指令微调训练脚本（适配 Qwen-3 / Llama / Gemma 等）
 =================================================================
 - 将原始 Jupyter Notebook 代码整理为可直接运行的 Python 程序。

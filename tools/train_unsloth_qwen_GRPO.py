@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+https://github.com/unslothai/notebooks/blob/main/nb/Kaggle-Qwen3_(4B)-GRPO.ipynb
 Unsloth + TRL 单文件训练脚本（可直接 python 运行）
 - 将原始 Jupyter Notebook 代码整理为常规 Python 程序
 - 支持命令行参数配置模型、LoRA、训练超参、保存路径
