@@ -9,6 +9,12 @@ pip config set global.index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/si
 cd ART
 pip install .
 pip install ".[backend]"
+# 设置代理，安装git上的项目
+export http_proxy=http://127.0.0.1:7890
+export https_proxy=http://127.0.0.1:7890
+export all_proxy=http://127.0.0.1:7890
+export HTTP_PROXY=http://127.0.0.1:7890
+export HTTPs_PROXY=http://127.0.0.1:7890
 pip install 'torchtune @ git+https://github.com/pytorch/torchtune.git'
 pip install 'unsloth-zoo @ git+https://github.com/bradhilton/unsloth-zoo'
 
