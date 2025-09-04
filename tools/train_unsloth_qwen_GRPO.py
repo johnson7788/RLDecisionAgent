@@ -31,7 +31,7 @@ logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(message)s",
     datefmt="%H:%M:%S",
 )
-logger = logging.getLogger("train_unsloth")
+logger = logging.getLogger("train_grpo_unsloth")
 
 # ============ 依赖导入 ============
 try:
@@ -99,7 +99,7 @@ class TrainConfig:
 
     # 保存与推理
     output_dir: str = "lora_model"
-    do_infer_after_train: bool = False
+    do_infer_after_train: bool = True
     infer_prompt: str = "Solve (x + 2)^2 = 0."
     generation_max_new_tokens: int = 256
 
@@ -150,7 +150,6 @@ def train(cfg: TrainConfig):
         load_in_4bit=cfg.load_in_4bit,
         load_in_8bit=cfg.load_in_8bit,
         full_finetuning=cfg.full_finetuning,
-        # token="hf_xxx",  # 如为受限模型，请在此传入 HF token
     )
 
     logger.info("应用 LoRA 适配器")
@@ -237,7 +236,7 @@ def train(cfg: TrainConfig):
         json.dump(train_result.metrics, f, ensure_ascii=False, indent=2)
     logger.info("训练完成，指标已保存到 %s", metrics_path)
 
-    # 可选：简单推理验证
+    # 简单推理验证
     if cfg.do_infer_after_train:
         logger.info("训练后做一次简单推理验证 ...")
         messages = [{"role": "user", "content": cfg.infer_prompt}]
