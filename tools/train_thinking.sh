@@ -1,0 +1,9 @@
+python train_unsloth_qwen_thinking.py \
+  --model_name "unsloth/Qwen3-4B-Thinking-2507" \
+  --dataset_name "unsloth/OpenMathReasoning-mini" \
+  --split "cot" \
+  --max_steps 60 \
+  --per_device_train_batch_size 2 \
+  --gradient_accumulation_steps 4 \
+  --output_dir "./outputs/lora_qwen3" \
+  --demo_prompt "解方程 (x+2)^2=0"

@@ -16,7 +16,9 @@ os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 # os.environ["https_proxy"] = "http://127.0.0.1:7890"
 from transformers import pipeline
 
-model = "unsloth/qwen2.5-7b-instruct-unsloth-bnb-4bit"
+model = "unsloth/Qwen3-4B-Thinking-2507"
+# model = "unsloth/Qwen3-4B-Instruct-2507"
+# model = "unsloth/qwen2.5-7b-instruct-unsloth-bnb-4bit"
 # model = "unsloth/Qwen2.5-0.5B-Instruct-bnb-4bit"
 pipe = pipeline("text-generation", model=model)
 messages = [

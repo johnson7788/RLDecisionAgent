@@ -21,7 +21,7 @@ pip install torch torchvision torchaudio xformers --index-url https://download.p
 
 快速开始：
 -----------------------------------------------------------------
-python train_unsloth_qwen3.py \
+python train_unsloth_qwen_thinking.py \
   --model_name "unsloth/Qwen3-4B-Thinking-2507" \
   --dataset_name "unsloth/OpenMathReasoning-mini" \
   --split "cot" \
