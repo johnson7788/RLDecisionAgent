@@ -137,7 +137,6 @@ class TrainArgs:
     weight_decay: float
     lr_scheduler_type: str
     seed: int
-    mask_user_input: bool
     save_dir: str
     merge_to_16bit: bool
     merge_to_4bit: bool
@@ -146,6 +145,7 @@ class TrainArgs:
     push_to_hub_gguf: Optional[str]
     hf_token: Optional[str]
     inference_prompt: Optional[str]
+    mask_user_input: bool = True
 
 
 def prepare_model_and_tokenizer(args: TrainArgs):
@@ -228,7 +228,7 @@ def build_trainer(args: TrainArgs, model, tokenizer, dataset):
 
     trainer = SFTTrainer(
         model=model,
-        tokenizer=tokenizer,
+        processing_class=tokenizer,
         train_dataset=dataset,
         eval_dataset=None,
         args=SFTConfig(**sft_config_kwargs),

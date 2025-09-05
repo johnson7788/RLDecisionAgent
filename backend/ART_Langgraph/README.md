@@ -26,6 +26,7 @@ cd RLDecisionAgent/backend/ART_mcp-rl
 python LLM_cache.py
 
 ## 训练
+cp env_template .env  # 注意修改Key
 export CUDA_VISIBLE_DEVICES=1
 export HF_ENDPOINT=https://hf-mirror.com
 python train.py
