@@ -14,16 +14,18 @@ os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 # os.environ["HTTPS_PROXY"] = "http://127.0.0.1:7890"
 # os.environ["http_proxy"] = "http://127.0.0.1:7890"
 # os.environ["https_proxy"] = "http://127.0.0.1:7890"
-from transformers import pipeline
+from transformers import AutoTokenizer, pipeline
 
 model = "unsloth/Qwen3-4B-Base"
 # model = "unsloth/Qwen3-4B-Thinking-2507"
 # model = "unsloth/Qwen3-4B-Instruct-2507"
 # model = "unsloth/qwen2.5-7b-instruct-unsloth-bnb-4bit"
 # model = "unsloth/Qwen2.5-0.5B-Instruct-bnb-4bit"
-pipe = pipeline("text-generation", model=model)
-messages = [
-            {"role": "user", "content": "Who are you?"},
-            ]
-result = pipe(messages)
-print(result)
+print("force_download强制重新下载tokenizer")
+# 强制重新下载 tokenizer（避免用到已损坏的缓存）
+tok = AutoTokenizer.from_pretrained(
+    model,
+    trust_remote_code=True,     # 部分仓库需要
+    force_download=True,        # 强制重新下载
+    resume_download=False       # 禁用断点续传
+)

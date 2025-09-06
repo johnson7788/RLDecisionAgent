@@ -1556,3 +1556,42 @@ Traceback (most recent call last):
   File "/workspace/verl/ART/src/art/vllm/patches.py", line 7, in <module>
     from vllm.worker.multi_step_model_runner import MultiStepModelRunner
 ModuleNotFoundError: No module named 'vllm.worker.multi_step_model_runner'
+
+
+# tokenizer的vocab下载不全，使用[load_tokenizer.py](load_tokenizer.py)强制重新下载
+Traceback (most recent call last):
+  File "/workspace/verl/docs/ART/load_model.py", line 24, in <module>
+    pipe = pipeline("text-generation", model=model)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/transformers/pipelines/__init__.py", line 1079, in pipeline
+    raise e
+  File "/opt/conda/lib/python3.11/site-packages/transformers/pipelines/__init__.py", line 1074, in pipeline
+    tokenizer = AutoTokenizer.from_pretrained(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/transformers/models/auto/tokenization_auto.py", line 1125, in from_pretrained
+    return tokenizer_class.from_pretrained(pretrained_model_name_or_path, *inputs, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/transformers/tokenization_utils_base.py", line 2033, in from_pretrained
+    resolved_vocab_files[file_id] = cached_file(
+                                    ^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/transformers/utils/hub.py", line 321, in cached_file
+    file = cached_files(path_or_repo_id=path_or_repo_id, filenames=[filename], **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/transformers/utils/hub.py", line 566, in cached_files
+    raise e
+  File "/opt/conda/lib/python3.11/site-packages/transformers/utils/hub.py", line 478, in cached_files
+    hf_hub_download(
+  File "/opt/conda/lib/python3.11/site-packages/huggingface_hub/utils/_validators.py", line 114, in _inner_fn
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/huggingface_hub/file_download.py", line 1010, in hf_hub_download
+    return _hf_hub_download_to_cache_dir(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/huggingface_hub/file_download.py", line 1171, in _hf_hub_download_to_cache_dir
+    _download_to_tmp_and_move(
+  File "/opt/conda/lib/python3.11/site-packages/huggingface_hub/file_download.py", line 1738, in _download_to_tmp_and_move
+    http_get(
+  File "/opt/conda/lib/python3.11/site-packages/huggingface_hub/file_download.py", line 525, in http_get
+    raise EnvironmentError(
+OSError: Consistency check failed: file should be of size 2776833 but has size 13264127 (vocab.json).
+This is usually due to network issues while downloading the file. Please retry with `force_download=True`.
