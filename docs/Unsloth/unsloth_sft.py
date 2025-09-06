@@ -320,16 +320,55 @@ def build_model_and_tokenizer(cfg: TrainConfig, logger: logging.Logger):
 # ==============================
 
 def load_and_prepare_dataset(cfg: TrainConfig, tokenizer, logger: logging.Logger) -> Dataset:
-    """加载数据集，统一对话格式，并转成训练字段 text。"""
+    """加载数据集，统一为 conversations，并渲染为训练字段 text；同时详细记录原始→中间→处理后三段日志。"""
     logger.info(f"加载数据集: {cfg.dataset_name} [{cfg.dataset_split}] …")
-    dataset = load_dataset(cfg.dataset_name, split=cfg.dataset_split)
+    raw_ds = load_dataset(cfg.dataset_name, split=cfg.dataset_split)
+
+    # 预览相关参数，预览3条数据
+    preview_n = max(1, min(getattr(cfg, "log_preview_samples", 3), len(raw_ds)))
+    clip_len = 1000 # 打印1000个字
+
+    def _clip(s: str, limit: int = clip_len) -> str:
+        if s is None:
+            return "None"
+        s = str(s)
+        return s if len(s) <= limit else (s[:limit] + f" … <+{len(s) - limit} chars>")
+
+    def _pjson(obj, limit: int = clip_len) -> str:
+        try:
+            txt = json.dumps(obj, ensure_ascii=False, indent=2)
+        except Exception:
+            txt = str(obj)
+        return _clip(txt, limit)
+
+    # 原始样本预览
+    logger.info(f"原始样本预览（前 {preview_n} 条，截断 {clip_len} 字符）：")
+    for i in range(preview_n):
+        try:
+            logger.info(f"[#{i}] 原始(raw): {_pjson(raw_ds[i])}")
+        except Exception as e:
+            logger.warning(f"[#{i}] 原始样本读取失败: {e}")
 
     logger.info("标准化为通用 conversations 格式…")
-    dataset = standardize_data_formats(dataset)
+    std_ds = standardize_data_formats(raw_ds)
 
+    # 中间(conversations) + 渲染(text) 预览
+    logger.info(f"标准化 & 渲染预览（前 {preview_n} 条）：")
+    for i in range(preview_n):
+        try:
+            conv = std_ds[i].get("conversations", None)
+            logger.info(f"[#{i}] 中间(conversations): {_pjson(conv)}")
+            # 渲染为最终训练文本（不依赖 map，全量前先局部渲染以便对比）
+            rendered = tokenizer.apply_chat_template(
+                conv, tokenize=False, add_generation_prompt=False
+            ) if conv is not None else ""
+            logger.info(f"[#{i}] 处理后(rendered text): {_clip(rendered)}")
+        except Exception as e:
+            logger.warning(f"[#{i}] 渲染预览失败: {e}")
+
+    # 正式批量渲染到数据集字段
     def formatting_prompts_func(examples):
         convos = examples["conversations"]
-        # 将多轮对话用 ChatTemplate 渲染为纯文本（含特殊标记）
         texts = [
             tokenizer.apply_chat_template(
                 convo, tokenize=False, add_generation_prompt=False
@@ -338,17 +377,18 @@ def load_and_prepare_dataset(cfg: TrainConfig, tokenizer, logger: logging.Logger
         ]
         return {cfg.dataset_text_field: texts}
 
-    logger.info("根据 Chat 模板渲染文本字段…")
-    dataset = dataset.map(formatting_prompts_func, batched=True, desc="apply_chat_template")
+    logger.info("根据 Chat 模板渲染文本字段（批量 map）…")
+    dataset = std_ds.map(formatting_prompts_func, batched=True, desc="apply_chat_template")
 
-    # 打印/记录一个样本便于检查
+    # 渲染后样本再验一遍（取第 0 条）
     try:
         sample_txt = dataset[0][cfg.dataset_text_field]
-        logger.info(f"样本预览: {sample_txt}")
+        logger.info(f"最终样本校验: {_clip(sample_txt)}")
     except Exception as e:
-        logger.warning(f"样本预览失败: {e}")
+        logger.warning(f"最终样本校验失败: {e}")
 
     return dataset
+
 
 
 # ==============================
