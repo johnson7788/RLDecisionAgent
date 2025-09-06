@@ -146,6 +146,8 @@ class TrainArgs:
     hf_token: Optional[str]
     inference_prompt: Optional[str]
     mask_user_input: bool = True
+    bf16: bool = False          # <<< 新增
+    fp16: bool = False          # <<< 新增
 
 
 def prepare_model_and_tokenizer(args: TrainArgs):
@@ -220,6 +222,10 @@ def build_trainer(args: TrainArgs, model, tokenizer, dataset):
         seed=args.seed,
         report_to="none",
     )
+    sft_config_kwargs.update(
+        bf16=getattr(args, "bf16", False),
+        fp16=getattr(args, "fp16", False),
+    )
 
     if args.max_steps > 0:
         sft_config_kwargs.update(max_steps=args.max_steps)
@@ -228,7 +234,7 @@ def build_trainer(args: TrainArgs, model, tokenizer, dataset):
 
     trainer = SFTTrainer(
         model=model,
-        processing_class=tokenizer,
+        tokenizer=tokenizer,
         train_dataset=dataset,
         eval_dataset=None,
         args=SFTConfig(**sft_config_kwargs),
@@ -363,6 +369,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument("--push_to_hub_merged", type=str, default=None, help="HF repo for merged upload, e.g. user/repo")
     p.add_argument("--push_to_hub_gguf", type=str, default=None, help="HF repo for gguf upload, e.g. user/repo")
     p.add_argument("--hf_token", type=str, default=os.environ.get("HF_TOKEN"))
+    p.add_argument("--bf16", action="store_true", default=None, help="Use bf16 mixed precision if supported.")
+    p.add_argument("--fp16", action="store_true", default=None, help="Use fp16 mixed precision if bf16 not supported.")
 
     # Inference sanity check
     p.add_argument("--inference_prompt", type=str, default="Continue the sequence: 1, 1, 2, 3, 5, 8,")
@@ -376,6 +384,14 @@ def build_arg_parser() -> argparse.ArgumentParser:
 def main():
     parser = build_arg_parser()
     ns = parser.parse_args()
+    #  判断是否支持bf16或者fp16
+    bf16_supported = torch.cuda.is_available() and getattr(torch.cuda, "is_bf16_supported", lambda: False)()
+    if ns.bf16 is None and ns.fp16 is None:
+        ns.bf16 = bf16_supported
+        ns.fp16 = not bf16_supported
+    elif ns.bf16 and ns.fp16:
+        # 避免同时为 True，优先 bf16
+        ns.fp16 = False
 
     setup_logging(ns.verbose)
     set_seed(ns.seed)
@@ -420,6 +436,8 @@ def main():
         push_to_hub_gguf=ns.push_to_hub_gguf,
         hf_token=ns.hf_token,
         inference_prompt=ns.inference_prompt,
+        bf16=bool(ns.bf16),
+        fp16=bool(ns.fp16),
     )
 
     # Prepare model + tokenizer
@@ -428,8 +446,13 @@ def main():
     # Data
     dataset = load_and_prepare_dataset(args, tokenizer)
 
+    print("eos_token:", tokenizer.eos_token, "id=", tokenizer.eos_token_id)
+    print("pad_token:", tokenizer.pad_token, "id=", tokenizer.pad_token_id)
+
     # Trainer
     trainer = build_trainer(args, model, tokenizer, dataset)
+    logging.info("AMP flags -> bf16=%s, fp16=%s", getattr(trainer.args, "bf16", None),
+                 getattr(trainer.args, "fp16", None))
 
     # Log GPU before train
     log_gpu_info(prefix="[Before] ")
