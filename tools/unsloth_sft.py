@@ -1,27 +1,37 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-模块化 Unsloth SFT 训练脚本（可复用模板）
+模块化 Unsloth SFT 训练脚本（可复用模板） + Weights & Biases 集成
 ----------------------------------------------------
-将原始脚本封装为通用训练模块：
-1) 函数化结构 + 配置化参数（dataclass/CLI）
-2) 中文注释，便于团队维护
-3) 统一日志（控制台 + 文件），记录训练全流程
-4) 支持 4bit/8bit/LoRA 与 Qwen3 聊天模板示例
-5) 数据集标准化 + ChatTemplate 格式化 + 仅训练 Assistant 响应
+新增能力：
+1) 训练过程自动上报到 W&B（loss/learning_rate/steps 等由 TRL 内置上报）
+2) 关键资源指标（GPU 显存峰值、训练耗时等）自定义 wandb.log
+3) 训练异常捕获并上报到 W&B（alert + run.summary 标记失败，finish(exit_code=1)）
+4) 训练完成自动标记 run 成功状态并可选上传最终模型为 artifact
+5) 支持命令行开关（--use_wandb、--wandb_project、--wandb_run_name ...）
+
+# .env中配置WANDB_BASE_URL和WANDB_API_KEY
 
 依赖：
+  - python-dotenv
+  - wandb
   - unsloth >= 2024.XX
   - transformers, peft, trl, datasets, bitsandbytes (若使用 8bit/4bit)
   - torch, numpy
 
 示例用法：
-python unsloth_sft.py
+  pip install wandb
+  wandb login  # 或设置环境变量 WANDB_API_KEY
+  python unsloth_sft_wandb.py \
+    --report_to wandb \
+    --wandb_project unsloth-sft \
+    --wandb_run_name qwen3-4b-lora \
+    --output_dir ./outputs/qwen3_4b_lora
 
-注意：默认使用 Qwen3 指令模板（qwen3-instruct），并且只训练 assistant 段落。
+注意：默认启用 W&B（use_wandb=True）。如需禁用：--no_use_wandb。
 """
 from __future__ import annotations
-
+import dotenv
 import os
 import sys
 import json
@@ -31,9 +41,20 @@ import logging
 import argparse
 from dataclasses import dataclass, asdict, field
 from typing import List, Optional
-
+from pathlib import Path
 import numpy as np
 import torch
+dotenv.load_dotenv()
+
+# ---------- 可选导入 wandb ----------
+try:
+    import wandb
+    WANDB_AVAILABLE = True
+    print(f"WANDB_AVAILABLE是可用的，已经安装了wandb")
+except Exception:
+    wandb = None  # type: ignore
+    WANDB_AVAILABLE = False
+    print(f"WANDB_AVAILABLE不可用，没有安装wandb")
 
 # Unsloth & 训练相关库
 from unsloth import FastModel
@@ -94,7 +115,20 @@ class TrainConfig:
     weight_decay: float = 0.01
     lr_scheduler_type: str = "linear"
     seed: int = 3407
-    report_to: str = "none"  # 可切换为 wandb
+    report_to: str = "wandb"  # 改为默认同步到 wandb
+
+    # W&B 相关
+    use_wandb: bool = True
+    wandb_project: Optional[str] = "unsloth-sft"
+    wandb_entity: Optional[str] = None
+    wandb_run_name: Optional[str] = None
+    wandb_tags: List[str] = field(default_factory=lambda: ["unsloth", "sft", "qwen3"])
+    wandb_dir: Optional[str] = None
+    wandb_group: Optional[str] = None
+    wandb_job_type: str = "train"
+    wandb_mode: Optional[str] = None  # None/"online"/"offline"/"disabled"
+    wandb_notes: Optional[str] = None
+    wandb_log_model: bool | str = False  # True/False/"checkpoint"/"end"
 
     # 输出/保存
     output_dir: str = "./outputs/qwen3_4b_lora"
@@ -108,8 +142,7 @@ class TrainConfig:
 # ==============================
 
 def setup_logging(output_dir: str, logging_dir: Optional[str] = None) -> logging.Logger:
-    """配置日志：控制台 + 文件。
-    """
+    """配置日志：控制台 + 文件。"""
     os.makedirs(output_dir, exist_ok=True)
     log_dir = logging_dir or os.path.join(output_dir, "logs")
     os.makedirs(log_dir, exist_ok=True)
@@ -140,6 +173,77 @@ def setup_logging(output_dir: str, logging_dir: Optional[str] = None) -> logging
 
     logger.info(f"日志写入: {log_file}")
     return logger
+
+
+# ==============================
+# W&B 工具
+# ==============================
+
+def setup_wandb(cfg: TrainConfig, logger: logging.Logger):
+    """初始化 wandb。返回 run 对象或 None。"""
+    if not cfg.use_wandb:
+        logger.info("已禁用 W&B。")
+        return None
+    if not WANDB_AVAILABLE:
+        logger.warning("未检测到 wandb 包，已跳过 W&B 集成。pip install wandb")
+        return None
+
+    # 允许通过环境变量覆盖
+    project = cfg.wandb_project or os.getenv("WANDB_PROJECT") or "unsloth-sft"
+    entity = cfg.wandb_entity or os.getenv("WANDB_ENTITY")
+
+    run = wandb.init(
+        project=project,
+        entity=entity,
+        name=cfg.wandb_run_name,
+        group=cfg.wandb_group,
+        job_type=cfg.wandb_job_type,
+        dir=cfg.wandb_dir,
+        tags=cfg.wandb_tags or None,
+        notes=cfg.wandb_notes,
+        mode=cfg.wandb_mode,  # None 使用默认
+        config=asdict(cfg),
+        reinit=False,
+    )
+
+    # 记录当前脚本代码，便于复现
+    try:
+        wandb.run.log_code(root=str(Path(__file__).resolve().parent))
+    except Exception:
+        pass
+
+    logger.info(f"已连接 W&B：project={project}, run={run.name}")
+    return run
+
+
+def wandb_log_metrics(metrics: dict):
+    if WANDB_AVAILABLE and wandb.run is not None:
+        wandb.log(metrics)
+
+
+def wandb_on_error(e: Exception, logger: logging.Logger):
+    if WANDB_AVAILABLE and wandb.run is not None:
+        try:
+            # 尝试发出告警（企业/团队版更友好），失败则降级为普通日志
+            try:
+                wandb.alert(title="Training crashed", text=str(e), level=wandb.AlertLevel.ERROR)
+            except Exception:
+                pass
+            wandb.run.summary["status"] = "failed"
+            wandb.log({"error/exception": str(e)})
+            wandb.finish(exit_code=1)
+            logger.error("已将异常上报至 W&B（status=failed）")
+        except Exception as ee:
+            logger.error(f"上报 W&B 异常失败: {ee}")
+
+
+def wandb_on_success(extra_summary: dict | None = None, exit_code: int = 0):
+    if WANDB_AVAILABLE and wandb.run is not None:
+        if extra_summary:
+            for k, v in extra_summary.items():
+                wandb.run.summary[k] = v
+        wandb.run.summary["status"] = "success"
+        wandb.finish(exit_code=exit_code)
 
 
 # ==============================
@@ -239,8 +343,8 @@ def load_and_prepare_dataset(cfg: TrainConfig, tokenizer, logger: logging.Logger
 
     # 打印/记录一个样本便于检查
     try:
-        sample_txt = dataset[0][cfg.dataset_text_field][:256].replace("\n", " ")
-        logger.info(f"样本预览: {sample_txt}…")
+        sample_txt = dataset[0][cfg.dataset_text_field]
+        logger.info(f"样本预览: {sample_txt}")
     except Exception as e:
         logger.warning(f"样本预览失败: {e}")
 
@@ -270,7 +374,7 @@ def build_trainer(model, tokenizer, dataset: Dataset, cfg: TrainConfig, logger: 
         weight_decay=cfg.weight_decay,
         lr_scheduler_type=cfg.lr_scheduler_type,
         seed=cfg.seed,
-        report_to=cfg.report_to,
+        report_to=cfg.report_to,  # → "wandb" 时将自动上报
         save_steps=cfg.save_steps,
         save_total_limit=cfg.save_total_limit,
     )
@@ -297,6 +401,13 @@ def build_trainer(model, tokenizer, dataset: Dataset, cfg: TrainConfig, logger: 
     except Exception as e:
         logger.warning(f"编码样本预览失败: {e}")
 
+    # 将梯度/权重变化发送到 W&B（可选）
+    if WANDB_AVAILABLE and wandb.run is not None and cfg.use_wandb:
+        try:
+            wandb.watch(trainer.model, log="gradients", log_freq=max(1, cfg.logging_steps))
+        except Exception:
+            pass
+
     return trainer
 
 
@@ -313,6 +424,11 @@ def train_and_report(trainer: SFTTrainer, logger: logging.Logger):
     if gpu_stats:
         logger.info(f"GPU = {gpu_stats.name}. Max memory = {max_mem} GB.")
         logger.info(f"启动时保留显存 = {start_reserved} GB.")
+        wandb_log_metrics({
+            "env/gpu_name": gpu_stats.name,
+            "env/gpu_mem_gb": max_mem,
+            "memory/start_reserved_gb": start_reserved,
+        })
 
     logger.info("开始训练…")
     trainer_stats = trainer.train()
@@ -323,11 +439,21 @@ def train_and_report(trainer: SFTTrainer, logger: logging.Logger):
     used_pct = round(used_reserved / max_mem * 100, 3) if max_mem else 0.0
     lora_pct = round(used_for_lora / max_mem * 100, 3) if max_mem else 0.0
 
-    rt = trainer_stats.metrics.get('train_runtime', 0.0)
+    rt = float(trainer_stats.metrics.get('train_runtime', 0.0))
     logger.info(f"训练耗时 {rt:.2f} 秒（约 {rt/60:.2f} 分钟）。")
     logger.info(f"峰值保留显存 = {used_reserved} GB；其中训练增量 = {used_for_lora} GB。")
     if max_mem:
         logger.info(f"显存占用峰值占比 = {used_pct}%；训练增量占比 = {lora_pct}%。")
+
+    # 自定义指标上报到 W&B
+    wandb_log_metrics({
+        "memory/peak_reserved_gb": used_reserved,
+        "memory/peak_reserved_pct": used_pct,
+        "memory/lora_delta_gb": used_for_lora,
+        "memory/lora_delta_pct": lora_pct,
+        "time/train_runtime_sec": rt,
+        "trainer/global_step": getattr(trainer.state, "global_step", 0),
+    })
 
     return trainer_stats
 
@@ -336,14 +462,28 @@ def train_and_report(trainer: SFTTrainer, logger: logging.Logger):
 # 保存模型
 # ==============================
 
-def save_model(trainer: SFTTrainer, tokenizer, output_dir: str, logger: logging.Logger) -> None:
-    """尝试使用TRL/Transformers 保存。"""
+def save_model(trainer: SFTTrainer, tokenizer, output_dir: str, logger: logging.Logger, *, log_artifact: bool | str = False) -> None:
+    """尝试使用TRL/Transformers 保存，并可选上传到 W&B Artifact。"""
     os.makedirs(output_dir, exist_ok=True)
     logger.info(f"Unsloth 保存模型 Trainer.save_model")
     try:
         trainer.save_model(output_dir)
         tokenizer.save_pretrained(output_dir)
         logger.info(f"模型已保存至: {output_dir}")
+
+        # 可选：上传模型目录为 artifact
+        if log_artifact and WANDB_AVAILABLE and wandb.run is not None:
+            art = wandb.Artifact(
+                name=f"{Path(output_dir).name}-{wandb.run.id}",
+                type="model",
+                metadata={"framework": "transformers", "task": "sft"},
+            )
+            art.add_dir(output_dir)
+            aliases = ["latest"]
+            if isinstance(log_artifact, str):
+                aliases.append(log_artifact)
+            wandb.log_artifact(art, aliases=aliases)
+            logger.info("模型已作为 W&B Artifact 上传。")
     except Exception as ee:
         logger.error(f"保存失败: {ee}")
         raise
@@ -352,15 +492,25 @@ def save_model(trainer: SFTTrainer, tokenizer, output_dir: str, logger: logging.
 # 主流程
 # ==============================
 
+def parse_bool_flag(parser: argparse.ArgumentParser, true_flag: str, false_flag: str, default: bool):
+    """同时支持 --flag / --no_flag 的布尔开关。返回存入 args 的目标名。"""
+    dest = true_flag.replace("--", "").replace("-", "_")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(true_flag, dest=dest, action="store_true")
+    group.add_argument(false_flag, dest=dest, action="store_false")
+    parser.set_defaults(**{dest: default})
+    return dest
+
+
 def parse_args() -> TrainConfig:
-    parser = argparse.ArgumentParser(description="Unsloth SFT 训练脚本（通用模板）")
+    parser = argparse.ArgumentParser(description="Unsloth SFT 训练脚本（通用模板 + W&B）")
 
     # 仅列出常用项；其余请直接在 dataclass 默认值中改
     parser.add_argument("--model_name", type=str, default=TrainConfig.model_name)
     parser.add_argument("--max_seq_length", type=int, default=TrainConfig.max_seq_length)
-    parser.add_argument("--load_in_4bit", action="store_true", default=True)
-    parser.add_argument("--load_in_8bit", action="store_true", default=False)
-    parser.add_argument("--full_finetuning", action="store_true", default=False)
+    parse_bool_flag(parser, "--load_in_4bit", "--no_load_in_4bit", default=TrainConfig.load_in_4bit)
+    parse_bool_flag(parser, "--load_in_8bit", "--no_load_in_8bit", default=TrainConfig.load_in_8bit)
+    parse_bool_flag(parser, "--full_finetuning", "--no_full_finetuning", default=TrainConfig.full_finetuning)
     parser.add_argument("--hf_token", type=str, default=None)
 
     parser.add_argument("--lora_r", type=int, default=TrainConfig.lora_r)
@@ -388,9 +538,30 @@ def parse_args() -> TrainConfig:
     parser.add_argument("--save_steps", type=int, default=TrainConfig.save_steps)
     parser.add_argument("--save_total_limit", type=int, default=None)
 
+    # W&B 相关开关
+    parse_bool_flag(parser, "--use_wandb", "--no_use_wandb", default=TrainConfig.use_wandb)
+    parser.add_argument("--wandb_project", type=str, default=TrainConfig.wandb_project)
+    parser.add_argument("--wandb_entity", type=str, default=TrainConfig.wandb_entity)
+    parser.add_argument("--wandb_run_name", type=str, default=TrainConfig.wandb_run_name)
+    parser.add_argument("--wandb_group", type=str, default=TrainConfig.wandb_group)
+    parser.add_argument("--wandb_job_type", type=str, default=TrainConfig.wandb_job_type)
+    parser.add_argument("--wandb_mode", type=str, default=TrainConfig.wandb_mode)
+    parser.add_argument("--wandb_dir", type=str, default=TrainConfig.wandb_dir)
+    parser.add_argument("--wandb_notes", type=str, default=TrainConfig.wandb_notes)
+    parser.add_argument("--wandb_log_model", type=str, default=str(TrainConfig.wandb_log_model))
+    parser.add_argument("--wandb_tags", type=str, nargs="*", default=None, help="空格分隔的 tag 列表")
+
     args = parser.parse_args()
 
-    # 将 argparse 合并到 dataclass（未暴露的字段沿用默认值）
+    # 解析 wandb_log_model 为 bool/str
+    wandb_log_model: bool | str
+    if str(args.wandb_log_model).lower() in {"true", "1", "yes"}:
+        wandb_log_model = True
+    elif str(args.wandb_log_model).lower() in {"false", "0", "no"}:
+        wandb_log_model = False
+    else:
+        wandb_log_model = str(args.wandb_log_model)
+
     cfg = TrainConfig(
         model_name=args.model_name,
         max_seq_length=args.max_seq_length,
@@ -419,6 +590,17 @@ def parse_args() -> TrainConfig:
         output_dir=args.output_dir,
         save_steps=args.save_steps,
         save_total_limit=args.save_total_limit,
+        use_wandb=args.use_wandb,
+        wandb_project=args.wandb_project,
+        wandb_entity=args.wandb_entity,
+        wandb_run_name=args.wandb_run_name,
+        wandb_tags=args.wandb_tags or TrainConfig().wandb_tags,
+        wandb_dir=args.wandb_dir,
+        wandb_group=args.wandb_group,
+        wandb_job_type=args.wandb_job_type,
+        wandb_mode=args.wandb_mode,
+        wandb_notes=args.wandb_notes,
+        wandb_log_model=wandb_log_model,
     )
     return cfg
 
@@ -437,27 +619,38 @@ def main(cfg: TrainConfig | None = None) -> None:
     set_seed(cfg.seed, logger)
     log_env_info(logger)
 
-    # 构建模型与 tokenizer
-    model, tokenizer = build_model_and_tokenizer(cfg, logger)
+    # 初始化 W&B（尽早建立 run，记录环境/配置）
+    run = setup_wandb(cfg, logger)
 
-    # 准备数据集
-    dataset = load_and_prepare_dataset(cfg, tokenizer, logger)
-
-    # 构建 Trainer
-    trainer = build_trainer(model, tokenizer, dataset, cfg, logger)
-
-    # 训练并报告
     try:
+        # 构建模型与 tokenizer
+        model, tokenizer = build_model_and_tokenizer(cfg, logger)
+
+        # 准备数据集
+        dataset = load_and_prepare_dataset(cfg, tokenizer, logger)
+
+        # 构建 Trainer
+        trainer = build_trainer(model, tokenizer, dataset, cfg, logger)
+
+        # 训练并报告
         stats = train_and_report(trainer, logger)
+
+        # 保存模型 & 可选上传 artifact（别名：final）
+        save_model(
+            trainer,
+            tokenizer,
+            cfg.output_dir,
+            logger,
+            log_artifact=(cfg.wandb_log_model if cfg.wandb_log_model else False),
+        )
+
+        # 成功收尾
+        extra = {"metrics/train_runtime_sec": float(stats.metrics.get("train_runtime", 0.0))}
+        wandb_on_success(extra_summary=extra, exit_code=0)
+
     except Exception as e:
         logger.exception(f"训练过程中发生错误: {e}")
-        raise
-
-    # 保存模型
-    try:
-        save_model(trainer, tokenizer, cfg.output_dir, logger)
-    except Exception as e:
-        logger.exception(f"保存模型失败: {e}")
+        wandb_on_error(e, logger)
         raise
 
     logger.info("🎉 全流程结束。")
