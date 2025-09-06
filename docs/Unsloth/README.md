@@ -14,3 +14,9 @@ python unsloth_sft.py
 ## Thinking模型训练
 python unsloth_thinking.py
 使用的模型是： unsloth/Qwen3-4B-Thinking-2507
+
+# GRPO强化学习训练， 需要安装vllm
+[unsloth_GRPO.py](unsloth_GRPO.py)
+## GRPO模型训练
+python unsloth_GRPO.py
+使用的模型是： unsloth/Qwen3-4B-Base
