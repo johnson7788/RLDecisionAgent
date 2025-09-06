@@ -1,31 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Date  : 2025/9/6 20:43
-# @File  : unslot_instruct.py
+# @Date  : 2025/9/6 21:49
+# @File  : unsloth_thinking.py
 # @Author: johnson
 # @Contact : github: johnson7788
-# @Desc  : https://github.com/unslothai/notebooks/blob/main/nb/Qwen3_(4B)-Instruct.ipynb
+# @Desc  : 参考： https://github.com/unslothai/notebooks/blob/main/nb/Qwen3_(4B)-Thinking.ipynb
 
 from unsloth import FastModel
 import torch
 
-# 4bit的模型
-# fourbit_models = [
-#     "unsloth/Qwen3-4B-Instruct-2507-unsloth-bnb-4bit", # Qwen 14B 2x faster
-#     "unsloth/Qwen3-4B-Thinking-2507-unsloth-bnb-4bit",
-#     "unsloth/Qwen3-8B-unsloth-bnb-4bit",
-#     "unsloth/Qwen3-14B-unsloth-bnb-4bit",
-#     "unsloth/Qwen3-32B-unsloth-bnb-4bit",
-#     # 4bit dynamic quants for superior accuracy and low memory use
-#     "unsloth/gemma-3-12b-it-unsloth-bnb-4bit",
-#     "unsloth/Phi-4",
-#     "unsloth/Llama-3.1-8B",
-#     "unsloth/Llama-3.2-3B",
-#     "unsloth/orpheus-3b-0.1-ft-unsloth-bnb-4bit" # [NEW] We support TTS models!
-# ] # More models at https://huggingface.co/unsloth
-
 model, tokenizer = FastModel.from_pretrained(
-    model_name = "unsloth/Qwen3-4B-Instruct-2507",
+    model_name = "unsloth/Qwen3-4B-Thinking-2507",
     max_seq_length = 2048, # Choose any for long context!
     load_in_4bit = True,  # 4 bit quantization to reduce memory
     load_in_8bit = False, # [NEW!] A bit more accurate, uses 2x memory
@@ -51,24 +36,30 @@ model = FastModel.get_peft_model(
 from unsloth.chat_templates import get_chat_template
 tokenizer = get_chat_template(
     tokenizer,
-    chat_template = "qwen3-instruct",
+    chat_template = "qwen3-thinking",
 )
 
 from datasets import load_dataset
-dataset = load_dataset("mlabonne/FineTome-100k", split = "train")
+dataset = load_dataset("unsloth/OpenMathReasoning-mini", split = "cot")
+def generate_conversation(examples):
+    problems  = examples["problem"]
+    solutions = examples["generated_solution"]
+    conversations = []
+    for problem, solution in zip(problems, solutions):
+        conversations.append([
+            {"role" : "user",      "content" : problem},
+            {"role" : "assistant", "content" : solution},
+        ])
+    return { "conversations": conversations, }
 
-from unsloth.chat_templates import standardize_data_formats
-dataset = standardize_data_formats(dataset)
+dataset = dataset.map(generate_conversation, batched = True)
 
-print(dataset[100])
 def formatting_prompts_func(examples):
    convos = examples["conversations"]
    texts = [tokenizer.apply_chat_template(convo, tokenize = False, add_generation_prompt = False) for convo in convos]
    return { "text" : texts, }
 
 dataset = dataset.map(formatting_prompts_func, batched = True)
-
-print(dataset[100]['text'])
 
 from trl import SFTTrainer, SFTConfig
 trainer = SFTTrainer(
@@ -99,8 +90,9 @@ trainer = train_on_responses_only(
     instruction_part = "<|im_start|>user\n",
     response_part = "<|im_start|>assistant\n",
 )
-
-print(tokenizer.decode(trainer.train_dataset[100]["input_ids"]))
+tokenizer.decode(trainer.train_dataset[100]["input_ids"])
+# Now let's print the masked out example - you should see only the answer is present:
+tokenizer.decode([tokenizer.pad_token_id if x == -100 else x for x in trainer.train_dataset[100]["labels"]]).replace(tokenizer.pad_token, " ")
 
 gpu_stats = torch.cuda.get_device_properties(0)
 start_gpu_memory = round(torch.cuda.max_memory_reserved() / 1024 / 1024 / 1024, 3)

@@ -1,3 +1,4 @@
 python-dotenv
 wandb
 unsloth
+transformers==4.55.4
