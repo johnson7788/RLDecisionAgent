@@ -6,14 +6,21 @@ pip install -r requirements.txt
 # 测试GRPO环境，即trl和transformers是否正常安装
 python GRPO_test.py
 
+# 核心依赖，SFT和thinking模型的训练代码
+[unsloth_core.py](unsloth_core.py)
+
 # SFT代码
-[train_sft.py](train_sft.py)
+[train_sft.py](train_sft.py)   # 数据处理并调用unsloth_core.py进行训练
 ## SFT训练
+
+1) 使用mlabonne/FineTome-100k进行训练
 python train_sft.py
+2) 使用自定义数据集进行训练
+python train_sft.py --data_files xiaosen_sft.jsonl
 使用的模型是： unsloth/Qwen3-4B-Instruct-2507
 
 # Thinking模型训练
-[train_thinking.py](train_thinking.py)
+[train_thinking.py](train_thinking.py)   # 数据处理并调用unsloth_core.py进行训练
 ## Thinking模型训练
 python train_thinking.py
 使用的模型是： unsloth/Qwen3-4B-Thinking-2507
