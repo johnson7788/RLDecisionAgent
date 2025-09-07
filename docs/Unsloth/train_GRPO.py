@@ -373,7 +373,7 @@ def main() -> None:
     if use_wandb and wandb is not None:
         wandb.finish()
 
-    logging.info("All done ✅")
+    logging.info("训练完成 ✅")
 
 
 if __name__ == "__main__":
