@@ -19,11 +19,17 @@ python train_sft.py
 python train_sft.py --data_files xiaosen_sft.jsonl
 使用的模型是： unsloth/Qwen3-4B-Instruct-2507
 
+## SFT训练后的模型测试
+python inference_sft.py
+
 # Thinking模型训练
 [train_thinking.py](train_thinking.py)   # 数据处理并调用unsloth_core.py进行训练
 ## Thinking模型训练
 python train_thinking.py
 使用的模型是： unsloth/Qwen3-4B-Thinking-2507
+
+## Thinking模型训练后的模型测试
+python inference_thinking.py
 
 # GRPO强化学习训练， 需要安装vllm
 [unsloth_GRPO.py](unsloth_GRPO.py)

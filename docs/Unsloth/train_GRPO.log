@@ -144,9 +144,13 @@ Similarly, the circle centered at $P$, which is tangent to $AC$ at $A$ and passe
 【提取数字】
 36
 ********************
-100%|█████████████████████████████████████████████████████████████████████████████████████| 100/100 [27:53<00:00, 16.74s/it]
-[2025-09-07 20:24:53,265][INFO] GRPO 训练完成。
-[2025-09-07 20:24:53,265][INFO] 保存 LoRA 适配器到：outputs/grpo_saved_lora
-
+{'train_runtime': 1732.6861, 'train_samples_per_second': 0.231, 'train_steps_per_second': 0.058, 'train_loss': 3.423964020635495e-05, 'epoch': 0.01}
+100%|█████████████████████████████████████████████████████████████████████████████████████| 100/100 [28:52<00:00, 17.33s/it]
+[2025-09-07 21:55:24,313][INFO] GRPO 训练完成。
+[2025-09-07 21:55:24,313][INFO] 保存 LoRA 适配器到：outputs/grpo_saved_lora
+[2025-09-07 21:55:24,313][INFO] Unsloth 保存模型 Trainer.save_model
+[2025-09-07 21:55:26,021][INFO] 模型已保存至: outputs/grpo_saved_lora
+[2025-09-07 21:55:26,022][INFO] 全部完成，用时 29.6 分钟。
+[2025-09-07 21:55:26,023][INFO] 提示：推理时可调用 model.load_lora('outputs/grpo_saved_lora') 进行 LoRA 加载。
 
 #

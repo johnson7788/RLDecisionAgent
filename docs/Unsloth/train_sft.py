@@ -143,6 +143,7 @@ def parse_args() -> TrainConfig:
         output_dir=args.output_dir,
         save_steps=args.save_steps,
         save_total_limit=args.save_total_limit,
+        data_files=args.data_files,
         use_wandb=args.use_wandb,
         wandb_project=args.wandb_project,
         wandb_entity=args.wandb_entity,
@@ -159,11 +160,11 @@ def parse_args() -> TrainConfig:
 
 def prepare_dataset_generic(cfg: TrainConfig, tokenizer, logger: logging.Logger) -> Dataset:
     """通用：标准化到 conversations → 渲染为 cfg.dataset_text_field。"""
-    logger.info(f"加载数据集: {cfg.dataset_name} [{cfg.dataset_split}] …")
+    logger.info(f"加载数据集: {cfg.dataset_name} [{cfg.dataset_split}], 自定义数据集：{cfg.data_files}")
     if cfg.data_files:
         print(f"使用本地的训练数据集: {cfg.data_files}")
         data_files = [s.strip() for s in cfg.data_files.split(",")]
-        raw_ds = load_dataset(cfg.dataset_name, data_files=data_files, split="train")
+        raw_ds = load_dataset(path="json",data_files = {"train": data_files},  split = "train")
     else:
         raw_ds = load_dataset(cfg.dataset_name, split=cfg.dataset_split)
 

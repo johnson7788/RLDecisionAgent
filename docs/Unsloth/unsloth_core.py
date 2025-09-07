@@ -99,6 +99,7 @@ class TrainConfig:
     lr_scheduler_type: str = "linear"
     seed: int = 3407
     report_to: str = "wandb"  # 改为默认同步到 wandb
+    data_files: Optional[str] = None  #自定义的训练的数据集
 
     # W&B 相关
     use_wandb: bool = True
