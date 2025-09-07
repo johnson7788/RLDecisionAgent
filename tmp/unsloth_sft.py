@@ -82,7 +82,7 @@ def parse_args() -> TrainConfig:
     parser.add_argument("--seed", type=int, default=TrainConfig.seed)
     parser.add_argument("--report_to", type=str, default=TrainConfig.report_to)
 
-    parser.add_argument("--output_dir", type=str, default=TrainConfig.output_dir)
+    parser.add_argument("--output_dir", type=str, default="./outputs/qwen3_4b_sft_lora")
     parser.add_argument("--save_steps", type=int, default=TrainConfig.save_steps)
     parser.add_argument("--save_total_limit", type=int, default=None)
 
@@ -203,39 +203,33 @@ def main(cfg: TrainConfig | None = None) -> None:
     # 初始化 W&B（尽早建立 run，记录环境/配置）
     run = setup_wandb(cfg, logger)
 
-    try:
-        # 构建模型与 tokenizer
-        model, tokenizer = build_model_and_tokenizer(cfg, logger)
+    # 构建模型与 tokenizer
+    model, tokenizer = build_model_and_tokenizer(cfg, logger)
 
-        # 准备数据集
-        dataset = prepare_dataset_generic(cfg, tokenizer, logger)
+    # 准备数据集
+    dataset = prepare_dataset_generic(cfg, tokenizer, logger)
 
-        # 构建 Trainer
-        trainer = build_trainer(model, tokenizer, dataset, cfg, logger)
+    # 构建 Trainer
+    trainer = build_trainer(model, tokenizer, dataset, cfg, logger)
 
-        # 训练并报告
-        stats = train_and_report(trainer, logger)
+    # 训练并报告
+    stats = train_and_report(trainer, logger)
 
-        # 保存模型 & 可选上传 artifact（别名：final）
-        save_model(
-            trainer,
-            tokenizer,
-            cfg.output_dir,
-            logger,
-            log_artifact=(cfg.wandb_log_model if cfg.wandb_log_model else False),
-        )
+    # 保存模型 & 可选上传 artifact（别名：final）
+    save_model(
+        trainer,
+        tokenizer,
+        cfg.output_dir,
+        logger,
+        log_artifact=(cfg.wandb_log_model if cfg.wandb_log_model else False),
+    )
 
-        # 成功收尾
-        extra = {"metrics/train_runtime_sec": float(stats.metrics.get("train_runtime", 0.0))}
-        wandb_on_success(extra_summary=extra, exit_code=0)
+    # 成功收尾
+    extra = {"metrics/train_runtime_sec": float(stats.metrics.get("train_runtime", 0.0))}
+    wandb_on_success(extra_summary=extra, exit_code=0)
 
-    except Exception as e:
-        logger.exception(f"训练过程中发生错误: {e}")
-        wandb_on_error(e, logger)
-        raise
-
-    logger.info("🎉 全流程结束。")
-
+    logger.info(f"{float(stats.metrics.get('train_runtime', 0.0)):.2f} 秒 used for training.")
+    logger.info("🎉  训练结束。")
 
 if __name__ == "__main__":
     main(parse_args())

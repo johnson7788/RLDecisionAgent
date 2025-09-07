@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import dotenv
+import logging
 from dataclasses import asdict
 from datasets import load_dataset, Dataset
 from unsloth_core import (
@@ -198,19 +199,33 @@ def main(cfg: TrainConfig | None = None) -> None:
     # 初始化 W&B（尽早建立 run，记录环境/配置）
     run = setup_wandb(cfg, logger)
 
-    # 模型 & 数据
+    # 构建模型与 tokenizer
     model, tokenizer = build_model_and_tokenizer(cfg, logger)
+
+    # 准备数据集
     dataset = prepare_dataset_openmath_thinking(cfg, tokenizer, logger, split="cot")
 
-    # Trainer & 训练
+    # 构建 Trainer
     trainer = build_trainer(model, tokenizer, dataset, cfg, logger)
+
+    # 训练并报告
     stats = train_and_report(trainer, logger)
 
-    # 保存
-    save_model(trainer, tokenizer, cfg.output_dir, logger)
+    # 保存模型 & 可选上传 artifact（别名：final）
+    save_model(
+        trainer,
+        tokenizer,
+        cfg.output_dir,
+        logger,
+        log_artifact=(cfg.wandb_log_model if cfg.wandb_log_model else False),
+    )
+
+    # 成功收尾
+    extra = {"metrics/train_runtime_sec": float(stats.metrics.get("train_runtime", 0.0))}
+    wandb_on_success(extra_summary=extra, exit_code=0)
 
     logger.info(f"{float(stats.metrics.get('train_runtime', 0.0)):.2f} 秒 used for training.")
-    logger.info("🎉 Thinking 训练结束。")
+    logger.info("🎉  训练结束。")
 
 if __name__ == "__main__":
     main(parse_args())
