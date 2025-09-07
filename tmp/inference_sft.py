@@ -277,6 +277,7 @@ def run_inference(model, tokenizer, messages: List[dict], args: argparse.Namespa
         temperature=args.temperature,
         top_p=args.top_p,
         top_k=args.top_k,
+        # cache_implementation="dynamic",  #强制动态缓存，避免 Static KV-cache 与 PEFT/4.56 的冲突
     )
 
     streamer = None if args.no_stream else TextStreamer(tokenizer, skip_prompt=True)
@@ -305,8 +306,8 @@ def main():
     log_env_info(logger)
 
     model, tokenizer = build_infer_model_and_tokenizer(args, logger)
-    # Unsloth 默认使用 Static cache 优化推理，Transformers 的新 KV-Cache（Static cache）可能不兼容
-    model.generation_config.cache_implementation = "dynamic"
+    # Unsloth 默认使用 Static cache 优化推理，Transformers 的新 KV-Cache（Static cache）可能不兼容，还是报错
+    # model.generation_config.cache_implementation = "dynamic"
 
     messages = _load_messages(args)
     logger.info(f"推理消息: {messages}")

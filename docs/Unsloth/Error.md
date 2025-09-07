@@ -164,3 +164,80 @@ INFO 09-07 07:06:57 [cuda.py:275] Using FlashInfer backend on V1 engine.
 [rank0]:     raise RuntimeError(error)
 [rank0]: RuntimeError: Loading prebuilt ops failed.
 [rank0]:[W907 07:07:00.626827755 ProcessGroupNCCL.cpp:1479] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+
+
+# 推理报错, 一定要选择transformers==4.55.4这个版本
+Please restructure your imports with 'import unsloth' at the top of your file.
+  from unsloth import FastModel
+🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning.
+/opt/conda/lib/python3.11/site-packages/torch/cuda/__init__.py:61: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+[2025-09-07 09:13:05,229] [INFO] [real_accelerator.py:254:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+INFO 09-07 09:13:06 [__init__.py:241] Automatically detected platform cuda.
+Unsloth: Your Flash Attention 2 installation seems to be broken?
+A possible explanation is you have a new CUDA version which isn't
+yet compatible with FA2? Please file a ticket to Unsloth or FA2.
+We shall now use Xformers instead, which does not have any performance hits!
+We found this negligible impact by benchmarking on 1x A100.
+🦥 Unsloth Zoo will now patch everything to make training faster!
+[09:13:11] INFO - 日志写入: ./outputs/qwen3_4b_sft_lora/logs_infer/logs/train_20250907_091311.log
+[09:13:11] INFO - 随机种子已设置: 3407
+[09:13:11] INFO - PyTorch: 2.7.1+cu126
+[09:13:11] INFO - GPU: NVIDIA GeForce RTX 4090 D  显存上限: 23.546 GB  启动保留: 0.0 GB
+[09:13:11] INFO - 加载 Tokenizer 自: ./outputs/qwen3_4b_sft_lora
+[09:13:11] INFO - 检测到 LoRA 适配器目录，基础模型: unsloth/Qwen3-4B-Instruct-2507
+==((====))==  Unsloth 2025.9.1: Fast Qwen3 patching. Transformers: 4.56.1. vLLM: 0.10.1.1.
+   \\   /|    NVIDIA GeForce RTX 4090 D. Num GPUs = 1. Max memory: 23.546 GB. Platform: Linux.
+O^O/ \_/ \    Torch: 2.7.1+cu126. CUDA: 8.9. CUDA Toolkit: 12.6. Triton: 3.3.1
+\        /    Bfloat16 = TRUE. FA [Xformers = None. FA2 = False]
+ "-____-"     Free license: http://github.com/unslothai/unsloth
+Unsloth: Fast downloading is enabled - ignore downloading bars which are red colored!
+[09:13:41] INFO - 推理消息: [{'role': 'user', 'content': 'Continue the sequence: 1, 1, 2, 3, 5, 8,'}]
+<|im_start|>user
+Continue the sequence: 1, 1, 2, 3, 5, 8,<|im_end|>
+<|im_start|>assistant
+Traceback (most recent call last):
+  File "/opt/conda/lib/python3.11/site-packages/unsloth/models/vision.py", line 236, in unsloth_base_fast_generate
+    output = self._old_generate(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/torch/utils/_contextlib.py", line 116, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/transformers/generation/utils.py", line 2464, in generate
+    raise ValueError("assisted generate is not supported with Static cache classes`")
+ValueError: assisted generate is not supported with Static cache classes`
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/workspace/verl/tmp/inference_sft.py", line 320, in <module>
+    main()
+  File "/workspace/verl/tmp/inference_sft.py", line 315, in main
+    run_inference(model, tokenizer, messages, args)
+  File "/workspace/verl/tmp/inference_sft.py", line 286, in run_inference
+    out = model.generate(
+          ^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/peft/peft_model.py", line 823, in generate
+    return self.get_base_model().generate(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/unsloth/models/vision.py", line 241, in unsloth_base_fast_generate
+    output = self._old_generate(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/torch/utils/_contextlib.py", line 116, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/transformers/generation/utils.py", line 2399, in generate
+    self._prepare_cache_for_generation(
+  File "/opt/conda/lib/python3.11/site-packages/transformers/generation/utils.py", line 1965, in _prepare_cache_for_generation
+    model_kwargs[cache_name] = self._get_cache(
+                               ^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/transformers/generation/utils.py", line 1835, in _get_cache
+    or cache_to_check.max_batch_size != batch_size
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/transformers/cache_utils.py", line 904, in max_batch_size
+    values = [layer.max_batch_size for layer in self.layers]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/conda/lib/python3.11/site-packages/transformers/cache_utils.py", line 904, in <listcomp>
+    values = [layer.max_batch_size for layer in self.layers]
+              ^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'StaticLayer' object has no attribute 'max_batch_size'
