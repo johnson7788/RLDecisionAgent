@@ -382,6 +382,8 @@ def main():
     # -------- 9) 训练参数（GRPO） --------
     training_args = GRPOConfig(
         use_vllm = True,
+        vllm_mode="server",
+        vllm_server_base_url="http://127.0.0.1:8000",
         vllm_sampling_params=vllm_sampling_params,
         temperature=1.0,
         learning_rate=LEARNING_RATE,
