@@ -1,0 +1,153 @@
+# 运行vllm server端，用于训练
+CUDA_VISIBLE_DEVICES=1 \
+> trl vllm-serve --model unsloth/Qwen3-4B-Base \
+>   --tensor-parallel-size 1 \
+>   --data-parallel-size 1 \
+>   --gpu-memory-utilization 0.6 \
+>   --max-model-len 2048 \
+>   --host 127.0.0.1 --port 8000
+INFO 09-07 12:32:14 [importing.py:53] Triton module has been replaced with a placeholder.
+INFO 09-07 12:32:14 [__init__.py:239] Automatically detected platform cuda.
+INFO:     Started server process [28421]
+INFO:     Waiting for application startup.
+config.json: 752B [00:00, 2.52MB/s]
+INFO 09-07 12:32:31 [config.py:717] This model supports multiple tasks: {'classify', 'score', 'embed', 'reward', 'generate'}
+. Defaulting to 'generate'.
+INFO 09-07 12:32:31 [config.py:2003] Chunked prefill is enabled with max_num_batched_tokens=8192.
+tokenizer_config.json: 5.43kB [00:00, 2.92MB/s]
+vocab.json: 2.78MB [00:02, 1.35MB/s]
+merges.txt: 1.67MB [00:00, 3.33MB/s]
+tokenizer.json: 100%|██████████████████████████████████████████████████████████████████| 11.4M/11.4M [00:04<00:00, 2.52MB/s]
+added_tokens.json: 707B [00:00, 2.63MB/s]
+special_tokens_map.json: 617B [00:00, 2.67MB/s]
+generation_config.json: 100%|██████████████████████████████████████████████████████████████| 166/166 [00:00<00:00, 1.21MB/s]
+INFO 09-07 12:32:58 [importing.py:53] Triton module has been replaced with a placeholder.
+INFO 09-07 12:32:58 [__init__.py:239] Automatically detected platform cuda.
+INFO 09-07 12:33:01 [core.py:58] Initializing a V1 LLM engine (v0.8.5.post1) with config: model='unsloth/Qwen3-4B-Base', spe
+culative_config=None, tokenizer='unsloth/Qwen3-4B-Base', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, over
+ride_neuron_config=None, tokenizer_revision=None, trust_remote_code=False, dtype=torch.bfloat16, max_seq_len=2048, download_
+dir=None, load_format=auto, tensor_parallel_size=1, pipeline_parallel_size=1, disable_custom_all_reduce=False, quantization=
+None, enforce_eager=False, kv_cache_dtype=auto,  device_config=cuda, decoding_config=DecodingConfig(guided_decoding_backend=
+'auto', reasoning_backend=None), observability_config=ObservabilityConfig(show_hidden_metrics=False, otlp_traces_endpoint=No
+ne, collect_model_forward_time=False, collect_model_execute_time=False), seed=None, served_model_name=unsloth/Qwen3-4B-Base,
+ num_scheduler_steps=1, multi_step_stream_outputs=True, enable_prefix_caching=True, chunked_prefill_enabled=True, use_async_
+output_proc=True, disable_mm_preprocessor_cache=False, mm_processor_kwargs=None, pooler_config=None
+INFO 09-07 12:33:02 [worker_base.py:589] Injected <class 'trl.scripts.vllm_serve.WeightSyncWorkerExtension'> into <class 'vllm.v1.worker.gpu_worker.Worker'> for extended collective_rpc calls ['close_communicator', 'init_communicator', 'update_named_param']
+WARNING 09-07 12:33:02 [utils.py:2522] Methods determine_num_available_blocks,device_config,get_cache_block_size_bytes,initialize_cache not implemented in <vllm.v1.worker.gpu_worker.Worker object at 0x7d1cbcbad330>
+INFO 09-07 12:33:03 [parallel_state.py:1004] rank 0 in world size 1 is assigned as DP rank 0, PP rank 0, TP rank 0
+INFO 09-07 12:33:03 [cuda.py:221] Using Flash Attention backend on V1 engine.
+INFO 09-07 12:33:03 [topk_topp_sampler.py:44] Currently, FlashInfer top-p & top-k sampling sampler is disabled because FlashInfer>=v0.2.3 is not backward compatible. Falling back to the PyTorch-native implementation of top-p & top-k sampling.
+INFO 09-07 12:33:03 [gpu_model_runner.py:1329] Starting to load model unsloth/Qwen3-4B-Base...
+INFO 09-07 12:33:06 [weight_utils.py:265] Using model weights format ['*.safetensors']
+model-00001-of-00002.safetensors: 100%|████████████████████████████████████████████████| 4.97G/4.97G [24:56<00:00, 3.32MB/s]
+model-00002-of-00002.safetensors: 100%|████████████████████████████████████████████████| 3.08G/3.08G [12:32<00:00, 4.09MB/s]
+INFO 09-07 13:10:38 [weight_utils.py:281] Time spent downloading weights for unsloth/Qwen3-4B-Base: 2251.961536 seconds
+Loading safetensors checkpoint shards:   0% Completed | 0/2 [00:00<?, ?it/s]
+Loading safetensors checkpoint shards:  50% Completed | 1/2 [00:00<00:00,  1.34it/s]
+Loading safetensors checkpoint shards: 100% Completed | 2/2 [00:01<00:00,  1.02it/s]
+Loading safetensors checkpoint shards: 100% Completed | 2/2 [00:01<00:00,  1.06it/s]
+
+INFO 09-07 13:10:45 [loader.py:458] Loading weights took 2.05 seconds
+INFO 09-07 13:10:46 [gpu_model_runner.py:1347] Model loading took 7.5532 GiB and 2262.188483 seconds
+INFO 09-07 13:11:02 [backends.py:420] Using cache directory: /root/.cache/vllm/torch_compile_cache/756b69ee23/rank_0_0 for vLLM's torch.compile
+INFO 09-07 13:11:02 [backends.py:430] Dynamo bytecode transform time: 16.28 s
+INFO 09-07 13:11:10 [backends.py:136] Cache the graph of shape None for later use
+INFO 09-07 13:11:59 [backends.py:148] Compiling a graph for general shape takes 55.50 s
+INFO 09-07 13:12:34 [monitor.py:33] torch.compile takes 71.78 s in total
+INFO 09-07 13:12:36 [kv_cache_utils.py:634] GPU KV cache size: 34,288 tokens
+INFO 09-07 13:12:36 [kv_cache_utils.py:637] Maximum concurrency for 2,048 tokens per request: 16.74x
+INFO 09-07 13:13:13 [gpu_model_runner.py:1686] Graph capturing finished in 37 secs, took 0.58 GiB
+INFO 09-07 13:13:13 [core.py:159] init engine (profile, create kv cache, warmup model) took 146.81 seconds
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+
+
+
+4INFO:     127.0.0.1:54962 - "GET /health/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54966 - "GET /get_world_size/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54974 - "POST /init_communicator/ HTTP/1.1" 200 OK
+INFO 09-07 19:56:55 [utils.py:1055] Found nccl from library libnccl.so.2
+INFO 09-07 19:56:55 [pynccl.py:69] vLLM is using nccl==2.21.5
+Processed prompts: 100%|███████████████| 4/4 [00:11<00:00,  2.94s/it, est. speed input: 38.13 toks/s, output: 195.66 toks/s]
+INFO:     127.0.0.1:54974 - "POST /generate/ HTTP/1.1" 200 OK
+Processed prompts: 100%|███████████████| 4/4 [00:08<00:00,  2.15s/it, est. speed input: 41.44 toks/s, output: 120.47 toks/s]
+INFO:     127.0.0.1:59226 - "POST /generate/ HTTP/1.1" 200 OK
+Processed prompts: 100%|███████████████| 4/4 [00:11<00:00,  2.89s/it, est. speed input: 61.15 toks/s, output: 221.02 toks/s]
+INFO:     127.0.0.1:59226 - "POST /generate/ HTTP/1.1" 200 OK
+Processed prompts: 100%|███████████████| 4/4 [00:26<00:00,  6.55s/it, est. speed input: 25.20 toks/s, output: 176.50 toks/s]
+INFO:     127.0.0.1:59226 - "POST /generate/ HTTP/1.1" 200 OK
+Processed prompts: 100%|███████████████| 4/4 [00:13<00:00,  3.29s/it, est. speed input: 47.37 toks/s, output: 168.53 toks/s]
+INFO:     127.0.0.1:59226 - "POST /generate/ HTTP/1.1" 200 OK
+Processed prompts: 100%|███████████████| 4/4 [00:13<00:00,  3.38s/it, est. speed input: 28.70 toks/s, output: 212.92 toks/s]
+INFO:     127.0.0.1:59226 - "POST /generate/ HTTP/1.1" 200 OK
+Processed prompts: 100%|███████████████| 4/4 [00:09<00:00,  2.50s/it, est. speed input: 57.27 toks/s, output: 217.06 toks/s]
+INFO:     127.0.0.1:59226 - "POST /generate/ HTTP/1.1" 200 OK
+Processed prompts: 100%|███████████████| 4/4 [00:07<00:00,  1.88s/it, est. speed input: 35.59 toks/s, output: 276.91 toks/s]
+INFO:     127.0.0.1:59226 - "POST /generate/ HTTP/1.1" 200 OK
+
+
+# python train_GRPO.py
+(10) Original $d_{1,d2}$ should be: $d_1$ + $d_2$ = 26 miles
+(11) Original $d_{2,d3}$ should be: $d_2$ +($d_3$ + $d_4$) = 24 miles (Re-evaluated result of equation 5)
+(12) Original $d_{3,d4}$ = $d_3$ + $d_4$ = 28 miles
+(13) Original $d_{1,d3}$ = $d_1$ +$d_3$ = 22 miles
+
+From equation (12), we know that $d_3$ + $d_4$ = 28 miles.
+
+From equation (11), we have $d_2$ + $d_3$ +$d_4$ = 24 miles.
+
+Substitute $d_3$ + $d_4$ from equation (12) into equation (11):
+(14) $d_2$ + 28 = 24 miles
+$d_2 = -4$
+
+From equation (10), we have $d_1$ + $d_2$ = 26 miles.
+
+Substitute $d_2$ from equation (14) into equation (10):
+(15) $d_1$ - 4 = 26 miles
+$d_1$ = 30 miles
+
+From equation (13), we have $d_1$ +$d_3$ = 22 miles.
+
+Substitute $d_1$ from equation (15) into equation (13):
+(16) 30 + $d_3$ = 22 miles
+$d_3$ = -8 miles
+It is not possible for distance to be negative, so there might be an error in the given values. <end_working_out>
+
+<SOLUTION>The provided information doesn't give a valid solution, it is highly possible that there is an error with the given information. </SOLUTION>
+【提取数字】
+,
+********************
+{'loss': 0.0, 'grad_norm': 0.15643028914928436, 'learning_rate': 2.5e-06, 'num_tokens': 192605.0, 'completions/mean_length': 949.0, 'completions/min_length': 530.0, 'completions/max_length': 1365.0, 'completions/clipped_ratio': 0.0, 'completions/mean_terminated_length': 949.0, 'completions/min_terminated_length': 530.0, 'completions/max_terminated_length': 1365.0, 'rewards/match_format_exactly/mean': 1.5, 'rewards/match_format_exactly/std': 1.7320507764816284, 'rewards/match_format_approximately/mean': 0.0, 'rewards/match_format_approximately/std': 1.7320507764816284, 'rewards/check_answer/mean': -0.875, 'rewards/check_answer/std': 4.09013032913208, 'rewards/check_numbers/mean': -0.125, 'rewards/check_numbers/std': 2.6259918212890625, 'reward': 0.5, 'reward_std': 8.736895561218262, 'frac_reward_zero_std': 0.0, 'completion_length': 949.0, 'kl': 0.0005415176274254918, 'epoch': 0.0}
+{'loss': 0.0, 'grad_norm': 0.4573933184146881, 'learning_rate': 2.4444444444444447e-06, 'num_tokens': 194313.0, 'completions/mean_length': 286.0, 'completions/min_length': 145.0, 'completions/max_length': 411.0, 'completions/clipped_ratio': 0.0, 'completions/mean_terminated_length': 286.0, 'completions/min_terminated_length': 145.0, 'completions/max_terminated_length': 411.0, 'rewards/match_format_exactly/mean': 2.25, 'rewards/match_format_exactly/std': 1.5, 'rewards/match_format_approximately/mean': -0.75, 'rewards/match_format_approximately/std': 2.598076105117798, 'rewards/check_answer/mean': -3.375, 'rewards/check_answer/std': 1.3149778842926025, 'rewards/check_numbers/mean': -1.125, 'rewards/check_numbers/std': 0.75, 'reward': -3.0, 'reward_std': 3.0276503562927246, 'frac_reward_zero_std': 0.0, 'completion_length': 286.0, 'kl': 0.0013940028147771955, 'epoch': 0.0}
+{'loss': 0.0, 'grad_norm': 0.13634787499904633, 'learning_rate': 2.388888888888889e-06, 'num_tokens': 200905.0, 'completions/mean_length': 1518.0, 'completions/min_length': 996.0, 'completions/max_length': 1846.0, 'completions/clipped_ratio': 0.5, 'completions/mean_terminated_length': 1190.0, 'completions/min_terminated_length': 996.0, 'completions/max_terminated_length': 1384.0, 'rewards/match_format_exactly/mean': 0.0, 'rewards/match_format_exactly/std': 0.0, 'rewards/match_format_approximately/mean': -1.5, 'rewards/match_format_approximately/std': 1.2247449159622192, 'rewards/check_answer/mean': -2.0, 'rewards/check_answer/std': 0.0, 'rewards/check_numbers/mean': -1.625, 'rewards/check_numbers/std': 1.1814539432525635, 'reward': -5.125, 'reward_std': 2.3228933811187744, 'frac_reward_zero_std': 0.0, 'completion_length': 1518.0, 'kl': 0.0006719433586113155, 'epoch': 0.0}
+{'loss': 0.0009, 'grad_norm': 9.77685546875, 'learning_rate': 2.3333333333333336e-06, 'num_tokens': 203523.0, 'completions/mean_length': 572.5, 'completions/min_length': 1.0, 'completions/max_length': 819.0, 'completions/clipped_ratio': 0.0, 'completions/mean_terminated_length': 572.5, 'completions/min_terminated_length': 1.0, 'completions/max_terminated_length': 819.0, 'rewards/match_format_exactly/mean': 0.75, 'rewards/match_format_exactly/std': 1.5, 'rewards/match_format_approximately/mean': -1.5, 'rewards/match_format_approximately/std': 2.1213202476501465, 'rewards/check_answer/mean': -2.625, 'rewards/check_answer/std': 1.25, 'rewards/check_numbers/mean': -2.25, 'rewards/check_numbers/std': 0.5, 'reward': -5.625, 'reward_std': 2.839454174041748, 'frac_reward_zero_std': 0.0, 'completion_length': 572.5, 'kl': 0.9055627584457397, 'epoch': 0.0}
+{'loss': 0.0, 'grad_norm': 0.1794643998146057, 'learning_rate': 2.277777777777778e-06, 'num_tokens': 208029.0, 'completions/mean_length': 1004.5, 'completions/min_length': 499.0, 'completions/max_length': 1846.0, 'completions/clipped_ratio': 0.25, 'completions/mean_terminated_length': 724.0, 'completions/min_terminated_length': 499.0, 'completions/max_terminated_length': 890.0, 'rewards/match_format_exactly/mean': 1.5, 'rewards/match_format_exactly/std': 1.7320507764816284, 'rewards/match_format_approximately/mean': 0.0, 'rewards/match_format_approximately/std': 2.1213202476501465, 'rewards/check_answer/mean': -3.25, 'rewards/check_answer/std': 1.4433757066726685, 'rewards/check_numbers/mean': -1.75, 'rewards/check_numbers/std': 0.5, 'reward': -3.5, 'reward_std': 2.8284270763397217, 'frac_reward_zero_std': 0.0, 'completion_length': 1004.5, 'kl': 0.0010894209844991565, 'epoch': 0.0}
+ 60%|███████████████████████████████████████████████████▌                                  | 60/100 [17:02<11:59, 17.99s/it][2025-09-07 20:14:12,445][INFO]
+********************
+【题目】
+Right triangle $ABC$ has side lengths $BC=6$, $AC=8$, and $AB=10$. A circle centered at $O$ is tangent to line $BC$ at $B$ and passes through $A$. A circle centered at $P$ is tangent to line $AC$ at $A$ and passes through $B$. The original answer is in \(\frac{k}{m}\) format, please give the value of k + m.
+【标准答案】
+47
+【模型输出】
+Since $ABC$ is a right triangle with the legs $BC=6$ and $AC=8$, the area of the triangle $S$ can be calculated by $S=\frac{1}{2} \times BC \times AC=\frac{1}{2} \times 6 \times 8=24$.
+
+Now, let's consider the right triangle $\triangle OAB$ and notice that $AB=10$ and the right triangle $ABC$. Consider that $AB$ is the hypotenuse of the right triangle, and thus by the Pythagorean theorem presented by $AC^{2} + BC^{2} = AB^{2}$, we can calculate:
+$$
+AC^{2} + BC^{2} = 6^{2} + 8^{2} = 36 + 64 = 100 = AB^{2}
+$$
+This leads us to deduce that $\triangle ABC$ is a right triangle, with the right angle at $C$.
+
+Under the given condition that the circle is tangent to $BC$ at $B$ and passes through $A$, then the radius at point $B$ created by the circle is exactly $6$ since this circle would actually be the circle inscribed in the triangle $\triangle ABC$. Therefore, $OB=6$.
+
+Similarly, the circle centered at $P$, which is tangent to $AC$ at $A$ and passes through $B$, must have $PA$ as the radius, and using a similar argument, this radius is exactly the length of $BC$, which is $8$.
+</end_working_out><SOLUTION></SOLUTION> 36
+【提取数字】
+36
+********************
+100%|█████████████████████████████████████████████████████████████████████████████████████| 100/100 [27:53<00:00, 16.74s/it]
+[2025-09-07 20:24:53,265][INFO] GRPO 训练完成。
+[2025-09-07 20:24:53,265][INFO] 保存 LoRA 适配器到：outputs/grpo_saved_lora
+
+
+
+#

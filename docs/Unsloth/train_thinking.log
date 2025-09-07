@@ -1,0 +1,313 @@
+/opt/conda/lib/python3.11/site-packages/torch/cuda/__init__.py:61: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+WANDB_AVAILABLE是可用的，已经安装了wandb
+🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning.
+/opt/conda/lib/python3.11/site-packages/torch/cuda/__init__.py:61: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+[2025-09-07 09:23:50,444] [INFO] [real_accelerator.py:254:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+INFO 09-07 09:23:51 [__init__.py:241] Automatically detected platform cuda.
+Unsloth: Your Flash Attention 2 installation seems to be broken?
+A possible explanation is you have a new CUDA version which isn't
+yet compatible with FA2? Please file a ticket to Unsloth or FA2.
+We shall now use Xformers instead, which does not have any performance hits!
+We found this negligible impact by benchmarking on 1x A100.
+🦥 Unsloth Zoo will now patch everything to make training faster!
+[09:23:56] INFO - 日志写入: ./outputs/qwen3_4b_thinking_lora/logs/train_20250907_092356.log
+[09:23:56] INFO - ===== 训练配置 =====
+[09:23:56] INFO - {
+  "model_name": "unsloth/Qwen3-4B-Thinking-2507",
+  "max_seq_length": 2048,
+  "load_in_4bit": true,
+  "load_in_8bit": false,
+  "full_finetuning": false,
+  "hf_token": null,
+  "lora_r": 32,
+  "lora_alpha": 32,
+  "lora_dropout": 0.0,
+  "bias": "none",
+  "use_gradient_checkpointing": "unsloth",
+  "use_rslora": false,
+  "loftq_config": null,
+  "target_modules": [
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "gate_proj",
+    "up_proj",
+    "down_proj"
+  ],
+  "chat_template": "qwen3-thinking",
+  "dataset_name": "unsloth/OpenMathReasoning-mini",
+  "dataset_split": "train",
+  "dataset_text_field": "text",
+  "instruction_part": "<|im_start|>user\n",
+  "response_part": "<|im_start|>assistant\n",
+  "per_device_train_batch_size": 2,
+  "gradient_accumulation_steps": 4,
+  "warmup_steps": 5,
+  "max_steps": 60,
+  "num_train_epochs": 2,
+  "learning_rate": 0.0002,
+  "logging_steps": 1,
+  "optim": "adamw_8bit",
+  "weight_decay": 0.01,
+  "lr_scheduler_type": "linear",
+  "seed": 3407,
+  "report_to": "wandb",
+  "use_wandb": true,
+  "wandb_project": "unsloth-sft",
+  "wandb_entity": null,
+  "wandb_run_name": null,
+  "wandb_tags": null,
+  "wandb_dir": null,
+  "wandb_group": null,
+  "wandb_job_type": "train",
+  "wandb_mode": null,
+  "wandb_notes": null,
+  "wandb_log_model": false,
+  "output_dir": "./outputs/qwen3_4b_thinking_lora",
+  "save_steps": 2,
+  "save_total_limit": null,
+  "logging_dir": null
+}
+[09:23:56] INFO - 随机种子已设置: 3407
+[09:23:56] INFO - PyTorch: 2.7.1+cu126
+[09:23:56] INFO - GPU: NVIDIA GeForce RTX 4090 D  显存上限: 23.546 GB  启动保留: 0.0 GB
+wandb: WARNING Using a boolean value for 'reinit' is deprecated. Use 'return_previous' or 'finish_previous' instead.
+wandb: Tracking run with wandb version 0.21.3
+wandb: W&B syncing is set to `offline` in this directory. Run `wandb online` or set WANDB_MODE=online to enable cloud syncing.
+wandb: Run data is saved locally in /workspace/verl/tmp/wandb/offline-run-20250907_092356-9pv4qwic
+[09:23:56] INFO - 已连接 W&B：project=unsloth-sft, run=None
+[09:23:56] INFO - 开始加载基础模型…
+==((====))==  Unsloth 2025.9.1: Fast Qwen3 patching. Transformers: 4.55.4. vLLM: 0.10.1.1.
+   \\   /|    NVIDIA GeForce RTX 4090 D. Num GPUs = 1. Max memory: 23.546 GB. Platform: Linux.
+O^O/ \_/ \    Torch: 2.7.1+cu126. CUDA: 8.9. CUDA Toolkit: 12.6. Triton: 3.3.1
+\        /    Bfloat16 = TRUE. FA [Xformers = None. FA2 = False]
+ "-____-"     Free license: http://github.com/unslothai/unsloth
+Unsloth: Fast downloading is enabled - ignore downloading bars which are red colored!
+[09:24:16] INFO - 基础模型加载完成。
+[09:24:16] INFO - 注入 LoRA 适配器…
+Unsloth: Making `model.base_model.model.model` require gradients
+[09:24:20] INFO - LoRA 适配器注入完成。
+[09:24:20] INFO - 应用 Chat 模板: qwen3-thinking
+[09:24:20] INFO - 加载数据集: unsloth/OpenMathReasoning-mini [train] …
+build_conversations: 100%|█████████████████████| 19252/19252 [00:03<00:00, 5898.48 examples/s]
+apply_chat_template: 100%|█████████████████████| 19252/19252 [00:07<00:00, 2517.09 examples/s]
+[09:27:14] INFO - 样本校验: <|im_start|>user
+Given $\sqrt{x^2+165}-\sqrt{x^2-52}=7$ and $x$ is positive, find all possible values of $x$.<|im_end|>
+<|im_start|>assistant
+<think>
+Okay, let's see. I need to solve the equation √(x² + 165) - √(x² - 52) = 7, and find all positive values of x. Hmm, radicals can be tricky, but maybe if I can eliminate the square roots by squaring both sides. Let me try that.
+
+First, let me write down the equation again to make sure I have it right:
+
+√(x² + 165) - √(x² - 52) = 7.
+
+Okay, so the idea is to isolate one of the radicals and then square both sides. Let me try moving the second radical to the other side:
+
+√(x² + 165) = 7 + √(x² - 52).
+
+Now, if I square both sides, maybe I can get rid of the square roots. Let's do that:
+
+(√(x² + 165))² = (7 + √(x² - 52))².
+
+Simplifying the left side:
+
+x² + 165 = 49 + 14√(x² - 52) + (√(x² - 52))².
+
+The right side is expanded using the formula (a + b)² = a² + 2ab + b². So the right side becomes 7² + 2*7*√(x² - 52) + (√(x² - 52))², which is 49 + 14 … <+2977 chars>
+[09:27:14] INFO - 创建 SFTTrainer…
+/workspace/verl/tmp/unsloth_compiled_cache/UnslothSFTTrainer.py:581: UserWarning: You passed a `max_seq_length` argument to the SFTTrainer, the value you passed will override the one in the `SFTConfig`.
+  warnings.warn(
+Map (num_proc=92): 100%|████████████████████████| 19252/19252 [00:19<00:00, 981.31 examples/s]
+/workspace/verl/tmp/unsloth_compiled_cache/UnslothSFTTrainer.py:714: FutureWarning: `tokenizer` is deprecated and will be removed in version 5.0.0 for `UnslothSFTTrainer.__init__`. Use `processing_class` instead.
+  super().__init__(
+[09:27:37] INFO - 切换为仅学习 assistant 响应（忽略 user 指令部分的 loss）…
+Map (num_proc=88): 100%|███████████████████████| 19252/19252 [00:03<00:00, 5733.27 examples/s]
+[09:27:43] INFO - 编码样本预览: <|im_start|>user
+Given $\sqrt{x^2+165}-\sqrt{x^2-52}=7$ and $x$ is positive, find all possible values of $x$.<|im_end|>
+<|im_start|>assistant
+<think>
+Okay, let's see. I need to solve the equation √(x² + 165) - √(x² - 52) = 7, and find all positive values of x. Hmm, radicals can be tricky, but maybe if I can eliminate the square roots by squaring both sides. Let me try that.
+
+First, let me write down the equation again to make sure I have it right:
+
+√(x² + 165) - √(x² - 52) = 7.
+
+Okay, so the idea is to isolate one of the radicals and then square both sides. Let me try moving the second radical to the other side:
+
+√(x² + 165) = 7 + √(x² - 52).
+
+Now, if I square both sides, maybe I can get rid of the square roots. Let's do that:
+
+(√(x² + 165))² = (7 + �
+[09:27:43] INFO - GPU = NVIDIA GeForce RTX 4090 D. Max memory = 23.546 GB.
+[09:27:43] INFO - 启动时保留显存 = 3.816 GB.
+[09:27:43] INFO - 开始训练…
+==((====))==  Unsloth - 2x faster free finetuning | Num GPUs used = 1
+   \\   /|    Num examples = 19,252 | Num Epochs = 1 | Total steps = 60
+O^O/ \_/ \    Batch size per device = 2 | Gradient accumulation steps = 4
+\        /    Data Parallel GPUs = 1 | Total batch size (2 x 4 x 1) = 8
+ "-____-"     Trainable parameters = 66,060,288 of 4,088,528,384 (1.62% trained)
+  0%|                                                                  | 0/60 [00:00<?, ?it/s]Unsloth: Will smartly offload gradients to save VRAM!
+{'loss': 0.5885, 'grad_norm': 0.3728635311126709, 'learning_rate': 0.0, 'epoch': 0.0}
+{'loss': 0.5195, 'grad_norm': 0.32497748732566833, 'learning_rate': 4e-05, 'epoch': 0.0}
+{'loss': 0.6243, 'grad_norm': 0.4116409420967102, 'learning_rate': 8e-05, 'epoch': 0.0}
+{'loss': 0.5617, 'grad_norm': 0.3256601393222809, 'learning_rate': 0.00012, 'epoch': 0.0}
+{'loss': 0.5198, 'grad_norm': 0.2857953608036041, 'learning_rate': 0.00016, 'epoch': 0.0}
+{'loss': 0.4536, 'grad_norm': 0.21673889458179474, 'learning_rate': 0.0002, 'epoch': 0.0}
+{'loss': 0.3715, 'grad_norm': 0.13393908739089966, 'learning_rate': 0.00019636363636363636, 'epoch': 0.0}
+{'loss': 0.3917, 'grad_norm': 0.1514512002468109, 'learning_rate': 0.00019272727272727274, 'epoch': 0.0}
+{'loss': 0.4791, 'grad_norm': 0.21656976640224457, 'learning_rate': 0.0001890909090909091, 'epoch': 0.0}
+{'loss': 0.4312, 'grad_norm': 0.1977001279592514, 'learning_rate': 0.00018545454545454545, 'epoch': 0.0}
+{'loss': 0.5172, 'grad_norm': 0.19072803854942322, 'learning_rate': 0.00018181818181818183, 'epoch': 0.0}
+{'loss': 0.4447, 'grad_norm': 0.24327407777309418, 'learning_rate': 0.0001781818181818182, 'epoch': 0.0}
+ 20%|███████████▍                                             | 12/60 [01:56<06:30,  8.14s/it]
+√(x² + 165) - √(x² - 52) = 7.
+
+Okay, so the idea is to isolate one of the radicals and then square both sides. Let me try moving the second radical to the other side:
+
+√(x² + 165) = 7 + √(x² - 52).
+
+Now, if I square both sides, maybe I can get rid of the square roots. Let's do that:
+
+(√(x² + 165))² = (7 + �
+[09:27:43] INFO - GPU = NVIDIA GeForce RTX 4090 D. Max memory = 23.546 GB.
+[09:27:43] INFO - 启动时保留显存 = 3.816 GB.
+[09:27:43] INFO - 开始训练…
+==((====))==  Unsloth - 2x faster free finetuning | Num GPUs used = 1
+   \\   /|    Num examples = 19,252 | Num Epochs = 1 | Total steps = 60
+O^O/ \_/ \    Batch size per device = 2 | Gradient accumulation steps = 4
+\        /    Data Parallel GPUs = 1 | Total batch size (2 x 4 x 1) = 8
+ "-____-"     Trainable parameters = 66,060,288 of 4,088,528,384 (1.62% trained)
+  0%|                                                                  | 0/60 [00:00<?, ?it/s]Unsloth: Will smartly offload gradients to save VRAM!
+{'loss': 0.5885, 'grad_norm': 0.3728635311126709, 'learning_rate': 0.0, 'epoch': 0.0}
+{'loss': 0.5195, 'grad_norm': 0.32497748732566833, 'learning_rate': 4e-05, 'epoch': 0.0}
+{'loss': 0.6243, 'grad_norm': 0.4116409420967102, 'learning_rate': 8e-05, 'epoch': 0.0}
+{'loss': 0.5617, 'grad_norm': 0.3256601393222809, 'learning_rate': 0.00012, 'epoch': 0.0}
+{'loss': 0.5198, 'grad_norm': 0.2857953608036041, 'learning_rate': 0.00016, 'epoch': 0.0}
+{'loss': 0.4536, 'grad_norm': 0.21673889458179474, 'learning_rate': 0.0002, 'epoch': 0.0}
+{'loss': 0.3715, 'grad_norm': 0.13393908739089966, 'learning_rate': 0.00019636363636363636, 'epoch': 0.0}
+{'loss': 0.3917, 'grad_norm': 0.1514512002468109, 'learning_rate': 0.00019272727272727274, 'epoch': 0.0}
+{'loss': 0.4791, 'grad_norm': 0.21656976640224457, 'learning_rate': 0.0001890909090909091, 'epoch': 0.0}
+{'loss': 0.4312, 'grad_norm': 0.1977001279592514, 'learning_rate': 0.00018545454545454545, 'epoch': 0.0}
+{'loss': 0.5172, 'grad_norm': 0.19072803854942322, 'learning_rate': 0.00018181818181818183, 'epoch': 0.0}
+{'loss': 0.4447, 'grad_norm': 0.24327407777309418, 'learning_rate': 0.0001781818181818182, 'epoch': 0.0}
+ 20%|███████████▍                                             | 12/60 [01:56<06:30,  8.14s/it]
+First, let me write down the equation again to make sure I have it right:
+
+√(x² + 165) - √(x² - 52) = 7.
+
+Okay, so the idea is to isolate one of the radicals and then square both sides. Let me try moving the second radical to the other side:
+
+√(x² + 165) = 7 + √(x² - 52).
+
+Now, if I square both sides, maybe I can get rid of the square roots. Let's do that:
+
+(√(x² + 165))² = (7 + �
+[09:27:43] INFO - GPU = NVIDIA GeForce RTX 4090 D. Max memory = 23.546 GB.
+[09:27:43] INFO - 启动时保留显存 = 3.816 GB.
+[09:27:43] INFO - 开始训练…
+==((====))==  Unsloth - 2x faster free finetuning | Num GPUs used = 1
+   \\   /|    Num examples = 19,252 | Num Epochs = 1 | Total steps = 60
+O^O/ \_/ \    Batch size per device = 2 | Gradient accumulation steps = 4
+\        /    Data Parallel GPUs = 1 | Total batch size (2 x 4 x 1) = 8
+ "-____-"     Trainable parameters = 66,060,288 of 4,088,528,384 (1.62% trained)
+  0%|                                                                  | 0/60 [00:00<?, ?it/s]Unsloth: Will smartly offload gradients to save VRAM!
+{'loss': 0.5885, 'grad_norm': 0.3728635311126709, 'learning_rate': 0.0, 'epoch': 0.0}
+{'loss': 0.5195, 'grad_norm': 0.32497748732566833, 'learning_rate': 4e-05, 'epoch': 0.0}
+{'loss': 0.6243, 'grad_norm': 0.4116409420967102, 'learning_rate': 8e-05, 'epoch': 0.0}
+{'loss': 0.5617, 'grad_norm': 0.3256601393222809, 'learning_rate': 0.00012, 'epoch': 0.0}
+{'loss': 0.5198, 'grad_norm': 0.2857953608036041, 'learning_rate': 0.00016, 'epoch': 0.0}
+{'loss': 0.4536, 'grad_norm': 0.21673889458179474, 'learning_rate': 0.0002, 'epoch': 0.0}
+{'loss': 0.3715, 'grad_norm': 0.13393908739089966, 'learning_rate': 0.00019636363636363636, 'epoch': 0.0}
+{'loss': 0.3917, 'grad_norm': 0.1514512002468109, 'learning_rate': 0.00019272727272727274, 'epoch': 0.0}
+{'loss': 0.4791, 'grad_norm': 0.21656976640224457, 'learning_rate': 0.0001890909090909091, 'epoch': 0.0}
+{'loss': 0.4312, 'grad_norm': 0.1977001279592514, 'learning_rate': 0.00018545454545454545, 'epoch': 0.0}
+{'loss': 0.5172, 'grad_norm': 0.19072803854942322, 'learning_rate': 0.00018181818181818183, 'epoch': 0.0}
+{'loss': 0.4447, 'grad_norm': 0.24327407777309418, 'learning_rate': 0.0001781818181818182, 'epoch': 0.0}
+{'loss': 0.4325, 'grad_norm': 0.12044846266508102, 'learning_rate': 0.00017454545454545454, 'epoch': 0.01}
+{'loss': 0.3773, 'grad_norm': 0.2367749959230423, 'learning_rate': 0.0001709090909090909, 'epoch': 0.01}
+{'loss': 0.4497, 'grad_norm': 0.09639908373355865, 'learning_rate': 0.00016727272727272728, 'epoch': 0.01}
+{'loss': 0.4298, 'grad_norm': 0.08616502583026886, 'learning_rate': 0.00016363636363636366, 'epoch': 0.01}
+{'loss': 0.3898, 'grad_norm': 0.0893850103020668, 'learning_rate': 0.00016, 'epoch': 0.01}
+{'loss': 0.4375, 'grad_norm': 0.10908949375152588, 'learning_rate': 0.00015636363636363637, 'epoch': 0.01}
+{'loss': 0.3955, 'grad_norm': 0.10200177878141403, 'learning_rate': 0.00015272727272727275, 'epoch': 0.01}
+{'loss': 0.4274, 'grad_norm': 0.1007433757185936, 'learning_rate': 0.0001490909090909091, 'epoch': 0.01}
+{'loss': 0.3847, 'grad_norm': 0.09955862909555435, 'learning_rate': 0.00014545454545454546, 'epoch': 0.01}
+{'loss': 0.3727, 'grad_norm': 0.08965104818344116, 'learning_rate': 0.00014181818181818184, 'epoch': 0.01}
+{'loss': 0.3685, 'grad_norm': 0.08066105842590332, 'learning_rate': 0.0001381818181818182, 'epoch': 0.01}
+{'loss': 0.4568, 'grad_norm': 0.08035139739513397, 'learning_rate': 0.00013454545454545455, 'epoch': 0.01}
+{'loss': 0.3783, 'grad_norm': 0.3455890119075775, 'learning_rate': 0.00013090909090909093, 'epoch': 0.01}
+{'loss': 0.3518, 'grad_norm': 0.07157354056835175, 'learning_rate': 0.00012727272727272728, 'epoch': 0.01}
+{'loss': 0.4501, 'grad_norm': 0.08351033926010132, 'learning_rate': 0.00012363636363636364, 'epoch': 0.01}
+{'loss': 0.3668, 'grad_norm': 0.07189388573169708, 'learning_rate': 0.00012, 'epoch': 0.01}
+{'loss': 0.4511, 'grad_norm': 0.08757680654525757, 'learning_rate': 0.00011636363636363636, 'epoch': 0.01}
+{'loss': 0.3804, 'grad_norm': 0.07819052040576935, 'learning_rate': 0.00011272727272727272, 'epoch': 0.01}
+{'loss': 0.3667, 'grad_norm': 0.07500045001506805, 'learning_rate': 0.00010909090909090909, 'epoch': 0.01}
+{'loss': 0.4059, 'grad_norm': 0.08117512613534927, 'learning_rate': 0.00010545454545454545, 'epoch': 0.01}
+{'loss': 0.3501, 'grad_norm': 0.0675412192940712, 'learning_rate': 0.00010181818181818181, 'epoch': 0.01}
+{'loss': 0.397, 'grad_norm': 0.07944927364587784, 'learning_rate': 9.818181818181818e-05, 'epoch': 0.01}
+{'loss': 0.3728, 'grad_norm': 0.07788346707820892, 'learning_rate': 9.454545454545455e-05, 'epoch': 0.01}
+{'loss': 0.3559, 'grad_norm': 0.07076675444841385, 'learning_rate': 9.090909090909092e-05, 'epoch': 0.01}
+{'loss': 0.4131, 'grad_norm': 0.07196515798568726, 'learning_rate': 8.727272727272727e-05, 'epoch': 0.02}
+{'loss': 0.3555, 'grad_norm': 0.06998749822378159, 'learning_rate': 8.363636363636364e-05, 'epoch': 0.02}
+{'loss': 0.379, 'grad_norm': 0.7997954487800598, 'learning_rate': 8e-05, 'epoch': 0.02}
+{'loss': 0.432, 'grad_norm': 0.07384613901376724, 'learning_rate': 7.636363636363637e-05, 'epoch': 0.02}
+{'loss': 0.4654, 'grad_norm': 0.08194660395383835, 'learning_rate': 7.272727272727273e-05, 'epoch': 0.02}
+{'loss': 0.481, 'grad_norm': 0.08362309634685516, 'learning_rate': 6.90909090909091e-05, 'epoch': 0.02}
+{'loss': 0.4279, 'grad_norm': 0.0755702555179596, 'learning_rate': 6.545454545454546e-05, 'epoch': 0.02}
+{'loss': 0.3572, 'grad_norm': 0.07029201090335846, 'learning_rate': 6.181818181818182e-05, 'epoch': 0.02}
+{'loss': 0.4555, 'grad_norm': 0.07548838108778, 'learning_rate': 5.818181818181818e-05, 'epoch': 0.02}
+{'loss': 0.3604, 'grad_norm': 0.06944432109594345, 'learning_rate': 5.4545454545454546e-05, 'epoch': 0.02}
+{'loss': 0.333, 'grad_norm': 0.0702856108546257, 'learning_rate': 5.090909090909091e-05, 'epoch': 0.02}
+{'loss': 0.4162, 'grad_norm': 0.07340552657842636, 'learning_rate': 4.7272727272727275e-05, 'epoch': 0.02}
+{'loss': 0.3536, 'grad_norm': 0.06919131428003311, 'learning_rate': 4.3636363636363636e-05, 'epoch': 0.02}
+{'loss': 0.3816, 'grad_norm': 0.07057007402181625, 'learning_rate': 4e-05, 'epoch': 0.02}
+{'loss': 0.3951, 'grad_norm': 0.07897971570491791, 'learning_rate': 3.6363636363636364e-05, 'epoch': 0.02}
+{'loss': 0.3674, 'grad_norm': 0.06707562506198883, 'learning_rate': 3.272727272727273e-05, 'epoch': 0.02}
+{'loss': 0.35, 'grad_norm': 0.07267999649047852, 'learning_rate': 2.909090909090909e-05, 'epoch': 0.02}
+{'loss': 0.3098, 'grad_norm': 0.06467854231595993, 'learning_rate': 2.5454545454545454e-05, 'epoch': 0.02}
+{'loss': 0.4266, 'grad_norm': 0.07776881009340286, 'learning_rate': 2.1818181818181818e-05, 'epoch': 0.02}
+{'loss': 0.3716, 'grad_norm': 0.07623150944709778, 'learning_rate': 1.8181818181818182e-05, 'epoch': 0.02}
+{'loss': 0.3791, 'grad_norm': 0.07647047936916351, 'learning_rate': 1.4545454545454545e-05, 'epoch': 0.02}
+[09:36:47] INFO - 训练完成。
+[09:36:47] INFO - 训练耗时 543.06 秒（约 9.05 分钟）。
+[09:36:47] INFO - 峰值保留显存 = 5.225 GB；其中训练增量 = 1.409 GB。
+[09:36:47] INFO - 显存占用峰值占比 = 22.191%；训练增量占比 = 5.984%。
+[09:36:47] INFO - Unsloth 保存模型 Trainer.save_model
+[09:36:49] INFO - 模型已保存至: ./outputs/qwen3_4b_thinking_lora
+wandb:
+wandb:
+wandb: Run history:
+wandb:           env/gpu_mem_gb ▁
+wandb:     memory/lora_delta_gb ▁
+wandb:    memory/lora_delta_pct ▁
+wandb:  memory/peak_reserved_gb ▁
+wandb: memory/peak_reserved_pct ▁
+wandb: memory/start_reserved_gb ▁
+wandb:   time/train_runtime_sec ▁
+wandb:              train/epoch ▁▁▁▁▂▂▂▂▂▃▃▃▃▃▃▃▄▄▄▄▄▄▄▅▅▅▅▅▆▆▆▆▆▇▇▇▇███
+wandb:        train/global_step ▁▁▁▁▁▂▂▂▂▂▃▃▃▃▃▃▄▄▄▄▅▅▅▅▅▆▆▆▆▆▇▇▇▇▇█████
+wandb:          train/grad_norm ▄▄▃▂▂▂▃▂▃▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁█▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+wandb:                       +3 ...
+wandb:
+wandb: Run summary:
+wandb:            env/gpu_mem_gb 23.546
+wandb:              env/gpu_name NVIDIA GeForce RTX 4...
+wandb:      memory/lora_delta_gb 1.409
+wandb:     memory/lora_delta_pct 5.984
+wandb:   memory/peak_reserved_gb 5.225
+wandb:  memory/peak_reserved_pct 22.191
+wandb:  memory/start_reserved_gb 3.816
+wandb: metrics/train_runtime_sec 543.0624
+wandb:                    status success
+wandb:    time/train_runtime_sec 543.0624
+wandb:                       +11 ...
+wandb:
+wandb: You can sync this run to the cloud by running:
+wandb: wandb sync /workspace/verl/tmp/wandb/offline-run-20250907_092625-wbecf2z9
+wandb: Find logs at: ./wandb/offline-run-20250907_092625-wbecf2z9/logs
+[09:36:49] INFO - 543.06 秒 used for training.
+[09:36:49] INFO - 🎉  训练结束。

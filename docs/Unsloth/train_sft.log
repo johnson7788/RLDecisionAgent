@@ -1,0 +1,251 @@
+train_sft.py
+/opt/conda/lib/python3.11/site-packages/torch/cuda/__init__.py:61: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+WANDB_AVAILABLE是可用的，已经安装了wandb
+🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning.
+/opt/conda/lib/python3.11/site-packages/torch/cuda/__init__.py:61: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+[2025-09-07 09:51:48,647] [INFO] [real_accelerator.py:254:get_accelerator] Setting ds_accelerator to cuda (auto detect)
+INFO 09-07 09:51:50 [__init__.py:241] Automatically detected platform cuda.
+Unsloth: Your Flash Attention 2 installation seems to be broken?
+A possible explanation is you have a new CUDA version which isn't
+yet compatible with FA2? Please file a ticket to Unsloth or FA2.
+We shall now use Xformers instead, which does not have any performance hits!
+We found this negligible impact by benchmarking on 1x A100.
+🦥 Unsloth Zoo will now patch everything to make training faster!
+[09:51:54] INFO - 日志写入: ./outputs/qwen3_4b_sft_lora/logs/train_20250907_095154.log
+[09:51:54] INFO - ===== 训练配置 =====
+[09:51:54] INFO - {
+  "model_name": "unsloth/Qwen3-4B-Instruct-2507",
+  "max_seq_length": 2048,
+  "load_in_4bit": true,
+  "load_in_8bit": false,
+  "full_finetuning": false,
+  "hf_token": null,
+  "lora_r": 32,
+  "lora_alpha": 32,
+  "lora_dropout": 0.0,
+  "bias": "none",
+  "use_gradient_checkpointing": "unsloth",
+  "use_rslora": false,
+  "loftq_config": null,
+  "target_modules": [
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "gate_proj",
+    "up_proj",
+    "down_proj"
+  ],
+  "chat_template": "qwen3-instruct",
+  "dataset_name": "mlabonne/FineTome-100k",
+  "dataset_split": "train",
+  "dataset_text_field": "text",
+  "instruction_part": "<|im_start|>user\n",
+  "response_part": "<|im_start|>assistant\n",
+  "per_device_train_batch_size": 2,
+  "gradient_accumulation_steps": 4,
+  "warmup_steps": 5,
+  "max_steps": 60,
+  "num_train_epochs": 2,
+  "learning_rate": 0.0002,
+  "logging_steps": 1,
+  "optim": "adamw_8bit",
+  "weight_decay": 0.01,
+  "lr_scheduler_type": "linear",
+  "seed": 3407,
+  "report_to": "wandb",
+  "use_wandb": true,
+  "wandb_project": "unsloth-sft",
+  "wandb_entity": null,
+  "wandb_run_name": null,
+  "wandb_tags": null,
+  "wandb_dir": null,
+  "wandb_group": null,
+  "wandb_job_type": "train",
+  "wandb_mode": null,
+  "wandb_notes": null,
+  "wandb_log_model": false,
+  "output_dir": "./outputs/qwen3_4b_sft_lora",
+  "save_steps": 2,
+  "save_total_limit": null,
+  "logging_dir": null
+}
+[09:51:54] INFO - 随机种子已设置: 3407
+[09:51:54] INFO - PyTorch: 2.7.1+cu126
+[09:51:54] INFO - GPU: NVIDIA GeForce RTX 4090 D  显存上限: 23.546 GB  启动保留: 0.0 GB
+wandb: WARNING Using a boolean value for 'reinit' is deprecated. Use 'return_previous' or 'finish_previous' instead.
+wandb: Tracking run with wandb version 0.21.3
+wandb: W&B syncing is set to `offline` in this directory. Run `wandb online` or set WANDB_MODE=online to enable cloud syncing.
+wandb: Run data is saved locally in /workspace/verl/docs/Unsloth/wandb/offline-run-20250907_095154-lfe5p81x
+[09:51:55] INFO - 已连接 W&B：project=unsloth-sft, run=None
+[09:51:55] INFO - 开始加载基础模型…
+==((====))==  Unsloth 2025.9.1: Fast Qwen3 patching. Transformers: 4.55.4. vLLM: 0.10.1.1.
+   \\   /|    NVIDIA GeForce RTX 4090 D. Num GPUs = 1. Max memory: 23.546 GB. Platform: Linux.
+O^O/ \_/ \    Torch: 2.7.1+cu126. CUDA: 8.9. CUDA Toolkit: 12.6. Triton: 3.3.1
+\        /    Bfloat16 = TRUE. FA [Xformers = None. FA2 = False]
+ "-____-"     Free license: http://github.com/unslothai/unsloth
+Unsloth: Fast downloading is enabled - ignore downloading bars which are red colored!
+[09:52:21] INFO - 基础模型加载完成。
+[09:52:21] INFO - 注入 LoRA 适配器…
+Unsloth: Making `model.base_model.model.model` require gradients
+[09:52:26] INFO - LoRA 适配器注入完成。
+[09:52:26] INFO - 应用 Chat 模板: qwen3-instruct
+[09:52:26] INFO - 加载数据集: mlabonne/FineTome-100k [train] …
+[09:52:36] INFO - 原始样本预览（前 3 条）:
+[09:52:36] INFO - [#0] 原始(raw): {
+  "conversations": [
+    {
+      "from": "human",
+      "value": "Explain what boolean operators are, what they do, and provide examples of how they can be used in programming. Additionally, describe the concept of operator precedence and provide examples of how it affects the evaluation of boolean expressions. Discuss the difference between short-circuit evaluation and normal evaluation in boolean expressions and demonstrate their usage in code. \n\nFurthermore, add the requirement that the c … <+3672 chars>
+[09:52:36] INFO - [#1] 原始(raw): {
+  "conversations": [
+    {
+      "from": "human",
+      "value": "Explain how recursion works and provide a recursive function in Python that calculates the factorial of a given number."
+    },
+    {
+      "from": "gpt",
+      "value": "Recursion is a programming technique where a function calls itself to solve a problem. It breaks down a complex problem into smaller, more manageable subproblems until a base case is reached. The base case is a condition where the function does not call itself, … <+1488 chars>
+[09:52:36] INFO - [#2] 原始(raw): {
+  "conversations": [
+    {
+      "from": "human",
+      "value": "Explain what boolean operators are, what they do, and provide examples of how they can be used in programming. Additionally, describe the concept of operator precedence and provide examples of how it affects the evaluation of boolean expressions.\n\nFurthermore, discuss the difference between short-circuit evaluation and normal evaluation in boolean expressions and demonstrate their usage in code. Finally, delve into the concept … <+3906 chars>
+[09:52:36] INFO - 标准化为 conversations …
+[09:52:37] INFO - 渲染为文本字段…
+apply_chat_template: 100%|█████████████████████████████████████████████████| 100000/100000 [00:16<00:00, 6167.87 examples/s]
+[09:52:53] INFO - 渲染样本校验: <|im_start|>user
+Explain what boolean operators are, what they do, and provide examples of how they can be used in programming. Additionally, describe the concept of operator precedence and provide examples of how it affects the evaluation of boolean expressions. Discuss the difference between short-circuit evaluation and normal evaluation in boolean expressions and demonstrate their usage in code.
+
+Furthermore, add the requirement that the code must be written in a language that does not support short-circuit evaluation natively, forcing the test taker to implement their own logic for short-circuit evaluation.
+
+Finally, delve into the concept of truthiness and falsiness in programming languages, explaining how it affects the evaluation of boolean expressions. Add the constraint that the test taker must write code that handles cases where truthiness and falsiness are implemented differently across different programming languages.<|im_end|>
+<|im_start|>assistant
+Boolean operators are l … <+2944 chars>
+[09:52:53] INFO - 创建 SFTTrainer…
+/workspace/verl/docs/Unsloth/unsloth_compiled_cache/UnslothSFTTrainer.py:581: UserWarning: You passed a `max_seq_length` argument to the SFTTrainer, the value you passed will override the one in the `SFTConfig`.
+Map (num_proc=92): 100%|███████████████████████████████████████████████████| 100000/100000 [00:15<00:00, 6299.16 examples/s]
+/workspace/verl/docs/Unsloth/unsloth_compiled_cache/UnslothSFTTrainer.py:714: FutureWarning: `tokenizer` is deprecated and will be removed in version 5.0.0 for `UnslothSFTTrainer.__init__`. Use `processing_class` instead.
+  super().__init__(
+[09:53:12] INFO - 切换为仅学习 assistant 响应（忽略 user 指令部分的 loss）…
+Map (num_proc=88): 100%|██████████████████████████████████████████████████| 100000/100000 [00:04<00:00, 20061.16 examples/s]
+[09:53:19] INFO - 编码样本预览: <|im_start|>user
+Explain what boolean operators are, what they do, and provide examples of how they can be used in programming. Additionally, describe the concept of operator precedence and provide examples of how it affects the evaluation of boolean expressions. Discuss the difference between short-circuit evaluation and normal evaluation in boolean expressions and demonstrate their usage in code.
+
+Furthermore, add the requirement that the code must be written in a language that does not support short-circuit evaluation natively, forcing the test taker to implement their own logic for short-circuit evaluation.
+
+Finally, delve into the concept of truthiness and falsiness in programming languages, explaining how it affects the evaluation of boolean expressions. Add the constraint that the test taker must write code that handles cases where truthiness and falsiness are implemented differently across different programming languages.<|im_end|>
+<|im_start|>assistant
+Boolean operators are logical operators used in programming to manipulate boolean values. They operate on one or more boolean operands and return a boolean result. The three main boolean operators are "AND" (&&), "OR" (||), and "NOT" (!).
+
+The "AND" operator returns true if both of its operands are true, and false otherwise. For example:
+
+```python
+x = 5
+y = 10
+
+[09:53:19] INFO - GPU = NVIDIA GeForce RTX 4090 D. Max memory = 23.546 GB.
+[09:53:19] INFO - 启动时保留显存 = 3.816 GB.
+[09:53:19] INFO - 开始训练…
+==((====))==  Unsloth - 2x faster free finetuning | Num GPUs used = 1
+   \\   /|    Num examples = 100,000 | Num Epochs = 1 | Total steps = 60
+O^O/ \_/ \    Batch size per device = 2 | Gradient accumulation steps = 4
+\        /    Data Parallel GPUs = 1 | Total batch size (2 x 4 x 1) = 8
+ "-____-"     Trainable parameters = 66,060,288 of 4,088,528,384 (1.62% trained)
+  0%|                                                                                                | 0/60 [00:00<?, ?it/s]Unsloth: Will smartly offload gradients to save VRAM!
+{'loss': 1.2341, 'grad_norm': 1.26889169216156, 'learning_rate': 0.0, 'epoch': 0.0}
+{'loss': 1.1838, 'grad_norm': 1.1245009899139404, 'learning_rate': 4e-05, 'epoch': 0.0}
+{'loss': 1.7394, 'grad_norm': 1.8781607151031494, 'learning_rate': 8e-05, 'epoch': 0.0}
+{'loss': 1.3852, 'grad_norm': 1.3905386924743652, 'learning_rate': 0.00012, 'epoch': 0.0}
+{'loss': 0.964, 'grad_norm': 1.0623937845230103, 'learning_rate': 0.00016, 'epoch': 0.0}
+{'loss': 1.0264, 'grad_norm': 1.0224908590316772, 'learning_rate': 0.0002, 'epoch': 0.0}
+{'loss': 0.5411, 'grad_norm': 0.26971349120140076, 'learning_rate': 0.00019636363636363636, 'epoch': 0.0}
+{'loss': 0.8925, 'grad_norm': 0.32616934180259705, 'learning_rate': 0.00019272727272727274, 'epoch': 0.0}
+{'loss': 0.7271, 'grad_norm': 0.254302054643631, 'learning_rate': 0.0001890909090909091, 'epoch': 0.0}
+{'loss': 0.673, 'grad_norm': 0.22280950844287872, 'learning_rate': 0.00018545454545454545, 'epoch': 0.0}
+{'loss': 0.7977, 'grad_norm': 0.24312573671340942, 'learning_rate': 0.00018181818181818183, 'epoch': 0.0}
+{'loss': 1.0145, 'grad_norm': 0.3125922679901123, 'learning_rate': 0.0001781818181818182, 'epoch': 0.0}
+{'loss': 0.8676, 'grad_norm': 0.272381991147995, 'learning_rate': 0.00017454545454545454, 'epoch': 0.0}
+{'loss': 0.5513, 'grad_norm': 0.2676119804382324, 'learning_rate': 0.0001709090909090909, 'epoch': 0.0}
+{'loss': 0.7952, 'grad_norm': 0.24834468960762024, 'learning_rate': 0.00016727272727272728, 'epoch': 0.0}
+{'loss': 0.5473, 'grad_norm': 0.27768614888191223, 'learning_rate': 0.00016363636363636366, 'epoch': 0.0}
+{'loss': 0.8955, 'grad_norm': 0.20760919153690338, 'learning_rate': 0.00016, 'epoch': 0.0}
+{'loss': 0.7086, 'grad_norm': 0.21113522350788116, 'learning_rate': 0.00015636363636363637, 'epoch': 0.0}
+{'loss': 0.6976, 'grad_norm': 0.16633240878582, 'learning_rate': 0.00015272727272727275, 'epoch': 0.0}
+{'loss': 0.833, 'grad_norm': 0.21081769466400146, 'learning_rate': 0.0001490909090909091, 'epoch': 0.0}
+{'loss': 0.8049, 'grad_norm': 0.26581352949142456, 'learning_rate': 0.00014545454545454546, 'epoch': 0.0}
+{'loss': 0.7765, 'grad_norm': 0.19209444522857666, 'learning_rate': 0.00014181818181818184, 'epoch': 0.0}
+{'loss': 0.9735, 'grad_norm': 0.1767033189535141, 'learning_rate': 0.0001381818181818182, 'epoch': 0.0}
+{'loss': 0.741, 'grad_norm': 0.21236300468444824, 'learning_rate': 0.00013454545454545455, 'epoch': 0.0}
+{'loss': 0.5395, 'grad_norm': 0.16105987131595612, 'learning_rate': 0.00013090909090909093, 'epoch': 0.0}
+{'loss': 0.6744, 'grad_norm': 0.17266200482845306, 'learning_rate': 0.00012727272727272728, 'epoch': 0.0}
+{'loss': 0.6948, 'grad_norm': 0.20043684542179108, 'learning_rate': 0.00012363636363636364, 'epoch': 0.0}
+{'loss': 0.6862, 'grad_norm': 0.19250285625457764, 'learning_rate': 0.00012, 'epoch': 0.0}
+{'loss': 1.0101, 'grad_norm': 0.2222357541322708, 'learning_rate': 0.00011636363636363636, 'epoch': 0.0}
+{'loss': 0.8951, 'grad_norm': 0.18886493146419525, 'learning_rate': 0.00011272727272727272, 'epoch': 0.0}
+{'loss': 0.63, 'grad_norm': 0.1961446851491928, 'learning_rate': 0.00010909090909090909, 'epoch': 0.0}
+{'loss': 0.4651, 'grad_norm': 0.1477976143360138, 'learning_rate': 0.00010545454545454545, 'epoch': 0.0}
+{'loss': 0.5622, 'grad_norm': 0.21210059523582458, 'learning_rate': 0.00010181818181818181, 'epoch': 0.0}
+{'loss': 0.4495, 'grad_norm': 0.15238900482654572, 'learning_rate': 9.818181818181818e-05, 'epoch': 0.0}
+{'loss': 0.6806, 'grad_norm': 0.19014455378055573, 'learning_rate': 9.454545454545455e-05, 'epoch': 0.0}
+{'loss': 0.9175, 'grad_norm': 0.19885402917861938, 'learning_rate': 9.090909090909092e-05, 'epoch': 0.0}
+{'loss': 0.7991, 'grad_norm': 0.1999858021736145, 'learning_rate': 8.727272727272727e-05, 'epoch': 0.0}
+{'loss': 0.5879, 'grad_norm': 0.1652590036392212, 'learning_rate': 8.363636363636364e-05, 'epoch': 0.0}
+{'loss': 0.6464, 'grad_norm': 0.18798349797725677, 'learning_rate': 8e-05, 'epoch': 0.0}
+{'loss': 0.8446, 'grad_norm': 0.19232279062271118, 'learning_rate': 7.636363636363637e-05, 'epoch': 0.0}
+{'loss': 0.6498, 'grad_norm': 0.19501300156116486, 'learning_rate': 7.272727272727273e-05, 'epoch': 0.0}
+{'loss': 0.8335, 'grad_norm': 0.1964937299489975, 'learning_rate': 6.90909090909091e-05, 'epoch': 0.0}
+{'loss': 0.667, 'grad_norm': 0.16009770333766937, 'learning_rate': 6.545454545454546e-05, 'epoch': 0.0}
+{'loss': 0.6401, 'grad_norm': 0.1928119957447052, 'learning_rate': 6.181818181818182e-05, 'epoch': 0.0}
+{'loss': 0.6539, 'grad_norm': 0.18661463260650635, 'learning_rate': 5.818181818181818e-05, 'epoch': 0.0}
+{'loss': 0.7584, 'grad_norm': 0.20336568355560303, 'learning_rate': 5.4545454545454546e-05, 'epoch': 0.0}
+{'loss': 0.6525, 'grad_norm': 0.20021581649780273, 'learning_rate': 5.090909090909091e-05, 'epoch': 0.0}
+{'loss': 0.5513, 'grad_norm': 0.1703331023454666, 'learning_rate': 4.7272727272727275e-05, 'epoch': 0.0}
+{'loss': 0.8928, 'grad_norm': 0.22873395681381226, 'learning_rate': 4.3636363636363636e-05, 'epoch': 0.0}
+{'loss': 0.8995, 'grad_norm': 0.15478254854679108, 'learning_rate': 4e-05, 'epoch': 0.0}
+{'loss': 0.3854, 'grad_norm': 0.15127526223659515, 'learning_rate': 3.6363636363636364e-05, 'epoch': 0.0}
+{'loss': 0.8053, 'grad_norm': 0.15952803194522858, 'learning_rate': 3.272727272727273e-05, 'epoch': 0.0}
+{'loss': 1.2978, 'grad_norm': 0.25887489318847656, 'learning_rate': 2.909090909090909e-05, 'epoch': 0.0}
+{'train_runtime': 466.9755, 'train_samples_per_second': 1.028, 'train_steps_per_second': 0.128, 'train_loss': 0.7906134098768234, 'epoch': 0.0}
+100%|███████████████████████████████████████████████████████████████████████████████████████| 60/60 [07:46<00:00,  7.78s/it]
+[10:01:08] INFO - 训练完成。
+[10:01:08] INFO - 训练耗时 466.98 秒（约 7.78 分钟）。
+[10:01:08] INFO - 峰值保留显存 = 5.025 GB；其中训练增量 = 1.209 GB。
+[10:01:08] INFO - 显存占用峰值占比 = 21.341%；训练增量占比 = 5.135%。
+[10:01:08] INFO - Unsloth 保存模型 Trainer.save_model
+[10:01:12] INFO - 模型已保存至: ./outputs/qwen3_4b_sft_lora
+wandb:
+wandb:
+wandb: Run history:
+wandb:           env/gpu_mem_gb ▁
+wandb:     memory/lora_delta_gb ▁
+wandb:    memory/lora_delta_pct ▁
+wandb:  memory/peak_reserved_gb ▁
+wandb: memory/peak_reserved_pct ▁
+wandb: memory/start_reserved_gb ▁
+wandb:   time/train_runtime_sec ▁
+wandb:              train/epoch ▁▁▁▂▂▂▂▂▃▃▃▃▃▃▃▄▄▄▄▄▄▅▅▅▅▅▆▆▆▆▆▇▇▇▇▇████
+wandb:        train/global_step ▁▁▁▁▂▂▂▃▃▃▃▃▃▃▄▄▄▅▅▅▅▅▆▆▆▆▆▆▆▇▇▇▇▇▇█████
+wandb:          train/grad_norm █▆▅▅▁▁▁▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+wandb:                       +3 ...
+wandb:
+wandb: Run summary:
+wandb:            env/gpu_mem_gb 23.546
+wandb:              env/gpu_name NVIDIA GeForce RTX 4...
+wandb:      memory/lora_delta_gb 1.209
+wandb:     memory/lora_delta_pct 5.135
+wandb:   memory/peak_reserved_gb 5.025
+wandb:  memory/peak_reserved_pct 21.341
+wandb:  memory/start_reserved_gb 3.816
+wandb: metrics/train_runtime_sec 466.9755
+wandb:                    status success
+wandb:    time/train_runtime_sec 466.9755
+wandb:                       +11 ...
+wandb:
+wandb: You can sync this run to the cloud by running:
+wandb: wandb sync /workspace/verl/docs/Unsloth/wandb/offline-run-20250907_095154-lfe5p81x
+wandb: Find logs at: ./wandb/offline-run-20250907_095154-lfe5p81x/logs
+[10:01:12] INFO - 466.98 秒 used for training.
+[10:01:12] INFO - 🎉  训练结束。
