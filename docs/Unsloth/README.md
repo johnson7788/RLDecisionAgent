@@ -7,15 +7,15 @@ pip install -r requirements.txt
 python GRPO_test.py
 
 # SFT代码
-[unsloth_sft.py](unsloth_sft.py)
+[train_sft.py](train_sft.py)
 ## SFT训练
-python unsloth_sft.py
+python train_sft.py
 使用的模型是： unsloth/Qwen3-4B-Instruct-2507
 
 # Thinking模型训练
-[unsloth_thinking.py](unsloth_thinking.py)
+[train_thinking.py](train_thinking.py)
 ## Thinking模型训练
-python unsloth_thinking.py
+python train_thinking.py
 使用的模型是： unsloth/Qwen3-4B-Thinking-2507
 
 # GRPO强化学习训练， 需要安装vllm
@@ -33,7 +33,8 @@ trl vllm-serve --model unsloth/Qwen3-4B-Base \
   --max-model-len 2048 \
   --host 127.0.0.1 --port 8000
 
-
+# 显卡2上训练
+CUDA_VISIBLE_DEVICES=2 python train_GRPO.py
 
 ## 对比SFT和Thinking
 两段代码的“骨架”几乎一样（Unsloth + LoRA + TRL 的 SFT），但**训练目标、数据与模板**完全不同，导致学到的能力、输出风格和部署注意点都不一样。一句话：

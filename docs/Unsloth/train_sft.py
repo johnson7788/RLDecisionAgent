@@ -10,6 +10,9 @@
 与原版相比：
 - 训练主体逻辑复用 unsloth_core
 - 保留原有 CLI 风格（常用参数）
+# 使用自己的数据进行训练
+python train_sft.py --data_files xiaosen_sft.jsonl
+
 """
 from __future__ import annotations
 import argparse
@@ -86,6 +89,7 @@ def parse_args() -> TrainConfig:
     parser.add_argument("--output_dir", type=str, default="./outputs/qwen3_4b_sft_lora")
     parser.add_argument("--save_steps", type=int, default=TrainConfig.save_steps)
     parser.add_argument("--save_total_limit", type=int, default=None)
+    parser.add_argument("--data_files", type=str, default=None,help="逗号分隔的本地数据文件，如 data/train.jsonl")
 
     # W&B 相关开关
     parse_bool_flag(parser, "--use_wandb", "--no_use_wandb", default=TrainConfig.use_wandb)
@@ -156,7 +160,12 @@ def parse_args() -> TrainConfig:
 def prepare_dataset_generic(cfg: TrainConfig, tokenizer, logger: logging.Logger) -> Dataset:
     """通用：标准化到 conversations → 渲染为 cfg.dataset_text_field。"""
     logger.info(f"加载数据集: {cfg.dataset_name} [{cfg.dataset_split}] …")
-    raw_ds = load_dataset(cfg.dataset_name, split=cfg.dataset_split)
+    if cfg.data_files:
+        print(f"使用本地的训练数据集: {cfg.data_files}")
+        data_files = [s.strip() for s in cfg.data_files.split(",")]
+        raw_ds = load_dataset(cfg.dataset_name, data_files=data_files, split="train")
+    else:
+        raw_ds = load_dataset(cfg.dataset_name, split=cfg.dataset_split)
 
     preview_n = max(1, min(3, len(raw_ds)))
     logger.info(f"原始样本预览（前 {preview_n} 条）:")
