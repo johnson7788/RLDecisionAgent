@@ -20,6 +20,7 @@ from dataclasses import asdict
 from datasets import load_dataset, Dataset
 from unsloth_core import (
     clip_display_text,
+    display_json,
     TrainConfig,
     setup_logging,
     set_seed,
@@ -161,7 +162,7 @@ def prepare_dataset_generic(cfg: TrainConfig, tokenizer, logger: logging.Logger)
     logger.info(f"原始样本预览（前 {preview_n} 条）:")
     for i in range(preview_n):
         try:
-            logger.info(f"[#%d] 原始(raw): %s", i, _pjson(raw_ds[i]))
+            logger.info(f"[#%d] 原始(raw): %s", i, display_json(raw_ds[i]))
         except Exception as e:
             logger.warning(f"[#%d] 原始样本读取失败: %s", i, e)
 

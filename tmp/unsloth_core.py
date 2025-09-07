@@ -308,6 +308,13 @@ def clip_display_text(s: str, limit: int = 1000) -> str:
     s = str(s)
     return s if len(s) <= limit else (s[:limit] + f" … <+{len(s) - limit} chars>")
 
+def display_json(obj, limit: int = 500) -> str:
+    try:
+        txt = json.dumps(obj, ensure_ascii=False, indent=2)
+    except Exception:
+        txt = str(obj)
+    return clip_display_text(txt, limit)
+
 # ==============================
 # Trainer / 训练 & 保存
 # ==============================
