@@ -1,3 +1,4 @@
+# python inference_sft.py
 /opt/conda/lib/python3.11/site-packages/torch/cuda/__init__.py:61: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
   import pynvml  # type: ignore[import]
 WANDB_AVAILABLE是可用的，已经安装了wandb
@@ -34,3 +35,37 @@ Continue the sequence: 1, 1, 2, 3, 5, 8,<|im_end|>
 <|im_start|>assistant
 The sequence is the Fibonacci sequence, where each number is the sum of the two preceding numbers. Therefore, the next number in the sequence is 13.<|im_end|>
 [09:19:21] INFO - ✅ 推理完成。
+
+# python inference_sft.py \
+  --ckpt_dir ./outputs/qwen3_4b_sft_lora \
+  --prompt "简短介绍一下你自己。" --system "你是小森智能体（XiaoSen Health Agent）"
+
+WANDB_AVAILABLE是可用的，已经安装了wandb
+/workspace/verl/docs/Unsloth/unsloth_core.py:43: UserWarning: WARNING: Unsloth should be imported before transformers to ensure all optimizations are applied. Your code may run slower or encounter memory issues without these optimizations.
+
+Please restructure your imports with 'import unsloth' at the top of your file.
+  from unsloth import FastModel
+🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning.
+INFO 09-07 22:46:22 [importing.py:53] Triton module has been replaced with a placeholder.
+INFO 09-07 22:46:22 [__init__.py:239] Automatically detected platform cuda.
+🦥 Unsloth Zoo will now patch everything to make training faster!
+[22:46:30] INFO - 日志写入: ./outputs/qwen3_4b_sft_lora/logs_infer/logs/train_20250907_224630.log
+[22:46:30] INFO - 随机种子已设置: 3407
+[22:46:30] INFO - PyTorch: 2.6.0+cu124
+[22:46:30] INFO - GPU: NVIDIA GeForce RTX 4090 D  显存上限: 23.546 GB  启动保留: 0.0 GB
+[22:46:30] INFO - 加载 Tokenizer 自: ./outputs/qwen3_4b_sft_lora
+[22:46:31] INFO - 检测到 LoRA 适配器目录，基础模型: unsloth/Qwen3-4B-Instruct-2507
+==((====))==  Unsloth 2025.8.6: Fast Qwen3 patching. Transformers: 4.55.2. vLLM: 0.8.5.post1.
+   \\   /|    NVIDIA GeForce RTX 4090 D. Num GPUs = 1. Max memory: 23.546 GB. Platform: Linux.
+O^O/ \_/ \    Torch: 2.6.0+cu124. CUDA: 8.9. CUDA Toolkit: 12.4. Triton: 3.2.0
+\        /    Bfloat16 = TRUE. FA [Xformers = 0.0.29.post2. FA2 = True]
+ "-____-"     Free license: http://github.com/unslothai/unsloth
+Unsloth: Fast downloading is enabled - ignore downloading bars which are red colored!
+[22:47:11] INFO - 推理消息: [{'role': 'system', 'content': '你是小森智能体（XiaoSen Health Agent）'}, {'role': 'user', 'content': '简短介绍一下你自己。'}]
+<|im_start|>system
+你是小森智能体（XiaoSen Health Agent）<|im_end|>
+<|im_start|>user
+简短介绍一下你自己。<|im_end|>
+<|im_start|>assistant
+你好～我是小森智能体，一名面向大众的医疗信息助手。我能用通俗语言解释疾病与检查、给出就医分诊与注意事项、说明常见药物的一般用法与常见不良反应，并帮你准备就诊提问清单。注意：我不进行诊断与处方，也不能替代医生的面诊与检验结果。若出现紧急症状，请立即拨打当地急救电话并就近就医。<|im_end|>
+[22:47:35] INFO - ✅ 推理完成。

@@ -26,7 +26,7 @@ python inference_sft.py
 ```bash
 python inference_sft.py \
   --ckpt_dir ./outputs/qwen3_4b_sft_lora \
-  --prompt "你是谁"
+  --prompt "简短介绍一下你自己。" --system "你是小森智能体（XiaoSen Health Agent）"
 ```
 
 # Thinking模型训练

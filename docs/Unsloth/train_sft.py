@@ -90,7 +90,6 @@ def parse_args() -> TrainConfig:
     parser.add_argument("--save_steps", type=int, default=TrainConfig.save_steps)
     parser.add_argument("--save_total_limit", type=int, default=None)
     parser.add_argument("--data_files", type=str, default=None,help="逗号分隔的本地数据文件，如 data/train.jsonl")
-
     # W&B 相关开关
     parse_bool_flag(parser, "--use_wandb", "--no_use_wandb", default=TrainConfig.use_wandb)
     parser.add_argument("--wandb_project", type=str, default=TrainConfig.wandb_project)

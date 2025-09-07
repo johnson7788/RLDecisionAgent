@@ -143,6 +143,7 @@ def parse_args(cfg_defaults: TrainConfig) -> argparse.Namespace:
     p.add_argument("--seed", type=int, default=cfg_defaults.seed)
 
     # 生成参数
+    p.add_argument("--system", type=str, default="你是小森智能体（XiaoSen Health Agent）", help="系统prompt")
     p.add_argument("--prompt", type=str, default=None, help="单条 user 提示词。若提供则覆盖默认示例")
     p.add_argument("--messages_json", type=str, default=None,
                    help="包含 messages(list[{'role','content'}]) 的 JSON 文件路径。")
@@ -179,7 +180,13 @@ def _load_messages(args: argparse.Namespace) -> List[dict]:
         return msgs
 
     if args.prompt:
-        return [{"role": "user", "content": args.prompt.strip()}]
+        if args.system:
+            return [
+                {"role": "system", "content": args.system.strip()},
+                {"role": "user", "content": args.prompt.strip()},
+            ]
+        else:
+            return [{"role": "user", "content": args.prompt.strip()}]
 
     # 默认示例
     return [
