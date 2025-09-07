@@ -1,379 +1,431 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-GRPO-style SFT training script for Unsloth + TRL with:
-- argparse for CLI
-- logging to console/file
-- optional Weights & Biases tracking
 
-Ref: https://github.com/unslothai/notebooks/blob/main/nb/Qwen3_(4B)-GRPO.ipynb
+"""
+使用 Unsloth + TRL 的 GRPO 在 open-r1/DAPO-Math-17k-Processed 数据集上训练推理格式与答案。
+本脚本抽取自 Unsloth 官方示例，专注于 DAPO-Math-17k 的训练部分，并补充中文注释与日志。
+
+运行前环境依赖（建议）：
+pip install -U "unsloth" "trl" "vllm" "datasets" "transformers==4.55.4" "bitsandbytes" "xformers" "torchvision"
+
+如果在 Colab 上，建议使用 T4/V100/A100 GPU。
 """
 
-from __future__ import annotations
 import os
-import sys
+import re
+import gc
 import math
+import time
 import json
 import random
 import logging
-import argparse
-from typing import List, Dict, Any
+from dataclasses import dataclass
 
-import numpy as np
-import pandas as pd
 import torch
+import numpy as np
 from datasets import load_dataset, Dataset
 
-# Optional: fail gracefully if wandb not installed
-try:
-    import wandb  # type: ignore
-except Exception:  # pragma: no cover
-    wandb = None
-
 from unsloth import FastLanguageModel
-from trl import SFTTrainer, SFTConfig
+from trl import GRPOConfig, GRPOTrainer
+from vllm import SamplingParams
 
-# -----------------------------
-# Utils
-# -----------------------------
+# =========================
+# 日志设置
+# =========================
+logging.basicConfig(
+    level=logging.INFO,
+    format="[%(asctime)s][%(levelname)s] %(message)s",
+)
+logger = logging.getLogger("GRPO-DAPO-Math")
 
-def setup_logging(level: str = "INFO", log_file: str | None = None) -> None:
-    """Configure Python logging.
+# =========================
+# 可调参数
+# =========================
+MODEL_NAME = "unsloth/Qwen3-4B-Base"   # 你也可以换成其他基座
+MAX_SEQ_LEN = 2048                     # 最大序列长度（越大越吃显存）
+LORA_RANK = 32                         # LoRA秩：越大效果越好、训练更慢更耗显存
+GPU_MEMORY_UTIL = 0.7                  # vLLM 推理内存利用率
+SEED = 3407
 
-    Args:
-        level: Logging level name, e.g. "INFO", "DEBUG".
-        log_file: Optional path to a log file. If provided, add a FileHandler.
-    """
-    # Basic config for root
-    numeric_level = getattr(logging, level.upper(), logging.INFO)
-    logging.captureWarnings(True)
+# 训练步数与生成配置（GRPO）
+MAX_STEPS = 100                        # 演示默认 100 步；正式训练可拉满或改为 num_train_epochs
+BATCH_SIZE = 1                         # 每卡 batch；用 grad_accum 可模拟更大 batch
+GRAD_ACCUM = 1                         # 梯度累积步数
+NUM_GENERATIONS = 4                    # 每个 prompt 生成的并行样本数
+LEARNING_RATE = 5e-6
+WEIGHT_DECAY = 0.01
+WARMUP_RATIO = 0.1
 
-    handlers: List[logging.Handler] = [
-        logging.StreamHandler(sys.stdout),
-    ]
-    if log_file:
-        os.makedirs(os.path.dirname(os.path.abspath(log_file)), exist_ok=True)
-        handlers.append(logging.FileHandler(log_file, encoding="utf-8"))
+# 数据集（Open R1）
+HF_DATASET = "open-r1/DAPO-Math-17k-Processed"
+HF_CONFIG = "en"
+HF_SPLIT = "train"
 
-    logging.basicConfig(
-        level=numeric_level,
-        format="%(asctime)s | %(levelname)5s | %(name)s | %(message)s",
-        handlers=handlers,
-        force=True,
-    )
+# 可选：是否进行一个很小的 SFT 预对齐（来自官方示例，用于让模型更快学会目标格式）
+ENABLE_PRE_SFT = False
 
+# 保存 LoRA 的目录
+OUTPUT_DIR = "outputs"
+LORA_SAVE_DIR = os.path.join(OUTPUT_DIR, "grpo_saved_lora")
 
-def seed_everything(seed: int) -> None:
+# =========================
+# 设定随机种子
+# =========================
+def set_seed(seed: int):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
-    torch.backends.cuda.matmul.allow_tf32 = True  # speed on Ampere+
+set_seed(SEED)
 
+# =========================
+# 自定义思维/答案标签与系统提示
+# =========================
+reasoning_start = "<start_working_out>"  # 类似 <think>
+reasoning_end   = "<end_working_out>"    # 类似 </think>
+solution_start  = "<SOLUTION>"
+solution_end    = "</SOLUTION>"
 
-# -----------------------------
-# Data formatting
-# -----------------------------
+system_prompt = (
+    f"You are given a problem.\n"
+    f"Think about the problem and provide your working out.\n"
+    f"Place it between {reasoning_start} and {reasoning_end}.\n"
+    f"Then, provide your solution between {solution_start}{solution_end}"
+)
 
-def build_messages_row(
-    x: pd.Series,
-    system_prompt: str,
-    reasoning_start: str,
-    reasoning_end: str,
-    solution_start: str,
-    solution_end: str,
-) -> List[Dict[str, str]]:
-    expected_answer = str(x["expected_answer"])  # keep as string
-    problem = x["problem"]
-    thoughts = x.get("generated_solution", "") or ""
-
-    # Remove any existing markers from the mined CoT
-    if reasoning_start:
-        thoughts = thoughts.replace(reasoning_start, "")
-    if reasoning_end:
-        thoughts = thoughts.replace(reasoning_end, "")
-
-    thoughts = thoughts.strip()
-
-    final_prompt = (
-        f"{reasoning_start}{thoughts}{reasoning_end}"
-        f"{solution_start}{expected_answer}{solution_end}"
-    )
-
-    return [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": problem},
-        {"role": "assistant", "content": final_prompt},
-    ]
-
-
-# -----------------------------
-# Main
-# -----------------------------
-
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Train GRPO-style SFT with Unsloth + TRL"
-    )
-
-    # Model / LoRA
-    parser.add_argument("--model_name", type=str, default="unsloth/Qwen3-4B-Base")
-    parser.add_argument("--max_seq_length", type=int, default=2048)
-    parser.add_argument("--lora_rank", type=int, default=32)
-    parser.add_argument("--load_in_4bit", action="store_true", help="Use 4-bit quantization for base model")
-    parser.add_argument("--fast_inference", type=lambda s: s.lower() != "false", default=True,
-                        help="Enable Unsloth fast inference kernel (vLLM style)")
-    parser.add_argument("--gpu_memory_utilization", type=float, default=0.9)
-
-    # Reasoning markers
-    parser.add_argument("--reasoning_start", type=str, default="", help="Marker before reasoning (e.g., <think>)")
-    parser.add_argument("--reasoning_end", type=str, default="", help="Marker after reasoning (e.g., </think>)")
-    parser.add_argument("--solution_start", type=str, default="", help="Marker before final solution")
-    parser.add_argument("--solution_end", type=str, default="", help="Marker after final solution")
-
-    # Data
-    parser.add_argument("--dataset_name", type=str, default="unsloth/OpenMathReasoning-mini")
-    parser.add_argument("--dataset_split", type=str, default="cot")
-    parser.add_argument("--max_prompt_ratio", type=float, default=0.5,
-                        help="Keep samples whose tokenized length <= max_seq_length * ratio")
-
-    # Training args
-    parser.add_argument("--output_dir", type=str, default="outputs/unsloth-grpo")
-    parser.add_argument("--num_train_epochs", type=float, default=2)
-    parser.add_argument("--per_device_train_batch_size", type=int, default=1)
-    parser.add_argument("--gradient_accumulation_steps", type=int, default=1)
-    parser.add_argument("--warmup_steps", type=int, default=5)
-    parser.add_argument("--learning_rate", type=float, default=2e-4)
-    parser.add_argument("--weight_decay", type=float, default=0.01)
-    parser.add_argument("--lr_scheduler_type", type=str, default="linear",
-                        choices=[
-                            "linear", "cosine", "cosine_with_restarts",
-                            "polynomial", "constant", "constant_with_warmup",
-                        ])
-    parser.add_argument("--optim", type=str, default="adamw_8bit",
-                        choices=["adamw_torch", "adamw_8bit"])  # bitsandbytes
-    parser.add_argument("--logging_steps", type=int, default=5)
-    parser.add_argument("--seed", type=int, default=3407)
-    parser.add_argument("--save_strategy", type=str, default="epoch",
-                        choices=["no", "steps", "epoch"])
-    parser.add_argument("--save_steps", type=int, default=100)
-    parser.add_argument("--save_total_limit", type=int, default=2)
-    parser.add_argument("--bf16", action="store_true", help="Train in bf16 if available")
-    parser.add_argument("--resume_from_checkpoint", type=str, default=None)
-
-    # W&B
-    parser.add_argument("--wandb_mode", type=str, default="disabled",
-                        choices=["online", "offline", "disabled"])
-    parser.add_argument("--wandb_project", type=str, default="grpo-unsloth")
-    parser.add_argument("--wandb_entity", type=str, default=None)
-    parser.add_argument("--wandb_run_name", type=str, default="qwen3-4b-grpo")
-    parser.add_argument("--wandb_group", type=str, default=None)
-    parser.add_argument("--wandb_tags", nargs="*", default=None)
-
-    # Logging
-    parser.add_argument("--log_level", type=str, default="INFO",
-                        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"])
-    parser.add_argument("--log_file", type=str, default=None)
-
-    args = parser.parse_args()
-    return args
-
-
-def maybe_init_wandb(args: argparse.Namespace) -> bool:
-    if args.wandb_mode == "disabled":
-        os.environ["WANDB_DISABLED"] = "true"
-        return False
-
-    if wandb is None:
-        logging.warning("wandb is not installed; proceeding without experiment tracking.")
-        os.environ["WANDB_DISABLED"] = "true"
-        return False
-
-    os.environ["WANDB_PROJECT"] = args.wandb_project
-    if args.wandb_entity:
-        os.environ["WANDB_ENTITY"] = args.wandb_entity
-    os.environ["WANDB_MODE"] = args.wandb_mode  # online / offline
-
-    run = wandb.init(
-        project=args.wandb_project,
-        entity=args.wandb_entity,
-        name=args.wandb_run_name,
-        group=args.wandb_group,
-        tags=args.wandb_tags,
-        config={k: v for k, v in vars(args).items() if "password" not in k.lower()},
-        reinit=True,
-        allow_val_change=True,
-    )
-    logging.info("Initialized Weights & Biases run: %s", run.name if run else "-")
-    return True
-
-
-def main() -> None:
-    args = parse_args()
-    setup_logging(args.log_level, args.log_file)
-
-    logging.info("Arguments: %s", json.dumps(vars(args), indent=2, ensure_ascii=False))
-
-    seed_everything(args.seed)
-    os.environ["TOKENIZERS_PARALLELISM"] = "false"
-
-    # System prompt & chat_template similar to notebook, with placeholders filled after
-    reasoning_start = args.reasoning_start
-    reasoning_end = args.reasoning_end
-    solution_start = args.solution_start
-    solution_end = args.solution_end
-
-    system_prompt = (
-        "You are given a problem.\n"
-        "Think about the problem and provide your working out.\n"
-        f"Place it between {reasoning_start} and {reasoning_end}.\n"
-        f"Then, provide your solution between {solution_start}{solution_end}"
-    )
-    logging.info("System prompt configured.")
-
-    # Load base model
-    logging.info("Loading base model: %s", args.model_name)
-    model, tokenizer = FastLanguageModel.from_pretrained(
-        model_name=args.model_name,
-        max_seq_length=args.max_seq_length,
-        load_in_4bit=args.load_in_4bit,
-        fast_inference=args.fast_inference,
-        max_lora_rank=args.lora_rank,
-        gpu_memory_utilization=args.gpu_memory_utilization,
-    )
-
-    # Apply LoRA
-    logging.info("Configuring LoRA with rank=%d", args.lora_rank)
-    model = FastLanguageModel.get_peft_model(
-        model,
-        r=args.lora_rank,
-        target_modules=[
-            "q_proj", "k_proj", "v_proj", "o_proj",
-            "gate_proj", "up_proj", "down_proj",
-        ],
-        lora_alpha=args.lora_rank * 2,
-        use_gradient_checkpointing="unsloth",
-        random_state=args.seed,
-    )
-
-    # Build chat template with a placeholder + replace, to avoid Jinja escaping issues
+# =========================
+# 构造 Chat Template（重要）
+# - 我们的 GRPO 格式需要模型在生成时以 <start_working_out> 开始
+# =========================
+def build_chat_template(tokenizer):
     chat_template = (
         "{% if messages[0]['role'] == 'system' %}"
-        "{{ messages[0]['content'] + eos_token }}"
-        "{% set loop_messages = messages[1:] %}"
+            "{{ messages[0]['content'] + eos_token }}"
+            "{% set loop_messages = messages[1:] %}"
         "{% else %}"
-        "{{ '{system_prompt}' + eos_token }}"
-        "{% set loop_messages = messages %}"
+            "{{ '" + system_prompt + "' + eos_token }}"
+            "{% set loop_messages = messages %}"
         "{% endif %}"
         "{% for message in loop_messages %}"
-        "{% if message['role'] == 'user' %}"
-        "{{ message['content'] }}"
-        "{% elif message['role'] == 'assistant' %}"
-        "{{ message['content'] + eos_token }}"
-        "{% endif %}"
+            "{% if message['role'] == 'user' %}"
+                "{{ message['content'] }}"
+            "{% elif message['role'] == 'assistant' %}"
+                "{{ message['content'] + eos_token }}"
+            "{% endif %}"
         "{% endfor %}"
-        "{% if add_generation_prompt %}{{ '{reasoning_start}' }}{% endif %}"
+        "{% if add_generation_prompt %}{{ '" + reasoning_start + "' }}{% endif %}"
     )
-    # Replace placeholders safely (repr keeps quotes)
-    chat_template = chat_template.replace("'{system_prompt}'", repr(system_prompt))
-    chat_template = chat_template.replace("'{reasoning_start}'", repr(reasoning_start))
     tokenizer.chat_template = chat_template
+    return tokenizer
 
-    # Sanity-check template
-    _ = tokenizer.apply_chat_template([
-        {"role": "user", "content": "What is 1+1?"},
-        {"role": "assistant", "content": f"{reasoning_start}I think it's 2.{reasoning_end}{solution_start}2{solution_end}"},
-        {"role": "user", "content": "What is 2+2?"},
-    ], tokenize=False, add_generation_prompt=True)
+# =========================
+# （可选）极小 SFT 预对齐以加速 GRPO（来自原笔记本）
+# =========================
+def maybe_pre_sft(model, tokenizer):
+    if not ENABLE_PRE_SFT:
+        logger.info("跳过预SFT对齐（可将 ENABLE_PRE_SFT=True 开启）")
+        return
+    logger.info("开始进行一个小规模的SFT以对齐输出格式（可选步骤）...")
+    from datasets import load_dataset
+    from trl import SFTTrainer, SFTConfig
 
-    # Load dataset
-    logging.info("Loading dataset: %s (split=%s)", args.dataset_name, args.dataset_split)
-    hf_ds = load_dataset(args.dataset_name, split=args.dataset_split)
-    df = hf_ds.to_pandas()[["expected_answer", "problem", "generated_solution"]]
+    ds = load_dataset("unsloth/OpenMathReasoning-mini", split="cot").to_pandas()
+    ds = ds[["expected_answer", "problem", "generated_solution"]]
 
-    # Filter to numeric answers only (as in the notebook)
-    is_number = pd.to_numeric(pd.Series(df["expected_answer"]), errors="coerce").notnull()
-    df = df.iloc[np.where(is_number)[0]].copy()
-    logging.info("Dataset numeric-only size: %d", len(df))
+    # 尝试把答案转为数字，过滤失效项（与原示例一致）
+    is_number = np.array(pd.to_numeric(ds["expected_answer"], errors="coerce").notnull())
+    ds = ds.iloc[np.where(is_number)[0]]
 
-    # Format to chat messages
-    df["Messages"] = df.apply(
-        lambda x: build_messages_row(
-            x, system_prompt, reasoning_start, reasoning_end, solution_start, solution_end
-        ),
-        axis=1,
-    )
+    def format_dataset(x):
+        # 去除原有 <think> 标签，贴合我们自定义的标签
+        thoughts = x["generated_solution"].replace("<think>", "").replace("</think>", "").strip()
+        final_prompt = reasoning_start + thoughts + reasoning_end + \
+                       solution_start + x["expected_answer"] + solution_end
+        return [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": x["problem"]},
+            {"role": "assistant", "content": final_prompt},
+        ]
 
-    # Compute tokenized length and prune long ones
-    df["N"] = df["Messages"].apply(lambda msgs: len(tokenizer.apply_chat_template(msgs)))
-    max_tokens = int(args.max_seq_length * args.max_prompt_ratio)
-    pruned = df.loc[df["N"] <= max_tokens].copy()
-    logging.info(
-        "Filtered dataset by token length: kept %d / %d (<= %d tokens)",
-        len(pruned), len(df), max_tokens,
-    )
-
-    # Convert to HF Dataset with text field (string templated)
-    pruned["text"] = tokenizer.apply_chat_template(pruned["Messages"].values.tolist(), tokenize=False)
-    train_ds: Dataset = Dataset.from_pandas(pruned)
-
-    # Maybe init wandb
-    use_wandb = maybe_init_wandb(args)
-
-    # Build Trainer
-    bf16 = args.bf16 and torch.cuda.is_available()
-    report_to = "wandb" if use_wandb else "none"
-
-    training_args = SFTConfig(
-        output_dir=args.output_dir,
-        dataset_text_field="text",
-        per_device_train_batch_size=args.per_device_train_batch_size,
-        gradient_accumulation_steps=args.gradient_accumulation_steps,
-        warmup_steps=args.warmup_steps,
-        num_train_epochs=args.num_train_epochs,
-        learning_rate=args.learning_rate,
-        logging_steps=args.logging_steps,
-        optim=args.optim,
-        weight_decay=args.weight_decay,
-        lr_scheduler_type=args.lr_scheduler_type,
-        seed=args.seed,
-        report_to=report_to,
-        save_strategy=args.save_strategy,
-        save_steps=args.save_steps,
-        save_total_limit=args.save_total_limit,
-        bf16=bf16,
-    )
+    ds["Messages"] = ds.apply(format_dataset, axis=1)
+    ds["text"] = tokenizer.apply_chat_template(ds["Messages"].values.tolist(), tokenize=False)
+    from datasets import Dataset as HFDataset
+    ds_hf = HFDataset.from_pandas(ds)
 
     trainer = SFTTrainer(
         model=model,
         tokenizer=tokenizer,
-        train_dataset=train_ds,
-        args=training_args,
+        train_dataset=ds_hf,
+        args=SFTConfig(
+            dataset_text_field="text",
+            per_device_train_batch_size=1,
+            gradient_accumulation_steps=1,
+            warmup_steps=5,
+            num_train_epochs=2,
+            learning_rate=2e-4,
+            logging_steps=5,
+            optim="adamw_8bit",
+            weight_decay=0.01,
+            lr_scheduler_type="linear",
+            seed=SEED,
+            report_to="none",
+        ),
+    )
+    trainer.train()
+    del ds_hf; gc.collect()
+    torch.cuda.empty_cache()
+    logger.info("预SFT对齐完成。")
+
+# =========================
+# 格式正则与奖励函数（与原示例等价，中文注释）
+# =========================
+def build_reward_funcs(tokenizer):
+    # 允许 </SOLUTION> 后有可选的 EOS
+    solution_end_regex = r"</SOLUTION>[\s]{0,}(?:" + re.escape(tokenizer.eos_token) + ")?"
+
+    # 匹配：... <end_working_out> <SOLUTION>答案</SOLUTION> [EOS]
+    match_format = re.compile(
+        rf"{re.escape(reasoning_end)}.*?"
+        rf"{re.escape(solution_start)}(.+?){solution_end_regex}"
+        rf"[\s]{{0,}}$",
+        flags=re.MULTILINE | re.DOTALL,
     )
 
-    # W&B model watching (optional; can be memory-heavy). Guarded.
-    if use_wandb and wandb is not None:
-        try:
-            wandb.watch(model, log="gradients", log_freq=args.logging_steps)
-        except Exception as e:  # pragma: no cover
-            logging.warning("wandb.watch failed: %s", e)
+    # 1) 完全匹配格式奖励（匹配到完整结构 +3）
+    def match_format_exactly(completions, **kwargs):
+        scores = []
+        for completion in completions:
+            resp = completion[0]["content"]
+            score = 3.0 if match_format.search(resp) is not None else 0.0
+            scores.append(score)
+        return scores
 
-    logging.info("Starting training …")
-    trainer.train(resume_from_checkpoint=args.resume_from_checkpoint)
+    # 2) 近似匹配格式奖励（标签个数正确各 +0.5，错误则 -1）
+    def match_format_approximately(completions, **kwargs):
+        scores = []
+        for completion in completions:
+            resp = completion[0]["content"]
+            score = 0.0
+            # start_working_out 由模板自动添加，不再奖励
+            score += 0.5 if resp.count(reasoning_end)   == 1 else -1.0
+            score += 0.5 if resp.count(solution_start)  == 1 else -1.0
+            score += 0.5 if resp.count(solution_end)    == 1 else -1.0
+            scores.append(score)
+        return scores
 
-    # Save artifacts
-    logging.info("Saving model and tokenizer to: %s", args.output_dir)
-    os.makedirs(args.output_dir, exist_ok=True)
-    trainer.save_model(args.output_dir)  # saves adapter if LoRA
-    try:
-        tokenizer.save_pretrained(args.output_dir)
-    except Exception as e:  # pragma: no cover
-        logging.warning("Tokenizer save failed: %s", e)
+    # 3) 基于严格提取答案的奖励（和真值对比，相等 +5，strip后相等 +3.5，
+    #    否则尝试转浮点按比例给部分分，失败则扣分）
+    def check_answer(prompts, completions, answer, **kwargs):
+        responses = [c[0]["content"] for c in completions]
+        extracted = [
+            m.group(1) if (m := match_format.search(r)) is not None else None
+            for r in responses
+        ]
+        scores = []
+        for guess, true_answer in zip(extracted, answer):
+            score = 0.0
+            if guess is None:
+                scores.append(-2.0)
+                continue
+            if guess == true_answer:
+                score += 5.0
+            elif guess.strip() == true_answer.strip():
+                score += 3.5
+            else:
+                try:
+                    ratio = float(guess) / float(true_answer)
+                    if 0.9 <= ratio <= 1.1:
+                        score += 2.0
+                    elif 0.8 <= ratio <= 1.2:
+                        score += 1.5
+                    else:
+                        score -= 2.5
+                except:
+                    score -= 4.5
+            scores.append(score)
+        return scores
 
-    if use_wandb and wandb is not None:
-        wandb.finish()
+    # 4) 数字提取版（容忍“答案里带文字”，只抽取第一个数字进行对比）
+    match_numbers = re.compile(
+        re.escape(solution_start) + r".*?[\s]{0,}([-]?[\d\.\,]{1,})",
+        flags=re.MULTILINE | re.DOTALL,
+    )
 
-    logging.info("训练完成 ✅")
+    # 打印频率（便于观察模型输出）
+    PRINT_EVERY_STEPS = 5
+    printed_times = {"n": 0}
+
+    def check_numbers(prompts, completions, answer, **kwargs):
+        # 仅用第一个样本进行可读性日志打印
+        question = prompts[0][-1]["content"]
+        responses = [c[0]["content"] for c in completions]
+        extracted = [
+            m.group(1) if (m := match_numbers.search(r)) is not None else None
+            for r in responses
+        ]
+
+        if printed_times["n"] % PRINT_EVERY_STEPS == 0:
+            logger.info("\n" + "*"*20 +
+                        f"\n【题目】\n{question}\n【标准答案】\n{answer[0]}"
+                        f"\n【模型输出】\n{responses[0]}"
+                        f"\n【提取数字】\n{extracted[0]}\n" + "*"*20)
+        printed_times["n"] += 1
+
+        scores = []
+        for guess, true_answer in zip(extracted, answer):
+            if guess is None:
+                scores.append(-2.5)
+                continue
+            try:
+                ta = float(true_answer.strip())
+                ga = float(guess.strip().replace(",", ""))
+                scores.append(3.5 if ga == ta else -1.5)
+            except:
+                scores.append(0.0)
+        return scores
+
+    return match_format_exactly, match_format_approximately, check_answer, check_numbers
+
+# =========================
+# 主流程
+# =========================
+def main():
+    t0 = time.time()
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+    # -------- 1) 加载模型与Tokenizer（LoRA可训练） --------
+    logger.info("加载基座模型与Tokenizer：%s", MODEL_NAME)
+    model, tokenizer = FastLanguageModel.from_pretrained(
+        model_name=MODEL_NAME,
+        max_seq_length=MAX_SEQ_LEN,
+        load_in_4bit=False,                # LoRA 16bit 训练
+        fast_inference=False,               # 关闭内嵌 vLLM
+        max_lora_rank=LORA_RANK,
+        gpu_memory_utilization=GPU_MEMORY_UTIL,
+    )
+    model = FastLanguageModel.get_peft_model(
+        model,
+        r=LORA_RANK,
+        target_modules=[
+            "q_proj", "k_proj", "v_proj", "o_proj",
+            "gate_proj", "up_proj", "down_proj",
+        ],
+        lora_alpha=LORA_RANK * 2,          # *2 可略微加快训练
+        use_gradient_checkpointing="unsloth",
+        random_state=SEED,
+    )
+
+    # -------- 2) 设置 Chat Template --------
+    tokenizer = build_chat_template(tokenizer)
+    logger.info("Chat template 已设定完成。")
+
+    # （可选）做一个很小的 SFT 预对齐（非必须）
+    maybe_pre_sft(model, tokenizer)
+
+    # -------- 3) 加载 DAPO-Math-17k 数据集 --------
+    logger.info("加载数据集：%s (%s / %s)", HF_DATASET, HF_CONFIG, HF_SPLIT)
+    ds = load_dataset(HF_DATASET, HF_CONFIG, split=HF_SPLIT)
+    logger.info("数据集大小：%d", len(ds))
+    logger.info("样例 prompt：%s", ds[0]["prompt"][:200].replace("\n", " "))
+    logger.info("样例 solution：%s", ds[0]["solution"][:200].replace("\n", " "))
+
+    # -------- 4) 数据字段映射到我们需要的格式 --------
+    #    - prompt: 系统提示 + 用户题目
+    #    - answer: 直接使用数据集的 "solution"（该数据集无需像 GSM8K 提取 #### 后的答案）
+    def extract_hash_answer(text):
+        # Open R1 这个处理版数据无需截 ####，保留原答案
+        return text
+
+    ds = ds.map(lambda x: {
+        "prompt": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user",   "content": x["prompt"]},
+        ],
+        "answer": extract_hash_answer(x["solution"]),
+    })
+    logger.info("字段映射完成，示例：%s", json.dumps(ds[0]["prompt"][-1], ensure_ascii=False)[:300])
+
+    # -------- 5) 构建奖励函数 --------
+    reward_funcs = build_reward_funcs(tokenizer)
+    logger.info("奖励函数已构建：%s", [f.__name__ for f in reward_funcs])
+
+    # -------- 6) 统计长度并过滤超长样本（避免被截断影响训练） --------
+    logger.info("开始统计 token 长度并过滤最长的 10%% 样本...")
+    tokenized = ds.map(
+        lambda x: {"tokens": tokenizer.apply_chat_template(x["prompt"], add_generation_prompt=True, tokenize=True)},
+        batched=True,
+    )
+    tokenized = tokenized.map(lambda x: {"L": len(x["tokens"])})
+    Ls = np.array(tokenized["L"])
+    max_prompt_len_q90 = int(np.quantile(Ls, 0.9))
+    logger.info("90%% 分位的 prompt token 长度：%d", max_prompt_len_q90)
+    kept_indices = np.where(Ls <= max_prompt_len_q90)[0]
+    ds = ds.select(kept_indices.tolist())
+    logger.info("过滤后数据集大小：%d（移除了 top 10%% 超长样本）", len(ds))
+
+    # -------- 7) 计算 GRPO 的 prompt / completion 长度预算 --------
+    max_prompt_length = max_prompt_len_q90 + 1
+    max_completion_length = MAX_SEQ_LEN - max_prompt_length
+    logger.info("max_prompt_length=%d, max_completion_length=%d",
+                max_prompt_length, max_completion_length)
+
+    # -------- 8) vLLM 采样参数（用于生成候选解） --------
+    vllm_sampling_params = SamplingParams(
+        min_p=0.1,
+        top_p=1.0,
+        top_k=-1,
+        seed=SEED,
+        stop=[tokenizer.eos_token],
+        include_stop_str_in_output=True,
+    )
+
+    # -------- 9) 训练参数（GRPO） --------
+    training_args = GRPOConfig(
+        use_vllm = True,
+        vllm_sampling_params=vllm_sampling_params,
+        temperature=1.0,
+        learning_rate=LEARNING_RATE,
+        weight_decay=WEIGHT_DECAY,
+        warmup_ratio=WARMUP_RATIO,
+        lr_scheduler_type="linear",
+        optim="adamw_8bit",
+        logging_steps=1,
+        per_device_train_batch_size=BATCH_SIZE,
+        gradient_accumulation_steps=GRAD_ACCUM,
+        num_generations=NUM_GENERATIONS,
+        max_prompt_length=max_prompt_length,
+        max_completion_length=max_completion_length,
+        max_steps=MAX_STEPS,              # 或者使用 num_train_epochs=1 做完整轮次
+        save_steps=MAX_STEPS,
+        report_to="none",
+        output_dir=OUTPUT_DIR,
+        # 你也可以打开评估相关参数
+        # fp16_full_eval=True,
+        # per_device_eval_batch_size=4,
+        # eval_accumulation_steps=1,
+        # eval_strategy="steps",
+        # eval_steps=50,
+    )
+
+    # -------- 10) 构建并启动 GRPO 训练 --------
+    logger.info("开始 GRPO 训练...")
+    trainer = GRPOTrainer(
+        model=model,
+        processing_class=tokenizer,
+        reward_funcs=list(reward_funcs),
+        args=training_args,
+        train_dataset=ds,
+    )
+    trainer.train()
+    logger.info("GRPO 训练完成。")
+
+    # -------- 11) （可选）保存 LoRA 适配器 --------
+    logger.info("保存 LoRA 适配器到：%s", LORA_SAVE_DIR)
+    model.save_lora(LORA_SAVE_DIR)
+    logger.info("全部完成，用时 %.1f 分钟。", (time.time() - t0) / 60.0)
+
+    # 提醒：可以用 model.load_lora(LORA_SAVE_DIR) 在推理时加载
+    logger.info("提示：推理时可调用 model.load_lora('%s') 进行 LoRA 加载。", LORA_SAVE_DIR)
 
 
 if __name__ == "__main__":

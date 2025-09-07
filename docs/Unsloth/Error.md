@@ -241,3 +241,101 @@ Traceback (most recent call last):
     values = [layer.max_batch_size for layer in self.layers]
               ^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'StaticLayer' object has no attribute 'max_batch_size'
+
+# 报错 同一进程多次load模型
+INFO 09-07 11:23:32 [gpu_model_runner.py:1875] Loading model from scratch...
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/unsloth_zoo/vllm_utils.py", line 1504, in load_vllm
+[rank0]:     llm = LLM(**engine_args)
+[rank0]:           ^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/llm.py", line 273, in __init__
+[rank0]:     self.llm_engine = LLMEngine.from_engine_args(
+[rank0]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/engine/llm_engine.py", line 497, in from_engine_args
+[rank0]:     return engine_cls.from_vllm_config(
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/llm_engine.py", line 126, in from_vllm_config
+[rank0]:     return cls(vllm_config=vllm_config,
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/llm_engine.py", line 103, in __init__
+[rank0]:     self.engine_core = EngineCoreClient.make_client(
+[rank0]:                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core_client.py", line 79, in make_client
+[rank0]:     return InprocClient(vllm_config, executor_class, log_stats)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core_client.py", line 235, in __init__
+[rank0]:     self.engine_core = EngineCore(*args, **kwargs)
+[rank0]:                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 77, in __init__
+[rank0]:     self.model_executor = executor_class(vllm_config)
+[rank0]:                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/executor/executor_base.py", line 53, in __init__
+[rank0]:     self._init_executor()
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/executor/uniproc_executor.py", line 49, in _init_executor
+[rank0]:     self.collective_rpc("load_model")
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/executor/uniproc_executor.py", line 58, in collective_rpc
+[rank0]:     answer = run_method(self.driver_worker, method, args, kwargs)
+[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/utils/__init__.py", line 2985, in run_method
+[rank0]:     return func(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu_worker.py", line 201, in load_model
+[rank0]:     self.model_runner.load_model(eep_scale_up=eep_scale_up)
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu_model_runner.py", line 1876, in load_model
+[rank0]:     self.model = model_loader.load_model(
+[rank0]:                  ^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/model_executor/model_loader/base_loader.py", line 44, in load_model
+[rank0]:     model = initialize_model(vllm_config=vllm_config,
+[rank0]:             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/model_executor/model_loader/utils.py", line 67, in initialize_model
+[rank0]:     return model_class(vllm_config=vllm_config, prefix=prefix)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/qwen3.py", line 271, in __init__
+[rank0]:     self.model = Qwen3Model(vllm_config=vllm_config,
+[rank0]:                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/compilation/decorators.py", line 183, in __init__
+[rank0]:     old_init(self, vllm_config=vllm_config, prefix=prefix, **kwargs)
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/qwen3.py", line 243, in __init__
+[rank0]:     super().__init__(vllm_config=vllm_config,
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/compilation/decorators.py", line 183, in __init__
+[rank0]:     old_init(self, vllm_config=vllm_config, prefix=prefix, **kwargs)
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/qwen2.py", line 316, in __init__
+[rank0]:     self.start_layer, self.end_layer, self.layers = make_layers(
+[rank0]:                                                     ^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/utils.py", line 640, in make_layers
+[rank0]:     maybe_offload_to_cpu(layer_fn(prefix=f"{prefix}.{idx}"))
+[rank0]:                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/qwen2.py", line 318, in <lambda>
+[rank0]:     lambda prefix: decoder_layer_type(config=config,
+[rank0]:                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/qwen3.py", line 174, in __init__
+[rank0]:     self.self_attn = Qwen3Attention(
+[rank0]:                      ^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/qwen3.py", line 117, in __init__
+[rank0]:     self.attn = Attention(self.num_heads,
+[rank0]:                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/attention/layer.py", line 193, in __init__
+[rank0]:     raise ValueError(f"Duplicate layer name: {prefix}")
+[rank0]: ValueError: Duplicate layer name: model.layers.0.self_attn.attn
+
+[rank0]: During handling of the above exception, another exception occurred:
+
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/workspace/verl/docs/Unsloth/train_GRPO.py", line 431, in <module>
+[rank0]:     main()
+[rank0]:   File "/workspace/verl/docs/Unsloth/train_GRPO.py", line 298, in main
+[rank0]:     model, tokenizer = FastLanguageModel.from_pretrained(
+[rank0]:                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/unsloth/models/loader.py", line 402, in from_pretrained
+[rank0]:     model, tokenizer = dispatch_model.from_pretrained(
+[rank0]:                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/unsloth/models/qwen3.py", line 420, in from_pretrained
+[rank0]:     return FastLlamaModel.from_pretrained(
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/unsloth/models/llama.py", line 2041, in from_pretrained
+[rank0]:     llm = load_vllm(**load_vllm_kwargs)
+[rank0]:           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/unsloth_zoo/vllm_utils.py", line 1516, in load_vllm
+[rank0]:     raise RuntimeError(error)
+[rank0]: RuntimeError: Duplicate layer name: model.layers.0.self_attn.attn
+[rank0]:[W907 11:23:36.468842731 ProcessGroupNCCL.cpp:1479] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())

@@ -21,6 +21,17 @@ python unsloth_thinking.py
 python unsloth_GRPO.py
 使用的模型是： unsloth/Qwen3-4B-Base
 
+# 显卡1上启动vllm
+CUDA_VISIBLE_DEVICES=1 \
+trl vllm-serve --model unsloth/Qwen3-4B-Base \
+  --tensor-parallel-size 1 \
+  --data-parallel-size 1 \
+  --gpu-memory-utilization 0.6 \
+  --max-model-len 2048 \
+  --host 127.0.0.1 --port 8000
+
+
+
 ## 对比SFT和Thinking
 两段代码的“骨架”几乎一样（Unsloth + LoRA + TRL 的 SFT），但**训练目标、数据与模板**完全不同，导致学到的能力、输出风格和部署注意点都不一样。一句话：
 **上面是通用指令跟随 SFT；下面是链式思维（CoT）/推理风格 SFT。**
@@ -115,4 +126,5 @@ python unsloth_GRPO.py
 * **一致性**：训练用什么模板，就用什么模板推理；否则标记对不上，输出会奇怪。
 * **显存与步长**：Thinking 的样本更长，必要时减小 `per_device_train_batch_size` 或增加 `gradient_accumulation_steps`，并留意 `max_seq_length`。
 * **只训答案**：若你不想让模型学会“吐思维过程”，在数据阶段剥离思维段，或在遮蔽规则上单独屏蔽“思维标记”到最终答案之间的内容。
+
 
