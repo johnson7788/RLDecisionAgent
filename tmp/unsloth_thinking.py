@@ -5,7 +5,6 @@
 # @Author: johnson
 # @Contact : github: johnson7788
 # @Desc  :
-
 # @Desc  : Qwen3 Thinking 训练（参考官方 notebook），复用 unsloth_core
 
 from __future__ import annotations
@@ -60,7 +59,7 @@ def parse_args() -> TrainConfig:
     # Thinking 专用 chat 模板
     parser.add_argument("--chat_template", type=str, default="qwen3-thinking")
     parser.add_argument("--dataset_name", type=str, default="unsloth/OpenMathReasoning-mini")
-    parser.add_argument("--dataset_split", type=str, default=TrainConfig.dataset_split)
+    parser.add_argument("--dataset_split", type=str, default="cot")
 
     parser.add_argument("--per_device_train_batch_size", type=int, default=TrainConfig.per_device_train_batch_size)
     parser.add_argument("--gradient_accumulation_steps", type=int, default=TrainConfig.gradient_accumulation_steps)

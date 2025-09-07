@@ -1,47 +1,59 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# @Date  : 2025/9/7 08:49
-# @File  : inference_sft.py
+# @Date  : 2025/9/7 09:20
+# @File  : inference_thinking.py
 # @Author: johnson
 # @Contact : github: johnson7788
-# @Desc  : 复用 unsloth_core 的推理脚本：自动识别 LoRA/完整模型，复用 chat template，测试训练好的模型
+# @Desc  : 基于 inference_sft.py 的推理脚本，适配 Qwen3-* Thinking 模型
+#          - 自动识别 LoRA/完整模型与最新 checkpoint
+#          - 复用 unsloth_core 配置与 chat template（qwen3-thinking）
+#          - 可选隐藏/剥离 <think> 思维段落，仅输出最终回答
 """
-## 用法示例
+用法示例
 
-### 1）使用最终输出目录（已保存 tokenizer）
+1）使用最终输出目录（已保存 tokenizer）
 
 ```bash
-python inference_sft.py \
-  --ckpt_dir ./outputs/qwen3_4b_sft_lora \
-  --prompt "请用中文解释量子纠缠是什么？" \
+python inference_thinking.py \
+  --ckpt_dir ./outputs/qwen3_4b_thinking_lora \
+  --prompt "一道经典鸡兔同笼题：鸡和兔共有 20 个头，50 条腿，各有多少只？" \
   --max_new_tokens 256
 ```
 
-### 2）直接指定最新 checkpoint-\*（脚本也会自动挑最新）
+2）直接指定某个 checkpoint（脚本也会自动挑最新）
 
 ```bash
-python inference_sft.py \
-  --ckpt_dir ./outputs/qwen3_4b_sft_lora/checkpoint-120 \
-  --prompt "北京周末亲子活动推荐？"
+python inference_thinking.py \
+  --ckpt_dir ./outputs/qwen3_4b_thinking_lora/checkpoint-120 \
+  --prompt "Solve: (x-3)^2 = 25"
 ```
 
-### 3）当 `--ckpt_dir` 是 LoRA 适配器目录时（需要 `peft`）
+3）当 `--ckpt_dir` 是 LoRA 适配器目录时（需要 `peft`）
 
 ```bash
-python inference_sft.py \
-  --ckpt_dir ./outputs/qwen3_4b_sft_lora \
-  --base_model unsloth/Qwen3-4B-Instruct-2507 \
-  --prompt "Explain attention mechanism."
+python inference_thinking.py \
+  --ckpt_dir ./outputs/qwen3_4b_thinking_lora \
+  --base_model unsloth/Qwen3-4B-Thinking-2507 \
+  --prompt "Explain breadth-first search."
 ```
 
-### 4）合并 LoRA，得到纯模型权重（更快推理）
+4）合并 LoRA，得到纯模型权重（更快推理）
 
 ```bash
-python inference_sft.py \
-  --ckpt_dir ./outputs/qwen3_4b_sft_lora \
-  --base_model unsloth/Qwen3-4B-Instruct-2507 \
+python inference_thinking.py \
+  --ckpt_dir ./outputs/qwen3_4b_thinking_lora \
+  --base_model unsloth/Qwen3-4B-Thinking-2507 \
   --merge_lora \
-  --prompt "写一首七言绝句。"
+  --prompt "请给一道中考几何压轴题并详细解答。"
+```
+
+5）隐藏思维过程，仅打印最终回答（非流式）
+
+```bash
+python inference_thinking.py \
+  --ckpt_dir ./outputs/qwen3_4b_thinking_lora \
+  --prompt "2025 年 3 月共有多少个星期日？" \
+  --strip_thought --no_stream
 ```
 """
 
@@ -123,12 +135,12 @@ def _find_latest_checkpoint(root: str) -> Optional[str]:
 # ==============================
 
 def parse_args(cfg_defaults: TrainConfig) -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="Unsloth SFT 推理脚本（复用训练公共模块）")
+    p = argparse.ArgumentParser(description="Unsloth Thinking 推理脚本（复用训练公共模块）")
 
     # 权重与设备
     p.add_argument("--ckpt_dir", type=str, default=cfg_defaults.output_dir,
                    help="训练产物目录（可为最终输出目录或 checkpoint-* 子目录）。")
-    p.add_argument("--base_model", type=str, default=cfg_defaults.model_name,
+    p.add_argument("--base_model", type=str, default="unsloth/Qwen3-4B-Thinking-2507",
                    help="当 --ckpt_dir 为 LoRA 适配器目录时，用于加载的基础模型名/路径。")
     p.add_argument("--max_seq_length", type=int, default=cfg_defaults.max_seq_length)
     p.add_argument("--load_in_4bit", action="store_true", default=cfg_defaults.load_in_4bit)
@@ -138,7 +150,7 @@ def parse_args(cfg_defaults: TrainConfig) -> argparse.Namespace:
     p.add_argument("--merge_lora", action="store_true", help="加载 LoRA 后将权重合并并卸载适配器（减少推理开销）")
 
     # 模板/随机种子
-    p.add_argument("--chat_template", type=str, default=cfg_defaults.chat_template)
+    p.add_argument("--chat_template", type=str, default="qwen3-thinking")
     p.add_argument("--seed", type=int, default=cfg_defaults.seed)
 
     # 生成参数
@@ -151,6 +163,10 @@ def parse_args(cfg_defaults: TrainConfig) -> argparse.Namespace:
     p.add_argument("--top_k", type=int, default=20)
     p.add_argument("--no_stream", action="store_true", help="关闭流式输出")
 
+    # Thinking 专用输出控制
+    p.add_argument("--strip_thought", action="store_true",
+                   help="剥离思维过程（<think>/思考段落），仅打印最终回答。会强制使用非流式模式。")
+
     args = p.parse_args()
 
     # 布尔修正
@@ -161,6 +177,10 @@ def parse_args(cfg_defaults: TrainConfig) -> argparse.Namespace:
     # 仅允许二选一
     if args.load_in_4bit and args.load_in_8bit:
         args.load_in_8bit = False  # 与训练一致，4bit 优先
+
+    # 非流式剥离思维
+    if args.strip_thought and not args.no_stream:
+        args.no_stream = True  # 需要后处理文本
 
     return args
 
@@ -180,9 +200,9 @@ def _load_messages(args: argparse.Namespace) -> List[dict]:
     if args.prompt:
         return [{"role": "user", "content": args.prompt.strip()}]
 
-    # 默认示例
+    # 默认示例：鼓励使用思维链
     return [
-        {"role": "user", "content": "Continue the sequence: 1, 1, 2, 3, 5, 8,"}
+        {"role": "user", "content": "解方程：2x + 3 = 15。请给出推理过程与最终答案。"}
     ]
 
 
@@ -281,6 +301,48 @@ def build_infer_model_and_tokenizer(args: argparse.Namespace, logger: logging.Lo
     return model, tokenizer
 
 
+# ==============================
+# 思维段落处理
+# ==============================
+
+_THINK_PATTERNS = [
+    # 常见 <think>…</think>
+    (re.compile(r"<\s*think\s*>[\s\S]*?<\s*/\s*think\s*>", re.IGNORECASE), ""),
+    # Qwen3 Thinking 类模板：<|assistant_thought|> ... （直到下一个 <|im_start|>assistant 或结尾）
+    (re.compile(r"<\|assistant_thought\|>[\s\S]*?(?=(<\|im_start\|>assistant|$))", re.IGNORECASE), ""),
+    # 其它可能的思维标记
+    (re.compile(r"<\s*reasoning\s*>[\s\S]*?<\s*/\s*reasoning\s*>", re.IGNORECASE), ""),
+    (re.compile(r"【\s*思考过程\s*】[\s\S]*?【\s*/?思考过程\s*】", re.IGNORECASE), ""),
+]
+
+_SPECIAL_TOKS = [
+    re.compile(r"<\|im_start\|>assistant\s*", re.IGNORECASE),
+    re.compile(r"<\|im_end\|>\s*", re.IGNORECASE),
+]
+
+
+def strip_thinking_blocks(text: str) -> str:
+    """剥离常见思维链标记块，保留最终答案文本。"""
+    cleaned = text
+    for pat, repl in _THINK_PATTERNS:
+        cleaned = pat.sub(repl, cleaned)
+    # 清理模板特殊 token（可选）
+    for pat in _SPECIAL_TOKS:
+        cleaned = pat.sub("", cleaned)
+    # 常见残留分隔
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
+    return cleaned
+
+
+def _extract_generated_segment(full_decoded: str, prompt_text: str) -> str:
+    """从完整解码文本中抽取新生成的片段。与 inference_sft.py 行为一致。"""
+    return full_decoded[len(prompt_text):]
+
+
+# ==============================
+# 推理执行
+# ==============================
+
 def run_inference(model, tokenizer, messages: List[dict], args: argparse.Namespace):
     prompt_text = tokenizer.apply_chat_template(
         messages,
@@ -312,8 +374,9 @@ def run_inference(model, tokenizer, messages: List[dict], args: argparse.Namespa
     # 非流式情况下打印一次性输出
     if args.no_stream:
         decoded = tokenizer.decode(out[0], skip_special_tokens=False)
-        # 只打印新生成片段
-        gen_text = decoded[len(prompt_text):]
+        gen_text = _extract_generated_segment(decoded, prompt_text)
+        if args.strip_thought:
+            gen_text = strip_thinking_blocks(gen_text)
         print(gen_text)
 
 
@@ -325,7 +388,7 @@ def main():
     cfg_defaults = TrainConfig()  # 直接复用训练端默认配置，避免重复定义
     args = parse_args(cfg_defaults)
 
-    logger = setup_logging(output_dir=os.path.join(args.ckpt_dir, "logs_infer"))
+    logger = setup_logging(output_dir=os.path.join(args.ckpt_dir, "logs_infer_thinking"))
     set_seed(args.seed, logger)
     log_env_info(logger)
 
