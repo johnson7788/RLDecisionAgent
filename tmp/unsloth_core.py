@@ -114,7 +114,7 @@ class TrainConfig:
     wandb_log_model: bool | str = False  # True/False/"checkpoint"/"end"
 
     # 输出/保存
-    output_dir: str = "./outputs/qwen3_4b_lora"
+    output_dir: str = "./outputs/qwen3_4b_sft_lora"
     save_steps: Optional[int] = 2  # 定期保存
     save_total_limit: Optional[int] = None
     logging_dir: Optional[str] = None  # 自定义日志目录
