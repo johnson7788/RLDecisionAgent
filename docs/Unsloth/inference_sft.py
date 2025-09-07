@@ -43,6 +43,7 @@ python inference_sft.py \
   --merge_lora \
   --prompt "写一首七言绝句。"
 ```
+
 """
 
 from __future__ import annotations

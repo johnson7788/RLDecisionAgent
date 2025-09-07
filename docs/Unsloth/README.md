@@ -20,7 +20,14 @@ python train_sft.py --data_files xiaosen_sft.jsonl
 使用的模型是： unsloth/Qwen3-4B-Instruct-2507
 
 ## SFT训练后的模型测试
+1) 测试mlabonne/FineTome-100k数据集
 python inference_sft.py
+2)测试自定义数据集
+```bash
+python inference_sft.py \
+  --ckpt_dir ./outputs/qwen3_4b_sft_lora \
+  --prompt "你是谁"
+```
 
 # Thinking模型训练
 [train_thinking.py](train_thinking.py)   # 数据处理并调用unsloth_core.py进行训练
