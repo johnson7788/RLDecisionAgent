@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import json
 import dotenv
+import logging
 from dataclasses import asdict
 from datasets import load_dataset, Dataset
 from unsloth_core import (
@@ -40,6 +41,7 @@ dotenv.load_dotenv()
 
 
 def parse_bool_flag(parser: argparse.ArgumentParser, true_flag: str, false_flag: str, default: bool):
+    """同时支持 --flag / --no_flag 的布尔开关。返回存入 args 的目标名。"""
     dest = true_flag.replace("--", "").replace("-", "_")
     group = parser.add_mutually_exclusive_group()
     group.add_argument(true_flag, dest=dest, action="store_true")
@@ -51,7 +53,7 @@ def parse_bool_flag(parser: argparse.ArgumentParser, true_flag: str, false_flag:
 def parse_args() -> TrainConfig:
     parser = argparse.ArgumentParser(description="Unsloth SFT 训练（unsloth_core 驱动）")
 
-    # 常用项（默认值来自 TrainConfig）
+    # 仅列出常用项；其余请直接在 dataclass 默认值中改
     parser.add_argument("--model_name", type=str, default=TrainConfig.model_name)
     parser.add_argument("--max_seq_length", type=int, default=TrainConfig.max_seq_length)
     parse_bool_flag(parser, "--load_in_4bit", "--no_load_in_4bit", default=TrainConfig.load_in_4bit)
@@ -84,8 +86,8 @@ def parse_args() -> TrainConfig:
     parser.add_argument("--save_steps", type=int, default=TrainConfig.save_steps)
     parser.add_argument("--save_total_limit", type=int, default=None)
 
-    # W&B
-    parse_bool_flag(parser, "--use_wandb", "--no_use_wandb", default=False)
+    # W&B 相关开关
+    parse_bool_flag(parser, "--use_wandb", "--no_use_wandb", default=TrainConfig.use_wandb)
     parser.add_argument("--wandb_project", type=str, default=TrainConfig.wandb_project)
     parser.add_argument("--wandb_entity", type=str, default=TrainConfig.wandb_entity)
     parser.add_argument("--wandb_run_name", type=str, default=TrainConfig.wandb_run_name)
@@ -95,7 +97,7 @@ def parse_args() -> TrainConfig:
     parser.add_argument("--wandb_dir", type=str, default=TrainConfig.wandb_dir)
     parser.add_argument("--wandb_notes", type=str, default=TrainConfig.wandb_notes)
     parser.add_argument("--wandb_log_model", type=str, default=str(TrainConfig.wandb_log_model))
-    parser.add_argument("--wandb_tags", type=str, nargs="*", default=None)
+    parser.add_argument("--wandb_tags", type=str, nargs="*", default=None, help="空格分隔的 tag 列表")
 
     args = parser.parse_args()
 
@@ -140,7 +142,7 @@ def parse_args() -> TrainConfig:
         wandb_project=args.wandb_project,
         wandb_entity=args.wandb_entity,
         wandb_run_name=args.wandb_run_name,
-        wandb_tags=args.wandb_tags,
+        wandb_tags=args.wandb_tags or TrainConfig().wandb_tags,
         wandb_dir=args.wandb_dir,
         wandb_group=args.wandb_group,
         wandb_job_type=args.wandb_job_type,
@@ -187,23 +189,46 @@ def prepare_dataset_generic(cfg: TrainConfig, tokenizer, logger: logging.Logger)
 def main(cfg: TrainConfig | None = None) -> None:
     cfg = cfg or TrainConfig()
 
-    logger = setup_logging(cfg.output_dir)
+    # 日志
+    logger = setup_logging(cfg.output_dir, cfg.logging_dir)
+
+    # 打印配置
     logger.info("===== 训练配置 =====")
     logger.info(json.dumps(asdict(cfg), ensure_ascii=False, indent=2))
 
+    # 随机种子 & 环境信息
     set_seed(cfg.seed, logger)
     log_env_info(logger)
 
+    # 初始化 W&B（尽早建立 run，记录环境/配置）
     run = setup_wandb(cfg, logger)
 
     try:
+        # 构建模型与 tokenizer
         model, tokenizer = build_model_and_tokenizer(cfg, logger)
+
+        # 准备数据集
         dataset = prepare_dataset_generic(cfg, tokenizer, logger)
+
+        # 构建 Trainer
         trainer = build_trainer(model, tokenizer, dataset, cfg, logger)
+
+        # 训练并报告
         stats = train_and_report(trainer, logger)
-        save_model(trainer, tokenizer, cfg.output_dir, logger, log_artifact=(cfg.wandb_log_model or False))
+
+        # 保存模型 & 可选上传 artifact（别名：final）
+        save_model(
+            trainer,
+            tokenizer,
+            cfg.output_dir,
+            logger,
+            log_artifact=(cfg.wandb_log_model if cfg.wandb_log_model else False),
+        )
+
+        # 成功收尾
         extra = {"metrics/train_runtime_sec": float(stats.metrics.get("train_runtime", 0.0))}
         wandb_on_success(extra_summary=extra, exit_code=0)
+
     except Exception as e:
         logger.exception(f"训练过程中发生错误: {e}")
         wandb_on_error(e, logger)
