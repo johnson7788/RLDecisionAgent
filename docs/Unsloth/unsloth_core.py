@@ -302,7 +302,7 @@ def build_model_and_tokenizer(cfg: TrainConfig, logger: logging.Logger):
 # 数据集准备
 # ==============================
 
-def clip_display_text(s: str, limit: int = 1000) -> str:
+def clip_display_text(s: str, limit: int = 4000) -> str:
     if s is None:
         return "None"
     s = str(s)
