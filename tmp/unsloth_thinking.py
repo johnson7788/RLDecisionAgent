@@ -8,6 +8,7 @@
 # @Desc  : Qwen3 Thinking 训练（参考官方 notebook），复用 unsloth_core
 
 from __future__ import annotations
+import time
 import argparse
 import json
 import dotenv
@@ -149,36 +150,56 @@ def parse_args() -> TrainConfig:
     return cfg
 
 def prepare_dataset_openmath_thinking(cfg: TrainConfig, tokenizer, logger: logging.Logger, *, split: str = "cot") -> Dataset:
-    """Qwen Thinking 官方示例所用的 OpenMathReasoning-mini → conversations → text。"""
-    logger.info(f"加载数据集: {cfg.dataset_name} [{cfg.dataset_split}] …")
+    """OpenMathReasoning-mini → conversations → text"""
+    t0 = time.perf_counter()
+    logger.info("加载数据集: %s [%s] …", cfg.dataset_name, cfg.dataset_split)
     ds = load_dataset(cfg.dataset_name, split=cfg.dataset_split)
+    logger.info("加载完成: %d 行，字段: %s", len(ds), ds.column_names)
 
-    def generate_conversation(examples):
-        problems = examples["problem"]
-        solutions = examples["generated_solution"]
-        conversations = []
-        for p, s in zip(problems, solutions):
-            conversations.append([
-                {"role": "user", "content": p},
-                {"role": "assistant", "content": s},
-            ])
-        return {"conversations": conversations}
+    # 轻量校验
+    for col in ("problem", "generated_solution"):
+        if col not in ds.column_names:
+            raise KeyError(f"缺少必需字段: {col}")
 
-    ds = ds.map(generate_conversation, batched=True, desc="build_conversations")
+    # 简短预览（原始）
+    if len(ds) > 0:
+        logger.info("原始样本#0.problem: %s", clip_display_text(ds[0]["problem"]))
+        logger.info("原始样本#0.solution: %s", clip_display_text(ds[0]["generated_solution"]))
 
-    def formatting_prompts_func(examples):
-        convos = examples["conversations"]
-        texts = [
-            tokenizer.apply_chat_template(convo, tokenize=False, add_generation_prompt=False)
-            for convo in convos
-        ]
+    # 构造 conversations
+    def _to_conversations(batch):
+        convs = []
+        for p, s in zip(batch["problem"], batch["generated_solution"]):
+            if isinstance(p, str) and isinstance(s, str) and p.strip() and s.strip():
+                convs.append([{"role": "user", "content": p.strip()},
+                              {"role": "assistant", "content": s.strip()}])
+        return {"conversations": convs}
+
+    t1 = time.perf_counter()
+    ds = ds.map(_to_conversations, batched=True, desc="build_conversations")
+    logger.info("build_conversations 完成（用时 %.2fs）", time.perf_counter() - t1)
+
+    # 预览（对话）
+    if len(ds) > 0 and "conversations" in ds.column_names:
+        c0 = ds[0]["conversations"]
+        logger.info("对话样本#0.user: %s", clip_display_text(c0[0]["content"]))
+        logger.info("对话样本#0.assistant: %s", clip_display_text(c0[1]["content"]))
+
+    # 应用 chat 模板
+    def _format(batch):
+        texts = [tokenizer.apply_chat_template(c, tokenize=False, add_generation_prompt=False)
+                 for c in batch["conversations"]]
         return {"text": texts}
 
-    ds = ds.map(formatting_prompts_func, batched=True, desc="apply_chat_template")
-    try:
-        logger.info("样本校验: %s", clip_display_text(ds[0]["text"]))
-    except Exception:
-        pass
+    t2 = time.perf_counter()
+    ds = ds.map(_format, batched=True, desc="apply_chat_template")
+    logger.info("apply_chat_template 完成（用时 %.2fs）", time.perf_counter() - t2)
+
+    # 预览（最终文本）
+    if len(ds) > 0 and "text" in ds.column_names:
+        logger.info("模板化样本#0.text: %s", clip_display_text(ds[0]["text"]))
+
+    logger.info("数据集准备完成：%d 行，总耗时 %.2fs", len(ds), time.perf_counter() - t0)
     return ds
 
 def main(cfg: TrainConfig | None = None) -> None:

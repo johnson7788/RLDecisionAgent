@@ -138,7 +138,7 @@ def parse_args(cfg_defaults: TrainConfig) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Unsloth Thinking 推理脚本（复用训练公共模块）")
 
     # 权重与设备
-    p.add_argument("--ckpt_dir", type=str, default=cfg_defaults.output_dir,
+    p.add_argument("--ckpt_dir", type=str, default="outputs/qwen3_4b_thinking_lora",
                    help="训练产物目录（可为最终输出目录或 checkpoint-* 子目录）。")
     p.add_argument("--base_model", type=str, default="unsloth/Qwen3-4B-Thinking-2507",
                    help="当 --ckpt_dir 为 LoRA 适配器目录时，用于加载的基础模型名/路径。")
