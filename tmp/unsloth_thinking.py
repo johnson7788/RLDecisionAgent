@@ -11,6 +11,7 @@
 from __future__ import annotations
 import argparse
 import json
+import dotenv
 from dataclasses import asdict
 from datasets import load_dataset, Dataset
 from unsloth_core import (
@@ -24,7 +25,7 @@ from unsloth_core import (
     train_and_report,
     save_model,
 )
-
+dotenv.load_dotenv()
 
 def parse_args() -> TrainConfig:
     parser = argparse.ArgumentParser(description="Qwen3-4B-Thinking SFT（unsloth_core 驱动）")

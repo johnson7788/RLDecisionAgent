@@ -14,6 +14,7 @@
 from __future__ import annotations
 import argparse
 import json
+import dotenv
 from dataclasses import asdict
 from datasets import load_dataset, Dataset
 from unsloth_core import (
@@ -35,6 +36,7 @@ from unsloth.chat_templates import (
     standardize_data_formats,
     train_on_responses_only,
 )
+dotenv.load_dotenv()
 
 
 def parse_bool_flag(parser: argparse.ArgumentParser, true_flag: str, false_flag: str, default: bool):
