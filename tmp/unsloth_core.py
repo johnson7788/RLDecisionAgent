@@ -91,7 +91,7 @@ class TrainConfig:
     gradient_accumulation_steps: int = 4
     warmup_steps: int = 5
     max_steps: int = 60  # 或使用 num_train_epochs
-    num_train_epochs: Optional[int] = 4
+    num_train_epochs: Optional[int] = 2
     learning_rate: float = 2e-4
     logging_steps: int = 1
     optim: str = "adamw_8bit"  # 需 bitsandbytes
