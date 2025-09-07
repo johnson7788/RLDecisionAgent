@@ -339,3 +339,78 @@ INFO 09-07 11:23:32 [gpu_model_runner.py:1875] Loading model from scratch...
 [rank0]:     raise RuntimeError(error)
 [rank0]: RuntimeError: Duplicate layer name: model.layers.0.self_attn.attn
 [rank0]:[W907 11:23:36.468842731 ProcessGroupNCCL.cpp:1479] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+
+
+# 需要在training_args = GRPOConfig(， 需要设置vllm_mode和vllm_server_base_url才行
+use_vllm = True,
+vllm_mode="server",
+vllm_server_base_url="http://127.0.0.1:8000",
+
+    return super().__getattr__(name)  # defer to nn.Module's logic
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1928, in __getattr__
+    raise AttributeError(
+AttributeError: 'PeftModelForCausalLM' object has no attribute 'vllm_engine'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/dist-packages/peft/tuners/lora/model.py", line 359, in __getattr__
+    return super().__getattr__(name)  # defer to nn.Module's logic
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1928, in __getattr__
+    raise AttributeError(
+AttributeError: 'LoraModel' object has no attribute 'vllm_engine'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/workspace/verl/docs/Unsloth/train_GRPO.py", line 432, in <module>
+    main()
+  File "/workspace/verl/docs/Unsloth/train_GRPO.py", line 412, in main
+    trainer = GRPOTrainer(
+  File "/usr/local/lib/python3.10/dist-packages/unsloth/trainer.py", line 209, in new_init
+    original_init(self, *args, **kwargs)
+  File "/workspace/verl/docs/Unsloth/unsloth_compiled_cache/UnslothGRPOTrainer.py", line 2896, in __init__
+    super().__init__(
+  File "/workspace/verl/docs/Unsloth/unsloth_compiled_cache/UnslothGRPOTrainer.py", line 1438, in __init__
+    self.llm = model.vllm_engine
+  File "/usr/local/lib/python3.10/dist-packages/peft/peft_model.py", line 797, in __getattr__
+    return getattr(self.base_model, name)
+  File "/usr/local/lib/python3.10/dist-packages/peft/tuners/lora/model.py", line 363, in __getattr__
+    return getattr(self.model, name)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1928, in __getattr__
+    raise AttributeError(
+AttributeError: 'Qwen3ForCausalLM' object has no attribute 'vllm_engine'
+
+
+#
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/dist-packages/peft/peft_model.py", line 793, in __getattr__
+    return super().__getattr__(name)  # defer to nn.Module's logic
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1928, in __getattr__
+    raise AttributeError(
+AttributeError: 'PeftModelForCausalLM' object has no attribute 'save_lora'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/dist-packages/peft/tuners/lora/model.py", line 359, in __getattr__
+    return super().__getattr__(name)  # defer to nn.Module's logic
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1928, in __getattr__
+    raise AttributeError(
+AttributeError: 'LoraModel' object has no attribute 'save_lora'
+
+During handling of the above exception, another exception occurred:
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/workspace/verl/docs/Unsloth/train_GRPO.py", line 434, in <module>
+    main()
+  File "/workspace/verl/docs/Unsloth/train_GRPO.py", line 426, in main
+    model.save_lora(LORA_SAVE_DIR)
+  File "/usr/local/lib/python3.10/dist-packages/peft/peft_model.py", line 797, in __getattr__
+    return getattr(self.base_model, name)
+  File "/usr/local/lib/python3.10/dist-packages/peft/tuners/lora/model.py", line 363, in __getattr__
+    return getattr(self.model, name)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1928, in __getattr__
+    raise AttributeError(
+AttributeError: 'Qwen3ForCausalLM' object has no attribute 'save_lora'

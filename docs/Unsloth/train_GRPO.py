@@ -423,7 +423,11 @@ def main():
 
     # -------- 11) （可选）保存 LoRA 适配器 --------
     logger.info("保存 LoRA 适配器到：%s", LORA_SAVE_DIR)
-    model.save_lora(LORA_SAVE_DIR)
+    os.makedirs(LORA_SAVE_DIR, exist_ok=True)
+    logger.info(f"Unsloth 保存模型 Trainer.save_model")
+    trainer.save_model(LORA_SAVE_DIR)
+    tokenizer.save_pretrained(LORA_SAVE_DIR)
+    logger.info(f"模型已保存至: {LORA_SAVE_DIR}")
     logger.info("全部完成，用时 %.1f 分钟。", (time.time() - t0) / 60.0)
 
     # 提醒：可以用 model.load_lora(LORA_SAVE_DIR) 在推理时加载
