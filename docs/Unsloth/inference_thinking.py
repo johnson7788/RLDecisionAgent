@@ -154,6 +154,7 @@ def parse_args(cfg_defaults: TrainConfig) -> argparse.Namespace:
     p.add_argument("--seed", type=int, default=cfg_defaults.seed)
 
     # 生成参数
+    p.add_argument("--system", type=str, default="你是小森智能体（XiaoSen Health Agent）", help="系统prompt")
     p.add_argument("--prompt", type=str, default=None, help="单条 user 提示词。若提供则覆盖默认示例")
     p.add_argument("--messages_json", type=str, default=None,
                    help="包含 messages(list[{'role','content'}]) 的 JSON 文件路径。")
@@ -196,10 +197,14 @@ def _load_messages(args: argparse.Namespace) -> List[dict]:
         msgs = data["messages"] if isinstance(data, dict) and "messages" in data else data
         assert isinstance(msgs, list), "messages_json 必须包含一个 list"
         return msgs
-
     if args.prompt:
-        return [{"role": "user", "content": args.prompt.strip()}]
-
+        if args.system:
+            return [
+                    {"role": "system", "content": args.system.strip()},
+                    {"role": "user", "content": args.prompt.strip()},
+                ]
+        else:
+            return [{"role": "user", "content": args.prompt.strip()}]
     # 默认示例：鼓励使用思维链
     return [
         {"role": "user", "content": "解方程：2x + 3 = 15。请给出推理过程与最终答案。"}

@@ -49,3 +49,48 @@ Unsloth: Fast downloading is enabled - ignore downloading bars which are red col
 
 左边就剩下x，右边是6。所以x =
 [09:43:37] INFO - ✅ 推理完成。
+
+# 自定义数据的训练结果
+python inference_thinking.py \
+  --ckpt_dir ./outputs/qwen3_4b_thinking_lora \
+  --system "小森智能体：用药合规与风险提示。清风丸为大健康公司新品。" \
+  --prompt "请介绍下清风丸"
+WANDB_AVAILABLE是可用的，已经安装了wandb
+/workspace/verl/docs/Unsloth/unsloth_core.py:43: UserWarning: WARNING: Unsloth should be imported before transformers to ensure all optimizations are applied. Your code may run slower or encounter memory issues without these optimizations.
+
+Please restructure your imports with 'import unsloth' at the top of your file.
+  from unsloth import FastModel
+🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning.
+INFO 09-08 13:35:23 [importing.py:53] Triton module has been replaced with a placeholder.
+INFO 09-08 13:35:23 [__init__.py:239] Automatically detected platform cuda.
+🦥 Unsloth Zoo will now patch everything to make training faster!
+[13:35:31] INFO - 日志写入: ./outputs/qwen3_4b_thinking_lora/logs_infer_thinking/logs/train_20250908_133531.log
+[13:35:31] INFO - 随机种子已设置: 3407
+[13:35:31] INFO - PyTorch: 2.6.0+cu124
+[13:35:31] INFO - GPU: NVIDIA GeForce RTX 4090 D  显存上限: 23.546 GB  启动保留: 0.0 GB
+[13:35:31] INFO - 加载 Tokenizer 自: ./outputs/qwen3_4b_thinking_lora
+[13:35:32] INFO - 检测到 LoRA 适配器目录，基础模型: unsloth/Qwen3-4B-Thinking-2507
+==((====))==  Unsloth 2025.8.6: Fast Qwen3 patching. Transformers: 4.55.2. vLLM: 0.8.5.post1.
+   \\   /|    NVIDIA GeForce RTX 4090 D. Num GPUs = 1. Max memory: 23.546 GB. Platform: Linux.
+O^O/ \_/ \    Torch: 2.6.0+cu124. CUDA: 8.9. CUDA Toolkit: 12.4. Triton: 3.2.0
+\        /    Bfloat16 = TRUE. FA [Xformers = 0.0.29.post2. FA2 = True]
+ "-____-"     Free license: http://github.com/unslothai/unsloth
+Unsloth: Fast downloading is enabled - ignore downloading bars which are red colored!
+[13:36:01] INFO - 推理消息: [{'role': 'system', 'content': '小森智能体：用药合规与风险提示。清风丸为大健康公司新品。'}, {'role': 'user', 'content': '请介绍下清风丸'}]
+<|im_start|>system
+小森智能体：用药合规与风险提示。清风丸为大健康公司新品。<|im_end|>
+<|im_start|>user
+请介绍下清风丸<|im_end|>
+<|im_start|>assistant
+<think>
+- 识别：产品介绍请求。
+- 安全：强调其为新品，信息有限，引导官方渠道。
+- 策略：提供通用合规信息，避免做出具体功效承诺。
+</think>
+“清风丸”是某大健康公司的新品，作为AI，我无法提供其具体信息。一般来说，任何健康补充类产品都应以官方说明书或包装上所示的成分、功效与适用人群为准。在使用任何产品前，建议您：
+1. 仔细阅读成分列表与适应症；
+2. 置于儿童与宠物无法触及的地方；
+3. 不要超量或超期使用；
+4. 如有基础疾病、正在服用药物或孕期/哺乳期，请咨询医生/药师。
+<|im_end|>
+[13:36:44] INFO - ✅ 推理完成。
