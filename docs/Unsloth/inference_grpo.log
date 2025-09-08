@@ -1,0 +1,61 @@
+python inference_grpo.py --ckpt_dir outputs_qwen3_64r/grpo_lora
+WANDB_AVAILABLE是可用的，已经安装了wandb
+/workspace/verl/docs/Unsloth/unsloth_core.py:43: UserWarning: WARNING: Unsloth should be imported before transformers to ensure all optimizations are applied. Your code may run slower or encounter memory issues without these optimizations.
+
+Please restructure your imports with 'import unsloth' at the top of your file.
+  from unsloth import FastModel
+🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning.
+INFO 09-08 16:20:05 [importing.py:53] Triton module has been replaced with a placeholder.
+INFO 09-08 16:20:05 [__init__.py:239] Automatically detected platform cuda.
+🦥 Unsloth Zoo will now patch everything to make training faster!
+[16:20:13] INFO - 日志写入: outputs_qwen3_64r/grpo_lora/logs_infer_grpo/logs/train_20250908_162013.log
+[16:20:13] INFO - 随机种子已设置: 3407
+[16:20:13] INFO - PyTorch: 2.6.0+cu124
+[16:20:13] INFO - GPU: NVIDIA GeForce RTX 4090 D  显存上限: 23.546 GB  启动保留: 0.0 GB
+[16:20:13] INFO - 加载 Tokenizer 自: outputs_qwen3_64r/grpo_lora
+[16:20:13] INFO - 使用 checkpoint 中已有的 chat_template。
+[16:20:13] INFO - 检测到 LoRA 适配器目录，基础模型: unsloth/Qwen3-4B-Base
+==((====))==  Unsloth 2025.8.6: Fast Qwen3 patching. Transformers: 4.55.2. vLLM: 0.8.5.post1.
+   \\   /|    NVIDIA GeForce RTX 4090 D. Num GPUs = 1. Max memory: 23.546 GB. Platform: Linux.
+O^O/ \_/ \    Torch: 2.6.0+cu124. CUDA: 8.9. CUDA Toolkit: 12.4. Triton: 3.2.0
+\        /    Bfloat16 = TRUE. FA [Xformers = 0.0.29.post2. FA2 = True]
+ "-____-"     Free license: http://github.com/unslothai/unsloth
+Unsloth: Fast downloading is enabled - ignore downloading bars which are red colored!
+[16:20:57] INFO - 推理消息: [{'role': 'user', 'content': '解方程：2x + 3 = 15。请给出推理过程与最终答案。'}]
+You are given a problem.
+Think about the problem and provide your working out.
+Place it between <start_working_out> and <end_working_out>.
+Then, provide your solution between <SOLUTION></SOLUTION><|endoftext|>解方程：2x + 3 = 15。请给出推理过程与最终答案。<start_working_out>首先，我们需要将方程中的常数项移到等号的另一边。我们可以通过减去3来实现这一点。这样，方程变为2x = 12。接下来，我们需要解出x。由于x被乘以了2，我们可以通过除以2来解出x。因此，x = 12 / 2 = 6。<end_working_out><SOLUTION>6</SOLUTION><|endoftext|>
+[16:21:25] INFO - ✅ GRPO 推理完成。
+
+# 自定义数据集的强化学习推理
+python inference_grpo.py --ckpt_dir outputs_grpo_custom/grpo_saved_lora --prompt "【分诊题】47岁女性，呼吸困难加重，唇紫绀，SpO2 82%。选项：[1] 立即复苏（氧疗与通气支持） [2] 紧急评估 [3] 常规优先级 [4] 观察区 [5] 居家。"
+
+WANDB_AVAILABLE是可用的，已经安装了wandb
+/workspace/verl/docs/Unsloth/unsloth_core.py:43: UserWarning: WARNING: Unsloth should be imported before transformers to ensure all optimizations are applied. Your code may run slower or encounter memory issues without these optimizations.
+
+Please restructure your imports with 'import unsloth' at the top of your file.
+  from unsloth import FastModel
+🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning.
+INFO 09-08 19:33:21 [importing.py:53] Triton module has been replaced with a placeholder.
+INFO 09-08 19:33:21 [__init__.py:239] Automatically detected platform cuda.
+🦥 Unsloth Zoo will now patch everything to make training faster!
+[19:33:29] INFO - 日志写入: outputs_grpo_custom/grpo_saved_lora/logs_infer_grpo/logs/train_20250908_193329.log
+[19:33:29] INFO - 随机种子已设置: 3407
+[19:33:29] INFO - PyTorch: 2.6.0+cu124
+[19:33:29] INFO - GPU: NVIDIA GeForce RTX 4090 D  显存上限: 23.546 GB  启动保留: 0.0 GB
+[19:33:29] INFO - 加载 Tokenizer 自: outputs_grpo_custom/grpo_saved_lora
+[19:33:30] INFO - 使用 checkpoint 中已有的 chat_template。
+[19:33:30] INFO - 检测到 LoRA 适配器目录，基础模型: unsloth/Qwen3-4B-Base
+==((====))==  Unsloth 2025.8.6: Fast Qwen3 patching. Transformers: 4.55.2. vLLM: 0.8.5.post1.
+   \\   /|    NVIDIA GeForce RTX 4090 D. Num GPUs = 1. Max memory: 23.546 GB. Platform: Linux.
+O^O/ \_/ \    Torch: 2.6.0+cu124. CUDA: 8.9. CUDA Toolkit: 12.4. Triton: 3.2.0
+\        /    Bfloat16 = TRUE. FA [Xformers = 0.0.29.post2. FA2 = True]
+ "-____-"     Free license: http://github.com/unslothai/unsloth
+Unsloth: Fast downloading is enabled - ignore downloading bars which are red colored!
+[19:33:58] INFO - 推理消息: [{'role': 'user', 'content': '【分诊题】47岁女性，呼吸困难加重，唇紫绀，SpO2 82%。选项：[1] 立即复苏（氧疗与通气支持） [2] 紧急评估 [3] 常规优先级 [4] 观察区 [5] 居家。'}]
+You are given a problem.
+Think about the problem and provide your working out.
+Place it between <start_working_out> and <end_working_out>.
+Then, provide your solution between <SOLUTION></SOLUTION><|endoftext|>【分诊题】47岁女性，呼吸困难加重，唇紫绀，SpO2 82%。选项：[1] 立即复苏（氧疗与通气支持） [2] 紧急评估 [3] 常规优先级 [4] 观察区 [5] 居家。<start_working_out>根据题目描述，患者为47岁女性，出现呼吸困难加重，唇紫绀，SpO2为82%。这些症状表明患者可能存在严重的低氧血症和呼吸衰竭，需要立即进行氧疗和通气支持以维持生命体征。因此，最合适的处理方式是立即复苏（氧疗与通气支持）。<end_working_out><SOLUTION>立即复苏（氧疗与通气支持）</SOLUTION><|endoftext|>
+[19:34:27] INFO - ✅ GRPO 推理完成。
