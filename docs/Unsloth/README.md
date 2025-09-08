@@ -113,7 +113,7 @@ CUDA_VISIBLE_DEVICES=2 python train_grpo.py \
   --vllm-server-base-url http://127.0.0.1:8000
 
 3）自定义数据集进行训练, 医疗分诊，用药数据集
-python train.py \
+CUDA_VISIBLE_DEVICES=2 python train_grpo.py \
   --model-name unsloth/Qwen3-4B-Base \
   --hf-dataset json \
   --hf-config none \
