@@ -45,6 +45,8 @@ python train_thinking.py \
   --data_files xiaosen_thinking.jsonl \
   --dataset_split train
 ```
+wandb训练记录
+![train_thinking_wandb.png](train_thinking_wandb.png)
 
 2. 明确训练/验证拆分
 
@@ -63,8 +65,13 @@ python train_thinking.py \
 ```
 
 ## Thinking模型训练后的模型测试
+1）默认数据集的测试
 python inference_thinking.py
-
+2）训练xiaosen_thinking.jsonl之后的测试
+python inference_thinking.py \
+  --ckpt_dir ./outputs/qwen3_4b_thinking_lora \
+  --system "小森智能体：用药合规与风险提示。清风丸为大健康公司新品。" \
+  --prompt "请介绍下清风丸" 
 
 
 # GRPO强化学习训练， 需要安装vllm

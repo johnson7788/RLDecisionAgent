@@ -315,3 +315,241 @@ wandb: Find logs at: ./wandb/offline-run-20250907_092625-wbecf2z9/logs
 
 # 自定义数据集
 python train_thinking.py   --model_name unsloth/Qwen3-4B-Thinking-2507   --chat_template qwen3-thinking   --data_files xiaosen_thinking.jsonl   --dataset_split train
+
+WANDB_AVAILABLE是可用的，已经安装了wandb
+🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning.
+INFO 09-08 10:26:04 [importing.py:53] Triton module has been replaced with a placeholder.
+INFO 09-08 10:26:04 [__init__.py:239] Automatically detected platform cuda.
+🦥 Unsloth Zoo will now patch everything to make training faster!
+[10:26:12] INFO - 日志写入: ./outputs/qwen3_4b_thinking_lora/logs/train_20250908_102612.log
+[10:26:12] INFO - ===== 训练配置 =====
+[10:26:12] INFO - {
+  "model_name": "unsloth/Qwen3-4B-Thinking-2507",
+  "max_seq_length": 2048,
+  "load_in_4bit": true,
+  "load_in_8bit": false,
+  "full_finetuning": false,
+  "hf_token": null,
+  "lora_r": 32,
+  "lora_alpha": 32,
+  "lora_dropout": 0.0,
+  "bias": "none",
+  "use_gradient_checkpointing": "unsloth",
+  "use_rslora": false,
+  "loftq_config": null,
+  "target_modules": [
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "gate_proj",
+    "up_proj",
+    "down_proj"
+  ],
+    "chat_template": "qwen3-thinking",
+  "dataset_name": "unsloth/OpenMathReasoning-mini",
+  "dataset_split": "train",
+  "dataset_text_field": "text",
+  "instruction_part": "<|im_start|>user\n",
+  "response_part": "<|im_start|>assistant\n",
+  "per_device_train_batch_size": 2,
+  "gradient_accumulation_steps": 4,
+  "warmup_steps": 5,
+  "max_steps": 60,
+  "num_train_epochs": 2,
+  "learning_rate": 0.0002,
+  "logging_steps": 1,
+  "optim": "adamw_8bit",
+  "weight_decay": 0.01,
+  "lr_scheduler_type": "linear",
+  "seed": 3407,
+  "report_to": "wandb",
+  "data_files": "xiaosen_thinking.jsonl",
+  "use_wandb": true,
+  "wandb_project": "unsloth-sft",
+  "wandb_entity": null,
+  "wandb_run_name": null,
+  "wandb_tags": null,
+  "wandb_dir": null,
+  "wandb_group": null,
+  "wandb_job_type": "train",
+  "wandb_mode": null,
+  "wandb_notes": null,
+  "wandb_log_model": false,
+  "output_dir": "./outputs/qwen3_4b_thinking_lora",
+  "save_steps": 2,
+  "save_total_limit": null,
+  "logging_dir": null
+ }
+[10:26:12] INFO - 随机种子已设置: 3407
+[10:26:12] INFO - PyTorch: 2.6.0+cu124
+[10:26:12] INFO - GPU: NVIDIA GeForce RTX 4090 D  显存上限: 23.546 GB  启动保留: 0.0 GB
+wandb: Currently logged in as: johnson to http://192.168.100.8:3005. Use `wandb login --relogin` to force relogin
+wandb: WARNING Using a boolean value for 'reinit' is deprecated. Use 'return_previous' or 'finish_previous' instead.
+wandb: Tracking run with wandb version 0.19.11
+wandb: Run data is saved locally in /workspace/verl/docs/Unsloth/wandb/run-20250908_102612-4amm213l
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run swept-dust-5
+wandb: ⭐️ View project at http://192.168.100.8:3005/johnson/unsloth-sft
+wandb: 🚀 View run at http://192.168.100.8:3005/johnson/unsloth-sft/runs/4amm213l
+[10:26:13] INFO - 已连接 W&B：project=unsloth-sft, run=swept-dust-5
+[10:26:13] INFO - 开始加载基础模型…
+==((====))==  Unsloth 2025.8.6: Fast Qwen3 patching. Transformers: 4.55.2. vLLM: 0.8.5.post1.
+   \\   /|    NVIDIA GeForce RTX 4090 D. Num GPUs = 1. Max memory: 23.546 GB. Platform: Linux.
+O^O/ \_/ \    Torch: 2.6.0+cu124. CUDA: 8.9. CUDA Toolkit: 12.4. Triton: 3.2.0
+\        /    Bfloat16 = TRUE. FA [Xformers = 0.0.29.post2. FA2 = True]
+ "-____-"     Free license: http://github.com/unslothai/unsloth
+Unsloth: Fast downloading is enabled - ignore downloading bars which are red colored!
+model.safetensors: 100%|███████████████████████████████████████████████████████████████| 3.51G/3.51G [15:24<00:00, 3.79MB/s]
+generation_config.json: 100%|███████████████████████████████████████████████████████████████| 238/238 [00:00<00:00, 357kB/s]
+tokenizer_config.json: 9.66kB [00:00, 9.88MB/s]
+vocab.json: 2.78MB [00:32, 86.7kB/s]
+merges.txt: 1.67MB [00:56, 29.6kB/s]
+tokenizer.json: 100%|██████████████████████████████████████████████████████████████████| 11.4M/11.4M [00:04<00:00, 2.54MB/s]
+added_tokens.json: 707B [00:00, 827kB/s]
+special_tokens_map.json: 614B [00:00, 853kB/s]
+chat_template.jinja: 4.05kB [00:00, 9.56kB/s]
+[10:43:54] INFO - 基础模型加载完成。
+[10:43:54] INFO - 注入 LoRA 适配器…
+Unsloth: Making `model.base_model.model.model` require gradients
+[10:43:58] INFO - LoRA 适配器注入完成。
+[10:43:58] INFO - 应用 Chat 模板: qwen3-thinking
+[10:43:58] INFO - 从本地文件加载数据: xiaosen_thinking.jsonl
+Generating train split: 19 examples [00:00, 4727.80 examples/s]
+[10:43:59] INFO - 已选择拆分: train（可用: ['train']）
+[10:43:59] INFO - 原始字段: {'text'}
+[10:43:59] INFO - 检测到已有 'text' 字段，跳过模板化。
+[10:43:59] INFO - 创建 SFTTrainer…
+Unsloth: Tokenizing ["text"] (num_proc=2): 100%|█████████████████████████████████████| 19/19 [00:01<00:00, 15.79 examples/s]
+[10:44:01] INFO - 切换为仅学习 assistant 响应（忽略 user 指令部分的 loss）…
+num_proc must be <= 19. Reducing num_proc to 19 for dataset of size 19.
+Map (num_proc=19): 100%|█████████████████████████████████████████████████████████████| 19/19 [00:00<00:00, 68.54 examples/s]
+[10:44:02] INFO - 编码样本预览: <|im_start|>system
+你是小森智能体（XiaoSen Health Agent），面向大众提供循证的健康与用药科普信息；不能替代医生诊断或处方。回答应先提示风险、再给出一般性建议与就医指引；避免个体化诊疗与具体剂量。重要：本数据集里的“清风丸”为大健康公司的新品，请提供其一般性科普信息，但不对其功效进行过度承诺，并强调使用风险与就医指引。
+<|im_end|>
+<|im_start|>user
+清风丸是什么药？
+<|im_end|>
+<|im_start|>assistant
+<think>
+- 识别：用户询问产品信息。
+- 安全：强调其为新品，信息有限，避免过度承诺功效。
+- 策略：以科普为主，介绍其作为大健康公司新品的定位，并提示其非药物，不能替代治疗。
+</think>
+“清风丸”是某大健康公司推出的新品，作为健康补充类产品，通常以草本或膳食补充剂形式出现，而非经国家药监部门批准的药品。因此，它不具备明确的治疗疾病的功效，也不能替代医生诊断或药物治疗。请在购买和使用前仔细了解其成分、适用人群及注意事项，并记住任何健康问题都应首先咨询专业医生
+[10:44:02] INFO - GPU = NVIDIA GeForce RTX 4090 D. Max memory = 23.546 GB.
+[10:44:02] INFO - 启动时保留显存 = 3.816 GB.
+[10:44:02] INFO - 开始训练…
+==((====))==  Unsloth - 2x faster free finetuning | Num GPUs used = 1
+   \\   /|    Num examples = 19 | Num Epochs = 20 | Total steps = 60
+O^O/ \_/ \    Batch size per device = 2 | Gradient accumulation steps = 4
+\        /    Data Parallel GPUs = 1 | Total batch size (2 x 4 x 1) = 8
+ "-____-"     Trainable parameters = 66,060,288 of 4,088,528,384 (1.62% trained)
+  0%|                                                                                                | 0/60 [00:00<?, ?it/s]`use_cache=True` is incompatible with gradient checkpointing. Setting `use_cache=False`.
+Unsloth: Will smartly offload gradients to save VRAM!
+{'loss': 3.3927, 'grad_norm': 2.361997127532959, 'learning_rate': 0.0, 'epoch': 0.4}
+{'loss': 3.7276, 'grad_norm': 2.627173662185669, 'learning_rate': 4e-05, 'epoch': 0.8}
+{'loss': 3.1137, 'grad_norm': 2.251357316970825, 'learning_rate': 8e-05, 'epoch': 1.0}
+{'loss': 3.1237, 'grad_norm': 2.2538106441497803, 'learning_rate': 0.00012, 'epoch': 1.4}
+{'loss': 2.7439, 'grad_norm': 1.7688621282577515, 'learning_rate': 0.00016, 'epoch': 1.8}
+{'loss': 2.3713, 'grad_norm': 1.2542682886123657, 'learning_rate': 0.0002, 'epoch': 2.0}
+{'loss': 2.152, 'grad_norm': 0.7897516489028931, 'learning_rate': 0.00019636363636363636, 'epoch': 2.4}
+{'loss': 1.8806, 'grad_norm': 0.8317602872848511, 'learning_rate': 0.00019272727272727274, 'epoch': 2.8}
+{'loss': 1.8103, 'grad_norm': 0.9280726313591003, 'learning_rate': 0.0001890909090909091, 'epoch': 3.0}
+{'loss': 1.7425, 'grad_norm': 0.8508353233337402, 'learning_rate': 0.00018545454545454545, 'epoch': 3.4}
+{'loss': 1.4726, 'grad_norm': 0.7637075185775757, 'learning_rate': 0.00018181818181818183, 'epoch': 3.8}
+{'loss': 1.392, 'grad_norm': 1.0445256233215332, 'learning_rate': 0.0001781818181818182, 'epoch': 4.0}
+{'loss': 1.2562, 'grad_norm': 0.6067392230033875, 'learning_rate': 0.00017454545454545454, 'epoch': 4.4}
+{'loss': 1.2664, 'grad_norm': 0.6285073757171631, 'learning_rate': 0.0001709090909090909, 'epoch': 4.8}
+{'loss': 1.1423, 'grad_norm': 0.8581075072288513, 'learning_rate': 0.00016727272727272728, 'epoch': 5.0}
+{'loss': 1.0993, 'grad_norm': 0.6113523244857788, 'learning_rate': 0.00016363636363636366, 'epoch': 5.4}
+{'loss': 0.9731, 'grad_norm': 0.5698300004005432, 'learning_rate': 0.00016, 'epoch': 5.8}
+{'loss': 0.9575, 'grad_norm': 0.9846962094306946, 'learning_rate': 0.00015636363636363637, 'epoch': 6.0}
+{'loss': 0.9098, 'grad_norm': 0.5770047903060913, 'learning_rate': 0.00015272727272727275, 'epoch': 6.4}
+{'loss': 0.7637, 'grad_norm': 0.5982579588890076, 'learning_rate': 0.0001490909090909091, 'epoch': 6.8}
+{'loss': 0.66, 'grad_norm': 0.8872319459915161, 'learning_rate': 0.00014545454545454546, 'epoch': 7.0}
+{'loss': 0.5937, 'grad_norm': 0.5404504537582397, 'learning_rate': 0.00014181818181818184, 'epoch': 7.4}
+{'loss': 0.6617, 'grad_norm': 0.6233908534049988, 'learning_rate': 0.0001381818181818182, 'epoch': 7.8}
+{'loss': 0.5544, 'grad_norm': 0.8771803975105286, 'learning_rate': 0.00013454545454545455, 'epoch': 8.0}
+{'loss': 0.4825, 'grad_norm': 0.6289380788803101, 'learning_rate': 0.00013090909090909093, 'epoch': 8.4}
+{'loss': 0.4731, 'grad_norm': 0.5899850726127625, 'learning_rate': 0.00012727272727272728, 'epoch': 8.8}
+{'loss': 0.2941, 'grad_norm': 0.8601074814796448, 'learning_rate': 0.00012363636363636364, 'epoch': 9.0}
+{'loss': 0.3259, 'grad_norm': 0.5770586729049683, 'learning_rate': 0.00012, 'epoch': 9.4}
+{'loss': 0.2796, 'grad_norm': 0.5355873107910156, 'learning_rate': 0.00011636363636363636, 'epoch': 9.8}
+{'loss': 0.2817, 'grad_norm': 0.97690349817276, 'learning_rate': 0.00011272727272727272, 'epoch': 10.0}
+{'loss': 0.1774, 'grad_norm': 0.4996536076068878, 'learning_rate': 0.00010909090909090909, 'epoch': 10.4}
+{'loss': 0.1826, 'grad_norm': 0.5746654868125916, 'learning_rate': 0.00010545454545454545, 'epoch': 10.8}
+{'loss': 0.2075, 'grad_norm': 1.0708175897598267, 'learning_rate': 0.00010181818181818181, 'epoch': 11.0}
+{'loss': 0.1242, 'grad_norm': 0.4984501898288727, 'learning_rate': 9.818181818181818e-05, 'epoch': 11.4}
+{'loss': 0.0907, 'grad_norm': 0.48498302698135376, 'learning_rate': 9.454545454545455e-05, 'epoch': 11.8}
+{'loss': 0.0694, 'grad_norm': 0.6108762621879578, 'learning_rate': 9.090909090909092e-05, 'epoch': 12.0}
+{'loss': 0.0634, 'grad_norm': 0.3929809033870697, 'learning_rate': 8.727272727272727e-05, 'epoch': 12.4}
+{'loss': 0.0486, 'grad_norm': 0.3201897442340851, 'learning_rate': 8.363636363636364e-05, 'epoch': 12.8}
+{'loss': 0.0096, 'grad_norm': 0.1778227835893631, 'learning_rate': 3.6363636363636364e-05, 'epoch': 17.0}
+{'loss': 0.0096, 'grad_norm': 0.08310312032699585, 'learning_rate': 3.272727272727273e-05, 'epoch': 17.4}
+{'loss': 0.0062, 'grad_norm': 0.04847618564963341, 'learning_rate': 2.909090909090909e-05, 'epoch': 17.8}
+{'loss': 0.0086, 'grad_norm': 0.10587561875581741, 'learning_rate': 2.5454545454545454e-05, 'epoch': 18.0}
+{'loss': 0.0071, 'grad_norm': 0.058706507086753845, 'learning_rate': 2.1818181818181818e-05, 'epoch': 18.4}
+{'loss': 0.0065, 'grad_norm': 0.053853925317525864, 'learning_rate': 1.8181818181818182e-05, 'epoch': 18.8}
+{'loss': 0.007, 'grad_norm': 0.08317374438047409, 'learning_rate': 1.4545454545454545e-05, 'epoch': 19.0}
+{'loss': 0.0066, 'grad_norm': 0.06966110318899155, 'learning_rate': 1.0909090909090909e-05, 'epoch': 19.4}
+ 97%|████████████████████████████████████████████████████████████████████████████████████   | 58/60 [06:51<00:12,  6.25s/it]/usr/local/lib/python3.10/dist-packages/peft/utils/other.py:1110: UserWarning: Unable to fetch remote file due to the following error (ReadTimeoutError("HTTPSConnectionPool(host='hf-mirror.com', port=443): Read timed out. (read timeout=10)"), '(Request ID: 8a0ad1d9-885f-4bb8-92db-b987bc4c5173)') - silently ignoring the lookup for the file config.json in unsloth/qwen3-4b-thinking-2507-unsloth-bnb-4bit.
+  warnings.warn(
+/usr/local/lib/python3.10/dist-packages/peft/utils/save_and_load.py:236: UserWarning: Could not find a config file in unsloth/qwen3-4b-thinking-2507-unsloth-bnb-4bit - will assume that the vocabulary was not modified.
+  warnings.warn(
+{'loss': 0.0066, 'grad_norm': 0.04431789740920067, 'learning_rate': 7.272727272727272e-06, 'epoch': 19.8}
+{'loss': 0.0063, 'grad_norm': 0.08704833686351776, 'learning_rate': 3.636363636363636e-06, 'epoch': 20.0}
+{'train_runtime': 442.5628, 'train_samples_per_second': 1.085, 'train_steps_per_second': 0.136, 'train_loss': 0.7199641212588176, 'epoch': 20.0}
+100%|███████████████████████████████████████████████████████████████████████████████████████| 60/60 [07:22<00:00,  7.38s/it]
+[10:51:27] INFO - 训练完成。
+[10:51:27] INFO - 训练耗时 442.56 秒（约 7.38 分钟）。
+[10:51:27] INFO - 峰值保留显存 = 4.301 GB；其中训练增量 = 0.485 GB。
+[10:51:27] INFO - 显存占用峰值占比 = 18.266%；训练增量占比 = 2.06%。
+[10:51:27] INFO - Unsloth 保存模型 Trainer.save_model
+[10:51:34] INFO - 模型已保存至: ./outputs/qwen3_4b_thinking_lora
+wandb:
+wandb:
+wandb: Run history:
+wandb:           env/gpu_mem_gb ▁
+wandb:     memory/lora_delta_gb ▁
+wandb:    memory/lora_delta_pct ▁
+wandb:  memory/peak_reserved_gb ▁
+wandb: memory/peak_reserved_pct ▁
+wandb: memory/start_reserved_gb ▁
+wandb:   time/train_runtime_sec ▁
+wandb:              train/epoch ▁▁▁▁▁▂▂▂▂▃▃▃▃▃▄▄▄▄▄▄▅▅▅▅▅▅▅▆▆▆▇▇▇▇▇▇▇███
+wandb:        train/global_step ▁▁▁▂▂▂▂▂▂▃▃▃▃▃▄▄▄▅▅▅▅▅▆▆▆▆▆▆▆▇▇▇▇▇▇█████
+wandb:          train/grad_norm ▇█▆▄▃▃▃▃▄▃▃▃▂▂▂▂▃▃▂▃▂▄▂▂▂▂▄▁▃▁▁▁▁▁▁▁▁▁▁▁
+wandb:      train/learning_rate ▁▂▄▇███▇▇▇▇▇▇▆▆▆▆▆▅▅▅▄▄▄▄▄▃▃▃▃▃▃▂▂▂▂▂▂▁▁
+wandb:               train/loss █▇▆▅▅▄▄▄▃▃▃▃▃▃▂▂▂▂▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+wandb:      trainer/global_step ▁
+wandb:
+wandb: Run summary:
+wandb:            env/gpu_mem_gb 23.546
+wandb:              env/gpu_name NVIDIA GeForce RTX 4...
+wandb:      memory/lora_delta_gb 0.485
+wandb:     memory/lora_delta_pct 2.06
+wandb:   memory/peak_reserved_gb 4.301
+wandb:  memory/peak_reserved_pct 18.266
+wandb:  memory/start_reserved_gb 3.816
+wandb: metrics/train_runtime_sec 442.5628
+wandb:                    status success
+wandb:    time/train_runtime_sec 442.5628
+wandb:                total_flos 1667293613334528.0
+wandb:               train/epoch 20
+wandb:         train/global_step 60
+wandb:           train/grad_norm 0.08705
+wandb:       train/learning_rate 0.0
+wandb:                train/loss 0.0063
+wandb:                train_loss 0.71996
+wandb:             train_runtime 442.5628
+wandb:  train_samples_per_second 1.085
+wandb:    train_steps_per_second 0.136
+wandb:       trainer/global_step 60
+wandb:
+wandb: 🚀 View run swept-dust-5 at: http://192.168.100.8:3005/johnson/unsloth-sft/runs/4amm213l
+wandb: ⭐️ View project at: http://192.168.100.8:3005/johnson/unsloth-sft
+wandb: Synced 6 W&B file(s), 0 media file(s), 2 artifact file(s) and 0 other file(s)
+wandb: Find logs at: ./wandb/run-20250908_102612-4amm213l/logs
+[10:51:36] INFO - 442.56 秒 used for training.
+[10:51:36] INFO - 🎉  训练结束。
