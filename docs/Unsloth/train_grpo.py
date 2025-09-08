@@ -292,6 +292,7 @@ def main(args):
     # 目录与种子
     os.makedirs(args.output_dir, exist_ok=True)
     lora_save_dir = args.lora_save_dir or os.path.join(args.output_dir, "grpo_saved_lora")
+    logger.info(f"保存lora模型路径为: {lora_save_dir}")
     set_seed(args.seed)
 
     # ==== NEW: 初始化 W&B ====
@@ -508,6 +509,7 @@ def main(args):
     elapsed_min = (time.time() - t0) / 60.0
     logger.info("全部完成，用时 %.1f 分钟。", elapsed_min)
     logger.info("提示：推理时可调用 model.load_lora('%s') 进行 LoRA 加载。", lora_save_dir)
+    logger.info(f"保存lora模型路径为: {lora_save_dir}")
 
     if wandb_enabled:
         wandb.summary["elapsed/minutes"] = round(elapsed_min, 2)

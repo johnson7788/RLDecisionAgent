@@ -382,7 +382,7 @@ Traceback (most recent call last):
 AttributeError: 'Qwen3ForCausalLM' object has no attribute 'vllm_engine'
 
 
-#
+# 没有save_lora这个参数
 Traceback (most recent call last):
   File "/usr/local/lib/python3.10/dist-packages/peft/peft_model.py", line 793, in __getattr__
     return super().__getattr__(name)  # defer to nn.Module's logic

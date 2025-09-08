@@ -621,3 +621,107 @@ None
 {'loss': 0.0, 'grad_norm': 0.3910440504550934, 'learning_rate': 3.2222222222222227e-06, 'num_tokens': 61907.0, 'completions/mean_length': 746.75, 'completions/min_length': 333.0, 'completions/max_length': 1390.0, 'completions/clipped_ratio': 0.0, 'completions/mean_terminated_length': 746.75, 'completions/min_terminated_length': 333.0, 'completions/max_terminated_length': 1390.0, 'rewards/match_format_exactly/mean': 0.75, 'rewards/match_format_exactly/std': 1.5, 'rewards/match_format_approximately/mean': -1.125, 'rewards/match_format_approximately/std': 1.8874585628509521, 'rewards/check_answer/mean': -2.625, 'rewards/check_answer/std': 1.25, 'rewards/check_numbers/mean': 0.5, 'rewards/check_numbers/std': 3.464101552963257, 'reward': -2.5, 'reward_std': 5.147815227508545, 'frac_reward_zero_std': 0.0, 'completion_length': 746.75, 'kl': 0.0013295126846060157, 'epoch': 0.67}
 {'loss': 0.0, 'grad_norm': 0.5040304064750671, 'learning_rate': 3.1111111111111116e-06, 'num_tokens': 64275.0, 'completions/mean_length': 476.0, 'completions/min_length': 215.0, 'completions/max_length': 1083.0, 'completions/clipped_ratio': 0.0, 'completions/mean_terminated_length': 476.0, 'completions/min_terminated_length': 215.0, 'completions/max_terminated_length': 1083.0, 'rewards/match_format_exactly/mean': 0.75, 'rewards/match_format_exactly/std': 1.5, 'rewards/match_format_approximately/mean': 0.75, 'rewards/match_format_approximately/std': 0.8660253882408142, 'rewards/check_answer/mean': -2.625, 'rewards/check_answer/std': 1.25, 'rewards/check_numbers/mean': -0.125, 'rewards/check_numbers/std': 2.6259918212890625, 'reward': -1.25, 'reward_std': 3.5939764976501465, 'frac_reward_zero_std': 0.0, 'completion_length': 476.0, 'kl': 0.0012762866681441665, 'epoch': 0.7}
 {'loss': 0.0, 'grad_norm': 0.5664493441581726, 'learning_rate': 3e-06, 'num_tokens': 66059.0, 'completions/mean_length': 350.0, 'completions/min_length': 129.0, 'completions/max_length': 781.0, 'completions/clipped_ratio': 0.0, 'completions/mean_terminated_length': 350.0, 'completions/min_terminated_length': 129.0, 'completions/max_terminated_length': 781.0, 'rewards/match_format_exactly/mean': 0.0, 'rewards/match_format_exactly/std': 0.0, 'rewards/match_format_approximately/mean': -1.5, 'rewards/match_format_approximately/std': 1.2247449159622192, 'rewards/check_answer/mean': -2.0, 'rewards/check_answer/std': 0.0, 'rewards/check_numbers/mean': -1.0, 'rewards/check_numbers/std': 3.0, 'reward': -4.5, 'reward_std': 4.062019348144531, 'frac_reward_zero_std': 0.0, 'completion_length': 350.0, 'kl': 0.0014152289368212223, 'epoch': 0.73}
+{'loss': 0.0, 'grad_norm': 0.47428855299949646, 'learning_rate': 3.3333333333333335e-07, 'num_tokens': 131903.0, 'completions/mean_length': 660.0, 'completions/min_length': 97.0, 'completions/max_length': 1923.0, 'completions/clipped_ratio': 0.25, 'completions/mean_terminated_length': 239.0, 'completions/min_terminated_length': 97.0, 'completions/max_terminated_length': 314.0, 'rewards/match_format_exactly/mean': 0.0, 'rewards/match_format_exactly/std': 0.0, 'rewards/match_format_approximately/mean': -0.75, 'rewards/match_format_approximately/std': 1.9364917278289795, 'rewards/check_answer/mean': -2.0, 'rewards/check_answer/std': 0.0, 'rewards/check_numbers/mean': -2.0, 'rewards/check_numbers/std': 0.5773502588272095, 'reward': -4.75, 'reward_std': 2.4664413928985596, 'frac_reward_zero_std': 0.0, 'completion_length': 660.0, 'kl': 0.0015424411976709962, 'epoch': 1.45}
+{'loss': 0.0, 'grad_norm': 0.4456276297569275, 'learning_rate': 2.2222222222222224e-07, 'num_tokens': 135576.0, 'completions/mean_length': 803.25, 'completions/min_length': 363.0, 'completions/max_length': 1923.0, 'completions/clipped_ratio': 0.25, 'completions/mean_terminated_length': 430.0, 'completions/min_terminated_length': 363.0, 'completions/max_terminated_length': 534.0, 'rewards/match_format_exactly/mean': 1.5, 'rewards/match_format_exactly/std': 1.7320507764816284, 'rewards/match_format_approximately/mean': -0.75, 'rewards/match_format_approximately/std': 2.598076105117798, 'rewards/check_answer/mean': -3.25, 'rewards/check_answer/std': 1.4433757066726685, 'rewards/check_numbers/mean': 2.0, 'rewards/check_numbers/std': 3.0, 'reward': -0.5, 'reward_std': 5.228128910064697, 'frac_reward_zero_std': 0.0, 'completion_length': 803.25, 'kl': 0.0012624248629435897, 'epoch': 1.48}
+{'loss': 0.0, 'grad_norm': 0.20969897508621216, 'learning_rate': 1.1111111111111112e-07, 'num_tokens': 139436.0, 'completions/mean_length': 852.0, 'completions/min_length': 419.0, 'completions/max_length': 1923.0, 'completions/clipped_ratio': 0.25, 'completions/mean_terminated_length': 495.0, 'completions/min_terminated_length': 419.0, 'completions/max_terminated_length
+': 578.0, 'rewards/match_format_exactly/mean': 0.0, 'rewards/match_format_exactly/std': 0.0, 'rewards/match_format_approximately/mean': -1.875, 'rewards/match_format_approximately/std': 0.75, 'rewards/check_answer/mean': -2.0, 'rewards/check_answer/std': 0.0, 'rewards/check_numbers/mean': -1.0, 'rewards/check_numbers/std': 3.0, 'reward': -4.875, 'reward_std': 3.326033592224121, 'frac_reward_zero_std': 0.0, 'completion_length': 852.0, 'kl': 0.0009595842566341162, 'epoch': 1.52}
+{'train_runtime': 798.1488, 'train_samples_per_second': 0.251, 'train_steps_per_second': 0.063, 'train_loss': 1.3353262934856503e-06, 'epoch': 1.52}
+100%|███████████████████████████████████████████████████████████████████████████████████████| 50/50 [13:18<00:00, 15.96s/it]
+[2025-09-08 17:56:22,044][INFO] GRPO 训练完成。
+[2025-09-08 17:56:22,044][INFO] 保存 LoRA 适配器到：outputs_grpo_custom/grpo_saved_lora
+[2025-09-08 17:56:24,094][INFO] 模型已保存至: outputs_grpo_custom/grpo_saved_lora
+wandb: Adding directory to artifact (./outputs_grpo_custom/grpo_saved_lora)... Done. 1.3s
+[2025-09-08 17:56:25,500][INFO] LoRA 适配器已作为 Artifact 上传到 W&B：unsloth-Qwen3-4B-Base-grpo-lora
+[2025-09-08 17:56:25,501][INFO] 全部完成，用时 14.2 分钟。
+[2025-09-08 17:56:25,503][INFO] 提示：推理时可调用 model.load_lora('outputs_grpo_custom/grpo_saved_lora') 进行 LoRA 加载。
+wandb:
+wandb:
+wandb:
+wandb: Run history:
+wandb:         profiling/Time taken: UnslothGRPOTrainer._calculate_rewards ▇▂▁▂█▁▂▂▅▁▃▄▄▁▂▂▅▂▃▁▅▃▂▂▂▂▁▁▄▂▁▁▅▃▂▁▅▁▄▁
+wandb:            profiling/Time taken: UnslothGRPOTrainer._prepare_inputs ▂█▂▃█▇▃▂▄▇▇▃▆▂▃▇▁▅▄▃▅▅▁█▅▇▁▁▃▁▂▂▄▃▇▃▆▂▇▇
+wandb:               profiling/Time taken: UnslothGRPOTrainer.check_answer ▃▃▂▂▄▄▂▃▃▂▂▁▂▃▂▃▁▃▂▄▄▄▃▂▂▂▄▂▂▂▂█▂▃▂▁▂▂█▂
+wandb:              profiling/Time taken: UnslothGRPOTrainer.check_numbers █▁▁▁▁▁▁▁█▁▁▁▇▁▁▁▇▁▁▁▇▁▁▁▁▁▁▁▇▁▁▁▇▁▁▁█▁▁▁
+wandb: profiling/Time taken: UnslothGRPOTrainer.match_format_approximately ▂▂▂▁▁▁▁▂▂▂▁▂█▁▁▁▂▁▁▁▁▁▂▁▁▁▂▁▂▁▁▁▁▂▁▁▂▁▂▁
+wandb:       profiling/Time taken: UnslothGRPOTrainer.match_format_exactly ▃▂▁▂▃▃▁▂▂▂▁▁▃▂▂▃▁▂▁▅▃▃▅▁▂▂▃▁▁▁█▁▁▃▂▁▁▁▆▁
+wandb:              profiling/Time taken: UnslothGRPOTrainer.vLLM.generate █▂▃█▅▃▂▄▇▆▃▄▆▂▃▇▁▅▄▃▃▅▅█▅▇▁▁▃▁▂▂▄▃▇▃▆▂▇▇
+wandb:                                             train/completion_length ▂▅▅▂▂▇▄▅▂▂▃▃▃▃▃▅▅▄▃▃▄▆▆▁▇▅▅▁▁▁▁█▂▂▄▅▂▂▄▅
+wandb:                                     train/completions/clipped_ratio ▁▁▁▁▁█▁▁▁▁▁▁▁▁▁▁▅▅▁▁▁▅▁▅▅▁▅▁▁▁█▁▁▁▁▁▁▅▅▅
+wandb:                                        train/completions/max_length ▁▁█▂▂█▆▃▂▄▆██▃▅▃▇█▆▄█▄▁██▆▇▁▁▃▁██▃▃▆▂▂██
+wandb:                             train/completions/max_terminated_length ▁▁█▂▂▃▃▃▆▆▃▃▃▂▁▃▅▇▂▂▇▃▄▃▁▄▄▅▁▇▇▃▁▄▂▃▃▆▂▂
+wandb:                                       train/completions/mean_length ▂▂▅▅▄▇▄▅▂▂▅▃▃▁▅▄▄▃▂▂▃▆▁▇▄▁▁▁▂█▂▂▅▂▂▄▄▅▅▅
+wandb:                            train/completions/mean_terminated_length ▂▂▆▆▄▃▃▃▄▂▄▄▃▃▁▄▂▂▂▂█▆▁▁▇▅▃▁▁▃▁▆▂▂▄▄▂▃▃▃
+wandb:                                        train/completions/min_length ▃█▃▃▇▅▂▂▆▂▄▄▃▄▂▄▃▃▅▄█▂▇▄▄▃▃▂▂▃▂▆▆█▁▃▅▅▆▇
+wandb:                             train/completions/min_terminated_length ▃▄▄█▃▅▅▅▂▇▂▅▃▇▇▄▄▂▆▆▅▃▃▄▂▄▄▃▃▃▃█▂▆▁▅▆▃▃█
+wandb:                                                         train/epoch ▁▁▁▁▁▂▂▂▂▂▃▃▃▃▃▄▄▄▄▄▅▅▅▅▅▆▆▆▆▆▆▇▇▇▇▇▇███
+wandb:                                          train/frac_reward_zero_std ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+wandb:                                                   train/global_step ▁▁▁▂▂▂▂▂▃▃▃▃▃▃▄▄▄▄▄▅▅▅▅▅▆▆▆▆▆▇▇▇▇▇▇█████
+wandb:                                                     train/grad_norm ▁▁▁▂▂▁▁▁▁▁▁▁▁▁▁▁▁▁▄▄▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁██▁
+wandb:                                                            train/kl ▁▁▁▇▆▆▅▆▅▇▅▆▆▇▇▆▆▆▅▇▇▇▇▇▅▆▆▇▆█▇█▆▇▆▇▆▇▆▅
+wandb:                                                 train/learning_rate ▁▂▄▇████▇▇▆▆▆▆▆▅▅▅▅▅▄▄▄▄▄▃▃▃▃▃▃▂▂▂▂▂▂▂▂▁
+wandb:                                                          train/loss ▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁
+wandb:                                                    train/num_tokens ▁▁▁▂▂▂▂▂▂▃▃▃▃▃▄▄▄▄▄▅▅▅▅▅▆▆▆▆▆▆▆▇▇▇▇▇▇▇▇█
+wandb:                                                        train/reward █▄▄▃▂▄▂▄▃▂▃▅▅▇▅▆▄▅▅▂▃▃██▁▄▆▂▂▅▃▅▃▄▂▄▂▂▅▂
+wandb:                                                    train/reward_std ▆▄▄▂▂▃▂▄█▄▃▂▃▇▄▃▃▃▁▄▂▂▅▅▁▃▃▂▃▃▄▃▄▃▃▁▅▂▃▃
+wandb:                                     train/rewards/check_answer/mean ▇▇▂▂▅▅▃▂▇▃▅▃▂▂▃█▃▃▅▅▂▅▅▂▇▅▅▅▁▁▅▃▅▃▃▃▃▅▅▅
+wandb:                                      train/rewards/check_answer/std █▁▃▃█▃▃▁▁▃▁▃▁▃▃▃▃▃▁▁▃▃█▁▁▁▃▃▃▁▃▃▃▃▁▃▃▃▃▁
+wandb:                                    train/rewards/check_numbers/mean ██▇▇▅▂▂▆▆▁▆▆▂▂▂▆█▂▂█▄▅▃▂▂▅▄▁▁▅▁▅▄▃▄▂▄▄▂▃
+wandb:                                     train/rewards/check_numbers/std ▇▆█▃▁▇▇▇▁▇▁▁▁▆▆▆▆▇▇▃▇▆▇▇▇█▆▁▆▆▆▇▇█▁▇▇▁▁▇
+wandb:                       train/rewards/match_format_approximately/mean ▆▆▁▁▅▄▇▂▅▆▅▇▅▄▆▃▇▂▅▄▄▄▄▆▆█▃▆▁▄█▄▄▅▂▄▄▄▄▁
+wandb:                        train/rewards/match_format_approximately/std ▇▇▁▁▅▁▄▆▄▄▃▃▄▇▇▁▁▃▃▃▅▅▁█▄▄▄▅▄▁▇▁▅▅▁▆▅▆▁▁
+wandb:                             train/rewards/match_format_exactly/mean ▅▅▃▁▃▅▅▃▃▁▁▃▃▃█▁▅▃▃▃▁▁▁▅▅▁▁▁▆▃▃▆▆▃▃▃▃▅▅▁
+wandb:                              train/rewards/match_format_exactly/std ███▁▁▇███▇▇▇▁██▇▇▁▇█▁▁▁██▁▇▁▇▇▁▇▇▇▇▇█▇▁▁
+wandb:
+wandb: Run summary:
+wandb:                                        budget/max_completion_length 1923
+wandb:                                            budget/max_prompt_length 125
+wandb:                                                        dataset/size 33
+wandb:                                                     elapsed/minutes 14.17
+wandb:         profiling/Time taken: UnslothGRPOTrainer._calculate_rewards 0.0024
+wandb:            profiling/Time taken: UnslothGRPOTrainer._prepare_inputs 22.41014
+wandb:               profiling/Time taken: UnslothGRPOTrainer.check_answer 0.00019
+wandb:              profiling/Time taken: UnslothGRPOTrainer.check_numbers 0.00021
+wandb: profiling/Time taken: UnslothGRPOTrainer.match_format_approximately 0.00015
+wandb:       profiling/Time taken: UnslothGRPOTrainer.match_format_exactly 0.00012
+wandb:              profiling/Time taken: UnslothGRPOTrainer.vLLM.generate 22.20284
+wandb:                                                      prompt_len/q90 124
+wandb:                                                  sample/answer_true 1
+wandb:                                             sample/extracted_number 5
+wandb:                                                     sample/question 【用药题】猫狗咬伤新鲜伤口的经验用药：[...
+wandb:                                                     sample/response 猫狗咬伤的有效治疗可以降低感染风险。万古...
+wandb:                                                          total_flos 0
+wandb:                                             train/completion_length 852
+wandb:                                     train/completions/clipped_ratio 0.25
+wandb:                                        train/completions/max_length 1923
+wandb:                             train/completions/max_terminated_length 578
+wandb:                                       train/completions/mean_length 852
+wandb:                            train/completions/mean_terminated_length 495
+wandb:                                        train/completions/min_length 419
+wandb:                             train/completions/min_terminated_length 419
+wandb:                                                         train/epoch 1.51515
+wandb:                                          train/frac_reward_zero_std 0
+wandb:                                                   train/global_step 50
+wandb:                                                     train/grad_norm 0.2097
+wandb:                                                            train/kl 0.00096
+wandb:                                                 train/learning_rate 0.0
+wandb:                                                          train/loss 0
+wandb:                                                    train/num_tokens 139436
+wandb:                                                        train/reward -4.875
+wandb:                                                    train/reward_std 3.32603
+wandb:                                     train/rewards/check_answer/mean -2
+wandb:                                      train/rewards/check_answer/std 0
+wandb:                                    train/rewards/check_numbers/mean -1
+wandb:                                     train/rewards/check_numbers/std 3
+wandb:                       train/rewards/match_format_approximately/mean -1.875
+wandb:                        train/rewards/match_format_approximately/std 0.75
+wandb:                             train/rewards/match_format_exactly/mean 0
+wandb:                              train/rewards/match_format_exactly/std 0
+wandb:                                                          train_loss 0.0
+wandb:                                                       train_runtime 798.1488
+wandb:                                            train_samples_per_second 0.251
+wandb:                                              train_steps_per_second 0.063
+wandb:
+wandb: 🚀 View run toasty-sun-3 at: http://192.168.100.8:3005/johnson/grpo-dapo-math/runs/xuu8isfz
+wandb: ⭐️ View project at: http://192.168.100.8:3005/johnson/grpo-dapo-math
+wandb: Synced 6 W&B file(s), 0 media file(s), 4 artifact file(s) and 0 other file(s)
+wandb: Find logs at: ./wandb/run-20250908_174215-xuu8isfz/logs

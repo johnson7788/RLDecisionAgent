@@ -132,7 +132,11 @@ CUDA_VISIBLE_DEVICES=2 python train_grpo.py \
 
 
 ## 模型测试
+1）默认数据集进行测试
 python inference_grpo.py --ckpt_dir outputs_qwen3_64r/grpo_lora --prompt "一道经典鸡兔同笼题：鸡和兔共有 20 个头，50 条腿，各有多少只？"
+
+2）自定义数据集进行测试
+python inference_grpo.py --ckpt_dir outputs_grpo_custom/grpo_saved_lora --prompt "【分诊题】47岁女性，呼吸困难加重，唇紫绀，SpO2 82%。选项：[1] 立即复苏（氧疗与通气支持） [2] 紧急评估 [3] 常规优先级 [4] 观察区 [5] 居家。"
 
 ## 对比SFT和Thinking
 两段代码的“骨架”几乎一样（Unsloth + LoRA + TRL 的 SFT），但**训练目标、数据与模板**完全不同，导致学到的能力、输出风格和部署注意点都不一样。一句话：
