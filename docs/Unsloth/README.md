@@ -102,7 +102,7 @@ CUDA_VISIBLE_DEVICES=2 python train_grpo.py \
   --hf-split train \
   --output-dir outputs_qwen3_64r \
   --lora-save-dir outputs_qwen3_64r/grpo_lora \
-  --max-steps 1000 \
+  --max-steps 20 \
   --batch-size 2 \
   --grad-accum 8 \
   --num-generations 4 \
