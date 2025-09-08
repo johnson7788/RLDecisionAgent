@@ -301,7 +301,6 @@ def main(args):
     if args.wandb and not _WANDB_AVAILABLE:
         logger.warning("检测到 --wandb=true 但未安装 wandb；请先 `pip install wandb`。")
     if wandb_enabled:
-        os.environ.setdefault("WANDB_SILENT", "true")
         tags = [t.strip() for t in (args.wandb_tags or "").split(",") if t.strip()]
         wandb_run = wandb.init(
             project=args.wandb_project,

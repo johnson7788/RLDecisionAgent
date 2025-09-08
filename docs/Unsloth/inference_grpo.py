@@ -13,11 +13,11 @@
 # @Author: johnson
 # @Desc  : 推理脚本（适配 train_GRPO.py 的 GRPO 训练产物）
 """
-用法示例（与 train_GRPO.py 默认保存目录一致）：
+用法示例（与 train_grpo.py 默认保存目录一致）：
 
 1) LoRA 目录直接推理（训练脚本保存到 ./outputs/grpo_saved_lora）
 ---------------------------------------------------------------
-python inference_GRPO.py \
+python inference_grpo.py \
   --ckpt_dir ./outputs/grpo_saved_lora \
   --base_model unsloth/Qwen3-4B-Base \
   --prompt "一道经典鸡兔同笼题：鸡和兔共有 20 个头，50 条腿，各有多少只？" \
@@ -25,14 +25,14 @@ python inference_GRPO.py \
 
 2) 自动定位输出根目录下“最新 checkpoint-*”
 ---------------------------------------------------------------
-python inference_GRPO.py \
+python inference_grpo.py \
   --ckpt_dir ./outputs \
   --prompt "Solve: (x-3)^2 = 25" \
   --no_stream
 
 3) 合并 LoRA（更快推理）
 ---------------------------------------------------------------
-python inference_GRPO.py \
+python inference_grpo.py \
   --ckpt_dir ./outputs/grpo_saved_lora \
   --base_model unsloth/Qwen3-4B-Base \
   --merge_lora \
