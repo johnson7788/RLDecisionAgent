@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # @Date  : 2025/9/7 08:06
-# @File  : unsloth_thinking.py
+# @File  : train_thinking.py
 # @Author: johnson
 # @Contact : github: johnson7788
 # @Desc  :
@@ -130,6 +130,7 @@ def parse_args() -> TrainConfig:
         lr_scheduler_type=args.lr_scheduler_type,
         seed=args.seed,
         report_to=args.report_to,
+        data_files=args.data_files,
         output_dir=args.output_dir,
         save_steps=args.save_steps,
         save_total_limit=args.save_total_limit,

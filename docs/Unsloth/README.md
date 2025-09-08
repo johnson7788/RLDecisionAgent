@@ -39,17 +39,17 @@ python train_thinking.py
 1. 单文件（全部当作 `train`）
 
 ```bash
-python unsloth_thinking.py \
+python train_thinking.py \
   --model_name unsloth/Qwen3-4B-Thinking-2507 \
   --chat_template qwen3-thinking \
-  --data_files data/train.jsonl \
+  --data_files xiaosen_thinking.jsonl \
   --dataset_split train
 ```
 
 2. 明确训练/验证拆分
 
 ```bash
-python unsloth_thinking.py \
+python train_thinking.py \
   --data_files "train=data/train.jsonl,validation=data/val.jsonl" \
   --dataset_split train
 ```
@@ -57,7 +57,7 @@ python unsloth_thinking.py \
 3. 多分片通配
 
 ```bash
-python unsloth_thinking.py \
+python train_thinking.py \
   --data_files "train=data/train-*.jsonl" \
   --dataset_split train
 ```

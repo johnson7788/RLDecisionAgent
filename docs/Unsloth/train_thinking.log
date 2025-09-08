@@ -311,3 +311,7 @@ wandb: wandb sync /workspace/verl/tmp/wandb/offline-run-20250907_092625-wbecf2z9
 wandb: Find logs at: ./wandb/offline-run-20250907_092625-wbecf2z9/logs
 [09:36:49] INFO - 543.06 秒 used for training.
 [09:36:49] INFO - 🎉  训练结束。
+
+
+# 自定义数据集
+python train_thinking.py   --model_name unsloth/Qwen3-4B-Thinking-2507   --chat_template qwen3-thinking   --data_files xiaosen_thinking.jsonl   --dataset_split train
