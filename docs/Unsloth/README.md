@@ -100,7 +100,6 @@ CUDA_VISIBLE_DEVICES=2 python train_grpo.py \
   --hf-dataset open-r1/DAPO-Math-17k-Processed \
   --hf-config en \
   --hf-split train \
-  --enable-pre-sft true \
   --output-dir outputs_qwen3_64r \
   --lora-save-dir outputs_qwen3_64r/grpo_lora \
   --max-steps 1000 \
