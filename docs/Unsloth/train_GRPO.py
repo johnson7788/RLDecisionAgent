@@ -5,10 +5,8 @@
 使用 Unsloth + TRL 的 GRPO 在 open-r1/DAPO-Math-17k-Processed 数据集上训练推理格式与答案。
 本脚本抽取自 Unsloth 官方示例，专注于 DAPO-Math-17k 的训练部分，并补充中文注释与日志。
 
-运行前环境依赖（建议）：
-pip install -U "unsloth" "trl" "vllm" "datasets" "transformers==4.55.4" "bitsandbytes" "xformers" "torchvision"
-
-如果在 Colab 上，建议使用 T4/V100/A100 GPU。
+环境依赖（示例）：
+pip install -U "unsloth" "trl" "vllm" "datasets" "transformers==4.55.4" "bitsandbytes" "xformers" "torchvision" "pandas"
 """
 
 import os
@@ -19,10 +17,12 @@ import time
 import json
 import random
 import logging
+import argparse
 from dataclasses import dataclass
 
 import torch
 import numpy as np
+import pandas as pd
 from datasets import load_dataset, Dataset
 
 from unsloth import FastLanguageModel
@@ -39,47 +39,26 @@ logging.basicConfig(
 logger = logging.getLogger("GRPO-DAPO-Math")
 
 # =========================
-# 可调参数
+# 工具函数
 # =========================
-MODEL_NAME = "unsloth/Qwen3-4B-Base"   # 你也可以换成其他基座
-MAX_SEQ_LEN = 2048                     # 最大序列长度（越大越吃显存）
-LORA_RANK = 32                         # LoRA秩：越大效果越好、训练更慢更耗显存
-GPU_MEMORY_UTIL = 0.7                  # vLLM 推理内存利用率
-SEED = 3407
+def str2bool(v):
+    if isinstance(v, bool):
+        return v
+    if v.lower() in ("yes", "true", "t", "y", "1"):
+        return True
+    if v.lower() in ("no", "false", "f", "n", "0"):
+        return False
+    raise argparse.ArgumentTypeError("Boolean value expected.")
 
-# 训练步数与生成配置（GRPO）
-MAX_STEPS = 100                        # 演示默认 100 步；正式训练可拉满或改为 num_train_epochs
-BATCH_SIZE = 1                         # 每卡 batch；用 grad_accum 可模拟更大 batch
-GRAD_ACCUM = 1                         # 梯度累积步数
-NUM_GENERATIONS = 4                    # 每个 prompt 生成的并行样本数
-LEARNING_RATE = 5e-6
-WEIGHT_DECAY = 0.01
-WARMUP_RATIO = 0.1
-
-# 数据集（Open R1）
-HF_DATASET = "open-r1/DAPO-Math-17k-Processed"
-HF_CONFIG = "en"
-HF_SPLIT = "train"
-
-# 可选：是否进行一个很小的 SFT 预对齐（来自官方示例，用于让模型更快学会目标格式）
-ENABLE_PRE_SFT = False
-
-# 保存 LoRA 的目录
-OUTPUT_DIR = "outputs"
-LORA_SAVE_DIR = os.path.join(OUTPUT_DIR, "grpo_saved_lora")
-
-# =========================
-# 设定随机种子
-# =========================
 def set_seed(seed: int):
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-set_seed(SEED)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
 
 # =========================
-# 自定义思维/答案标签与系统提示
+# 思维/答案标签与系统提示
 # =========================
 reasoning_start = "<start_working_out>"  # 类似 <think>
 reasoning_end   = "<end_working_out>"    # 类似 </think>
@@ -95,7 +74,6 @@ system_prompt = (
 
 # =========================
 # 构造 Chat Template（重要）
-# - 我们的 GRPO 格式需要模型在生成时以 <start_working_out> 开始
 # =========================
 def build_chat_template(tokenizer):
     chat_template = (
@@ -119,14 +97,13 @@ def build_chat_template(tokenizer):
     return tokenizer
 
 # =========================
-# （可选）极小 SFT 预对齐以加速 GRPO（来自原笔记本）
+# （可选）极小 SFT 预对齐
 # =========================
-def maybe_pre_sft(model, tokenizer):
-    if not ENABLE_PRE_SFT:
-        logger.info("跳过预SFT对齐（可将 ENABLE_PRE_SFT=True 开启）")
+def maybe_pre_sft(model, tokenizer, enable_pre_sft: bool, seed: int):
+    if not enable_pre_sft:
+        logger.info("跳过预SFT对齐（可通过 --enable-pre-sft true 开启）")
         return
     logger.info("开始进行一个小规模的SFT以对齐输出格式（可选步骤）...")
-    from datasets import load_dataset
     from trl import SFTTrainer, SFTConfig
 
     ds = load_dataset("unsloth/OpenMathReasoning-mini", split="cot").to_pandas()
@@ -167,7 +144,7 @@ def maybe_pre_sft(model, tokenizer):
             optim="adamw_8bit",
             weight_decay=0.01,
             lr_scheduler_type="linear",
-            seed=SEED,
+            seed=seed,
             report_to="none",
         ),
     )
@@ -177,7 +154,7 @@ def maybe_pre_sft(model, tokenizer):
     logger.info("预SFT对齐完成。")
 
 # =========================
-# 格式正则与奖励函数（与原示例等价，中文注释）
+# 奖励函数
 # =========================
 def build_reward_funcs(tokenizer):
     # 允许 </SOLUTION> 后有可选的 EOS
@@ -191,7 +168,7 @@ def build_reward_funcs(tokenizer):
         flags=re.MULTILINE | re.DOTALL,
     )
 
-    # 1) 完全匹配格式奖励（匹配到完整结构 +3）
+    # 1) 完全匹配格式奖励
     def match_format_exactly(completions, **kwargs):
         scores = []
         for completion in completions:
@@ -200,13 +177,12 @@ def build_reward_funcs(tokenizer):
             scores.append(score)
         return scores
 
-    # 2) 近似匹配格式奖励（标签个数正确各 +0.5，错误则 -1）
+    # 2) 近似匹配格式奖励
     def match_format_approximately(completions, **kwargs):
         scores = []
         for completion in completions:
             resp = completion[0]["content"]
             score = 0.0
-            # start_working_out 由模板自动添加，不再奖励
             score += 0.5 if resp.count(reasoning_end)   == 1 else -1.0
             score += 0.5 if resp.count(solution_start)  == 1 else -1.0
             score += 0.5 if resp.count(solution_end)    == 1 else -1.0
@@ -289,42 +265,46 @@ def build_reward_funcs(tokenizer):
 # =========================
 # 主流程
 # =========================
-def main():
+def main(args):
     t0 = time.time()
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    # -------- 1) 加载模型与Tokenizer（LoRA可训练） --------
-    logger.info("加载基座模型与Tokenizer：%s", MODEL_NAME)
+    # 目录与种子
+    os.makedirs(args.output_dir, exist_ok=True)
+    lora_save_dir = args.lora_save_dir or os.path.join(args.output_dir, "grpo_saved_lora")
+    set_seed(args.seed)
+
+    # 1) 加载模型与Tokenizer（LoRA可训练）
+    logger.info("加载基座模型与Tokenizer：%s", args.model_name)
     model, tokenizer = FastLanguageModel.from_pretrained(
-        model_name=MODEL_NAME,
-        max_seq_length=MAX_SEQ_LEN,
-        load_in_4bit=False,                # LoRA 16bit 训练
-        fast_inference=False,               # 关闭内嵌 vLLM
-        max_lora_rank=LORA_RANK,
-        gpu_memory_utilization=GPU_MEMORY_UTIL,
+        model_name=args.model_name,
+        max_seq_length=args.max_seq_len,
+        load_in_4bit=args.load_in_4bit,
+        fast_inference=args.fast_inference,
+        max_lora_rank=args.lora_rank,
+        gpu_memory_utilization=args.gpu_memory_util,
     )
     model = FastLanguageModel.get_peft_model(
         model,
-        r=LORA_RANK,
+        r=args.lora_rank,
         target_modules=[
             "q_proj", "k_proj", "v_proj", "o_proj",
             "gate_proj", "up_proj", "down_proj",
         ],
-        lora_alpha=LORA_RANK * 2,          # *2 可略微加快训练
+        lora_alpha=args.lora_rank * 2,
         use_gradient_checkpointing="unsloth",
-        random_state=SEED,
+        random_state=args.seed,
     )
 
-    # -------- 2) 设置 Chat Template --------
+    # 2) 设置 Chat Template
     tokenizer = build_chat_template(tokenizer)
     logger.info("Chat template 已设定完成。")
 
-    # （可选）做一个很小的 SFT 预对齐（非必须）
-    maybe_pre_sft(model, tokenizer)
+    # （可选）SFT 预对齐
+    maybe_pre_sft(model, tokenizer, args.enable_pre_sft, args.seed)
 
-    # -------- 3) 加载 DAPO-Math-17k 数据集 --------
-    logger.info("加载数据集：%s (%s / %s)", HF_DATASET, HF_CONFIG, HF_SPLIT)
-    ds = load_dataset(HF_DATASET, HF_CONFIG, split=HF_SPLIT)
+    # 3) 加载数据集
+    logger.info("加载数据集：%s (%s / %s)", args.hf_dataset, args.hf_config, args.hf_split)
+    ds = load_dataset(args.hf_dataset, args.hf_config, split=args.hf_split)
     logger.info("数据集大小：%d", len(ds))
     logger.info("样例 prompt：%s", ds[0]["prompt"][:200].replace("\n", " "))
     logger.info("样例 solution：%s", ds[0]["solution"][:200].replace("\n", " "))
@@ -345,7 +325,7 @@ def main():
     })
     logger.info("字段映射完成，示例：%s", json.dumps(ds[0]["prompt"][-1], ensure_ascii=False)[:300])
 
-    # -------- 5) 构建奖励函数 --------
+    # 5) 奖励函数
     reward_funcs = build_reward_funcs(tokenizer)
     logger.info("奖励函数已构建：%s", [f.__name__ for f in reward_funcs])
 
@@ -363,45 +343,45 @@ def main():
     ds = ds.select(kept_indices.tolist())
     logger.info("过滤后数据集大小：%d（移除了 top 10%% 超长样本）", len(ds))
 
-    # -------- 7) 计算 GRPO 的 prompt / completion 长度预算 --------
+    # 7) 计算长度预算
     max_prompt_length = max_prompt_len_q90 + 1
-    max_completion_length = MAX_SEQ_LEN - max_prompt_length
+    max_completion_length = args.max_seq_len - max_prompt_length
     logger.info("max_prompt_length=%d, max_completion_length=%d",
                 max_prompt_length, max_completion_length)
 
-    # -------- 8) vLLM 采样参数（用于生成候选解） --------
+    # 8) vLLM 采样参数
     vllm_sampling_params = SamplingParams(
         min_p=0.1,
         top_p=1.0,
         top_k=-1,
-        seed=SEED,
+        seed=args.seed,
         stop=[tokenizer.eos_token],
         include_stop_str_in_output=True,
     )
 
-    # -------- 9) 训练参数（GRPO） --------
+    # 9) 训练参数（GRPO）
     training_args = GRPOConfig(
-        use_vllm = True,
+        use_vllm = args.use_vllm,
         vllm_mode="server",
-        vllm_server_base_url="http://127.0.0.1:8000",
+        vllm_server_base_url=args.vllm_server_base_url,
         vllm_sampling_params=vllm_sampling_params,
         temperature=1.0,
-        learning_rate=LEARNING_RATE,
-        weight_decay=WEIGHT_DECAY,
-        warmup_ratio=WARMUP_RATIO,
+        learning_rate=args.learning_rate,
+        weight_decay=args.weight_decay,
+        warmup_ratio=args.warmup_ratio,
         lr_scheduler_type="linear",
-        optim="adamw_8bit",
+        optim=args.optim,
         logging_steps=1,
-        per_device_train_batch_size=BATCH_SIZE,
-        gradient_accumulation_steps=GRAD_ACCUM,
-        num_generations=NUM_GENERATIONS,
+        per_device_train_batch_size=args.batch_size,
+        gradient_accumulation_steps=args.grad_accum,
+        num_generations=args.num_generations,
         max_prompt_length=max_prompt_length,
         max_completion_length=max_completion_length,
-        max_steps=MAX_STEPS,              # 或者使用 num_train_epochs=1 做完整轮次
-        save_steps=MAX_STEPS,
+        max_steps=args.max_steps,
+        save_steps=args.save_steps if args.save_steps is not None else args.max_steps,
         report_to="none",
-        output_dir=OUTPUT_DIR,
-        # 你也可以打开评估相关参数
+        output_dir=args.output_dir,
+        # 评估相关参数可按需开启
         # fp16_full_eval=True,
         # per_device_eval_batch_size=4,
         # eval_accumulation_steps=1,
@@ -409,7 +389,7 @@ def main():
         # eval_steps=50,
     )
 
-    # -------- 10) 构建并启动 GRPO 训练 --------
+    # 10) 启动 GRPO 训练
     logger.info("开始 GRPO 训练...")
     trainer = GRPOTrainer(
         model=model,
@@ -421,18 +401,60 @@ def main():
     trainer.train()
     logger.info("GRPO 训练完成。")
 
-    # -------- 11) （可选）保存 LoRA 适配器 --------
-    logger.info("保存 LoRA 适配器到：%s", LORA_SAVE_DIR)
-    os.makedirs(LORA_SAVE_DIR, exist_ok=True)
-    logger.info(f"Unsloth 保存模型 Trainer.save_model")
-    trainer.save_model(LORA_SAVE_DIR)
-    tokenizer.save_pretrained(LORA_SAVE_DIR)
-    logger.info(f"模型已保存至: {LORA_SAVE_DIR}")
+    # 11) 保存 LoRA 适配器
+    logger.info("保存 LoRA 适配器到：%s", lora_save_dir)
+    os.makedirs(lora_save_dir, exist_ok=True)
+    trainer.save_model(lora_save_dir)
+    tokenizer.save_pretrained(lora_save_dir)
+    logger.info("模型已保存至: %s", lora_save_dir)
     logger.info("全部完成，用时 %.1f 分钟。", (time.time() - t0) / 60.0)
+    logger.info("提示：推理时可调用 model.load_lora('%s') 进行 LoRA 加载。", lora_save_dir)
 
-    # 提醒：可以用 model.load_lora(LORA_SAVE_DIR) 在推理时加载
-    logger.info("提示：推理时可调用 model.load_lora('%s') 进行 LoRA 加载。", LORA_SAVE_DIR)
+# =========================
+# 参数解析
+# =========================
+def build_parser():
+    p = argparse.ArgumentParser(description="GRPO 训练脚本（可通过命令行传参）")
 
+    # 模型 & 训练基础
+    p.add_argument("--model-name", type=str, default="unsloth/Qwen3-4B-Base")
+    p.add_argument("--max-seq-len", type=int, default=2048)
+    p.add_argument("--lora-rank", type=int, default=32)
+    p.add_argument("--gpu-memory-util", type=float, default=0.7)
+    p.add_argument("--seed", type=int, default=3407)
+
+    # 训练超参
+    p.add_argument("--max-steps", type=int, default=100)
+    p.add_argument("--batch-size", type=int, default=1)
+    p.add_argument("--grad-accum", type=int, default=1)
+    p.add_argument("--num-generations", type=int, default=4)
+    p.add_argument("--learning-rate", type=float, default=5e-6)
+    p.add_argument("--weight-decay", type=float, default=0.01)
+    p.add_argument("--warmup-ratio", type=float, default=0.1)
+    p.add_argument("--optim", type=str, default="adamw_8bit", choices=["adamw_8bit", "adamw_torch", "adamw_hf"])
+    p.add_argument("--save-steps", type=int, default=None, help="不指定则与 max_steps 相同")
+
+    # 数据集
+    p.add_argument("--hf-dataset", type=str, default="open-r1/DAPO-Math-17k-Processed")
+    p.add_argument("--hf-config",  type=str, default="en")
+    p.add_argument("--hf-split",   type=str, default="train")
+
+    # 预对齐
+    p.add_argument("--enable-pre-sft", type=str2bool, default=False)
+
+    # 目录
+    p.add_argument("--output-dir", type=str, default="outputs")
+    p.add_argument("--lora-save-dir", type=str, default=None, help="默认 outputs/grpo_saved_lora")
+
+    # vLLM / 加速相关
+    p.add_argument("--use-vllm", type=str2bool, default=True)
+    p.add_argument("--vllm-server-base-url", type=str, default="http://127.0.0.1:8000")
+    p.add_argument("--load-in-4bit", type=str2bool, default=False)
+    p.add_argument("--fast-inference", type=str2bool, default=False)
+
+    return p
 
 if __name__ == "__main__":
-    main()
+    parser = build_parser()
+    args = parser.parse_args()
+    main(args)
