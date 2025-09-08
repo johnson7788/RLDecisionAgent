@@ -75,9 +75,9 @@ python inference_thinking.py \
 
 
 # GRPO强化学习训练， 需要安装vllm
-[unsloth_GRPO.py](unsloth_GRPO.py)
+[train_grpo.py](train_grpo.py)
 ## GRPO模型训练
-python unsloth_GRPO.py
+python train_grpo.py
 使用的模型是： unsloth/Qwen3-4B-Base
 
 # 显卡1上启动vllm
@@ -90,7 +90,29 @@ trl vllm-serve --model unsloth/Qwen3-4B-Base \
   --host 127.0.0.1 --port 8000
 
 # 显卡2上训练
-CUDA_VISIBLE_DEVICES=2 python train_GRPO.py
+1）默认参数
+CUDA_VISIBLE_DEVICES=2 python train_grpo.py
+2）指定参数训练
+CUDA_VISIBLE_DEVICES=2 python train_grpo.py \
+  --model-name unsloth/Qwen3-4B-Base \
+  --max-seq-len 4096 \
+  --lora-rank 64 \
+  --hf-dataset open-r1/DAPO-Math-17k-Processed \
+  --hf-config en \
+  --hf-split train \
+  --enable-pre-sft true \
+  --output-dir outputs_qwen3_64r \
+  --lora-save-dir outputs_qwen3_64r/grpo_lora \
+  --max-steps 1000 \
+  --batch-size 2 \
+  --grad-accum 8 \
+  --num-generations 4 \
+  --learning-rate 5e-6 \
+  --weight-decay 0.01 \
+  --warmup-ratio 0.1 \
+  --use-vllm true \
+  --vllm-server-base-url http://127.0.0.1:8000
+
 
 ## 对比SFT和Thinking
 两段代码的“骨架”几乎一样（Unsloth + LoRA + TRL 的 SFT），但**训练目标、数据与模板**完全不同，导致学到的能力、输出风格和部署注意点都不一样。一句话：
