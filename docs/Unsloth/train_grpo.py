@@ -3,10 +3,10 @@
 
 """
 使用 Unsloth + TRL 的 GRPO 在 open-r1/DAPO-Math-17k-Processed 数据集上训练推理格式与答案。
-本脚本抽取自 Unsloth 官方示例，专注于 DAPO-Math-17k 的训练部分，并补充中文注释与日志。
+本脚本在原版基础上 **集成 Weights & Biases（wandb）**，将训练过程的关键信息、指标与样例输出记录到 wandb，并在训练结束后可选上传 LoRA 适配器为 W&B Artifact。
 
 环境依赖（示例）：
-pip install -U "unsloth" "trl" "vllm" "datasets" "transformers==4.55.4" "bitsandbytes" "xformers" "torchvision" "pandas"
+pip install -U "unsloth" "trl" "vllm" "datasets" "transformers==4.55.4" "bitsandbytes" "xformers" "torchvision" "pandas" wandb
 """
 
 import os
@@ -18,6 +18,7 @@ import json
 import random
 import logging
 import argparse
+import dotenv
 from dataclasses import dataclass
 
 import torch
@@ -28,6 +29,16 @@ from datasets import load_dataset, Dataset
 from unsloth import FastLanguageModel
 from trl import GRPOConfig, GRPOTrainer
 from vllm import SamplingParams
+dotenv.load_dotenv()
+# ==== NEW: wandb 集成 ====
+try:
+    import wandb
+    _WANDB_AVAILABLE = True
+    print(f"WANDB_AVAILABLE是可用的，已经安装了wandb")
+except Exception:
+    wandb = None
+    _WANDB_AVAILABLE = False
+    print(f"WANDB_AVAILABLE不可用，没有安装wandb")
 
 # =========================
 # 日志设置
@@ -99,7 +110,7 @@ def build_chat_template(tokenizer):
 # =========================
 # （可选）极小 SFT 预对齐
 # =========================
-def maybe_pre_sft(model, tokenizer, enable_pre_sft: bool, seed: int):
+def maybe_pre_sft(model, tokenizer, enable_pre_sft: bool, seed: int, wandb_args=None):
     if not enable_pre_sft:
         logger.info("跳过预SFT对齐（可通过 --enable-pre-sft true 开启）")
         return
@@ -129,6 +140,8 @@ def maybe_pre_sft(model, tokenizer, enable_pre_sft: bool, seed: int):
     from datasets import Dataset as HFDataset
     ds_hf = HFDataset.from_pandas(ds)
 
+    report_to = "wandb" if wandb_args and wandb_args.get("enabled") else "none"
+
     trainer = SFTTrainer(
         model=model,
         tokenizer=tokenizer,
@@ -145,7 +158,7 @@ def maybe_pre_sft(model, tokenizer, enable_pre_sft: bool, seed: int):
             weight_decay=0.01,
             lr_scheduler_type="linear",
             seed=seed,
-            report_to="none",
+            report_to=report_to,
         ),
     )
     trainer.train()
@@ -156,7 +169,7 @@ def maybe_pre_sft(model, tokenizer, enable_pre_sft: bool, seed: int):
 # =========================
 # 奖励函数
 # =========================
-def build_reward_funcs(tokenizer):
+def build_reward_funcs(tokenizer, wandb_enabled=False, wandb_log_samples=False):
     # 允许 </SOLUTION> 后有可选的 EOS
     solution_end_regex = r"</SOLUTION>[\s]{0,}(?:" + re.escape(tokenizer.eos_token) + ")?"
 
@@ -189,8 +202,7 @@ def build_reward_funcs(tokenizer):
             scores.append(score)
         return scores
 
-    # 3) 基于严格提取答案的奖励（和真值对比，相等 +5，strip后相等 +3.5，
-    #    否则尝试转浮点按比例给部分分，失败则扣分）
+    # 3) 基于严格提取答案的奖励
     def check_answer(prompts, completions, answer, **kwargs):
         responses = [c[0]["content"] for c in completions]
         extracted = [
@@ -241,10 +253,20 @@ def build_reward_funcs(tokenizer):
         ]
 
         if printed_times["n"] % PRINT_EVERY_STEPS == 0:
-            logger.info("\n" + "*"*20 +
-                        f"\n【题目】\n{question}\n【标准答案】\n{answer[0]}"
-                        f"\n【模型输出】\n{responses[0]}"
-                        f"\n【提取数字】\n{extracted[0]}\n" + "*"*20)
+            msg = ("\n" + "*"*20 +
+                   f"\n【题目】\n{question}\n【标准答案】\n{answer[0]}" \
+                   f"\n【模型输出】\n{responses[0]}" \
+                   f"\n【提取数字】\n{extracted[0]}\n" + "*"*20)
+            logger.info(msg)
+            # === NEW: 同步到 wandb（可选） ===
+            if wandb_enabled and wandb_log_samples and _WANDB_AVAILABLE and wandb.run is not None:
+                # 为了简单与稳定，使用文本字段进行记录
+                wandb.log({
+                    "sample/question": question,
+                    "sample/answer_true": str(answer[0]),
+                    "sample/response": responses[0],
+                    "sample/extracted_number": str(extracted[0]),
+                })
         printed_times["n"] += 1
 
         scores = []
@@ -273,6 +295,31 @@ def main(args):
     lora_save_dir = args.lora_save_dir or os.path.join(args.output_dir, "grpo_saved_lora")
     set_seed(args.seed)
 
+    # ==== NEW: 初始化 W&B ====
+    wandb_run = None
+    wandb_enabled = bool(args.wandb and _WANDB_AVAILABLE and args.wandb_mode != "disabled")
+    if args.wandb and not _WANDB_AVAILABLE:
+        logger.warning("检测到 --wandb=true 但未安装 wandb；请先 `pip install wandb`。")
+    if wandb_enabled:
+        os.environ.setdefault("WANDB_SILENT", "true")
+        tags = [t.strip() for t in (args.wandb_tags or "").split(",") if t.strip()]
+        wandb_run = wandb.init(
+            project=args.wandb_project,
+            entity=args.wandb_entity,
+            name=args.wandb_run_name,
+            mode=args.wandb_mode,
+            tags=tags,
+            config={**{k:v for k,v in vars(args).items() if isinstance(v, (int, float, str, bool, type(None)))}},
+        )
+        # 记录环境与硬件
+        sys_info = {
+            "torch_version": torch.__version__,
+            "cuda_available": torch.cuda.is_available(),
+            "num_gpus": torch.cuda.device_count(),
+            "gpu_names": [torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())] if torch.cuda.is_available() else [],
+        }
+        wandb.config.update(sys_info, allow_val_change=True)
+
     # 1) 加载模型与Tokenizer（LoRA可训练）
     logger.info("加载基座模型与Tokenizer：%s", args.model_name)
     model, tokenizer = FastLanguageModel.from_pretrained(
@@ -295,12 +342,20 @@ def main(args):
         random_state=args.seed,
     )
 
+    # 可选：监控梯度/权重（谨慎使用，可能较慢）
+    if wandb_enabled and args.wandb_watch != "none":
+        try:
+            wandb.watch(model, log=args.wandb_watch, log_freq=max(50, args.logging_steps))
+        except Exception as e:
+            logger.warning(f"wandb.watch 失败：{e}")
+
     # 2) 设置 Chat Template
     tokenizer = build_chat_template(tokenizer)
     logger.info("Chat template 已设定完成。")
 
     # （可选）SFT 预对齐
-    maybe_pre_sft(model, tokenizer, args.enable_pre_sft, args.seed)
+    maybe_pre_sft(model, tokenizer, args.enable_pre_sft, args.seed,
+                  wandb_args={"enabled": wandb_enabled})
 
     # 3) 加载数据集
     logger.info("加载数据集：%s (%s / %s)", args.hf_dataset, args.hf_config, args.hf_split)
@@ -325,8 +380,10 @@ def main(args):
     })
     logger.info("字段映射完成，示例：%s", json.dumps(ds[0]["prompt"][-1], ensure_ascii=False)[:300])
 
-    # 5) 奖励函数
-    reward_funcs = build_reward_funcs(tokenizer)
+    # 5) 奖励函数（带 wandb 文本样例记录选项）
+    reward_funcs = build_reward_funcs(tokenizer,
+                                      wandb_enabled=wandb_enabled,
+                                      wandb_log_samples=args.wandb_log_samples)
     logger.info("奖励函数已构建：%s", [f.__name__ for f in reward_funcs])
 
     # -------- 6) 统计长度并过滤超长样本（避免被截断影响训练） --------
@@ -349,6 +406,13 @@ def main(args):
     logger.info("max_prompt_length=%d, max_completion_length=%d",
                 max_prompt_length, max_completion_length)
 
+    # === NEW: 将上述统计同步到 W&B ===
+    if wandb_enabled:
+        wandb.summary["dataset/size"] = len(ds)
+        wandb.summary["prompt_len/q90"] = max_prompt_len_q90
+        wandb.summary["budget/max_prompt_length"] = max_prompt_length
+        wandb.summary["budget/max_completion_length"] = max_completion_length
+
     # 8) vLLM 采样参数
     vllm_sampling_params = SamplingParams(
         min_p=0.1,
@@ -360,6 +424,7 @@ def main(args):
     )
 
     # 9) 训练参数（GRPO）
+    report_to = "wandb" if wandb_enabled else "none"
     training_args = GRPOConfig(
         use_vllm = args.use_vllm,
         vllm_mode="server",
@@ -371,7 +436,7 @@ def main(args):
         warmup_ratio=args.warmup_ratio,
         lr_scheduler_type="linear",
         optim=args.optim,
-        logging_steps=1,
+        logging_steps=args.logging_steps,
         per_device_train_batch_size=args.batch_size,
         gradient_accumulation_steps=args.grad_accum,
         num_generations=args.num_generations,
@@ -379,7 +444,7 @@ def main(args):
         max_completion_length=max_completion_length,
         max_steps=args.max_steps,
         save_steps=args.save_steps if args.save_steps is not None else args.max_steps,
-        report_to="none",
+        report_to=report_to,
         output_dir=args.output_dir,
         # 评估相关参数可按需开启
         # fp16_full_eval=True,
@@ -398,6 +463,15 @@ def main(args):
         args=training_args,
         train_dataset=ds,
     )
+
+    # 让 transformers 的 WandbCallback 也能介入（可选）
+    if wandb_enabled:
+        try:
+            from transformers.integrations import WandbCallback
+            trainer.add_callback(WandbCallback())
+        except Exception as e:
+            logger.warning(f"添加 WandbCallback 失败：{e}")
+
     trainer.train()
     logger.info("GRPO 训练完成。")
 
@@ -407,14 +481,39 @@ def main(args):
     trainer.save_model(lora_save_dir)
     tokenizer.save_pretrained(lora_save_dir)
     logger.info("模型已保存至: %s", lora_save_dir)
-    logger.info("全部完成，用时 %.1f 分钟。", (time.time() - t0) / 60.0)
+
+    # === NEW: 上传为 W&B Artifact（可选） ===
+    if wandb_enabled and args.wandb_upload_artifact:
+        try:
+            safe_model_name = args.model_name.replace('/', '-').replace(' ', '_')
+            artifact_name = f"{safe_model_name}-grpo-lora"
+            art = wandb.Artifact(artifact_name, type="model",
+                                 metadata={
+                                     "model_name": args.model_name,
+                                     "lora_rank": args.lora_rank,
+                                     "max_steps": args.max_steps,
+                                     "dataset": f"{args.hf_dataset}/{args.hf_config}:{args.hf_split}",
+                                     "max_seq_len": args.max_seq_len,
+                                 })
+            art.add_dir(lora_save_dir)
+            wandb.log_artifact(art)
+            logger.info("LoRA 适配器已作为 Artifact 上传到 W&B：%s", artifact_name)
+        except Exception as e:
+            logger.warning(f"上传 Artifact 失败：{e}")
+
+    elapsed_min = (time.time() - t0) / 60.0
+    logger.info("全部完成，用时 %.1f 分钟。", elapsed_min)
     logger.info("提示：推理时可调用 model.load_lora('%s') 进行 LoRA 加载。", lora_save_dir)
+
+    if wandb_enabled:
+        wandb.summary["elapsed/minutes"] = round(elapsed_min, 2)
+        wandb.finish()
 
 # =========================
 # 参数解析
 # =========================
 def build_parser():
-    p = argparse.ArgumentParser(description="GRPO 训练脚本（可通过命令行传参）")
+    p = argparse.ArgumentParser(description="GRPO 训练脚本（可通过命令行传参），已集成 W&B 记录")
 
     # 模型 & 训练基础
     p.add_argument("--model-name", type=str, default="unsloth/Qwen3-4B-Base")
@@ -433,6 +532,7 @@ def build_parser():
     p.add_argument("--warmup-ratio", type=float, default=0.1)
     p.add_argument("--optim", type=str, default="adamw_8bit", choices=["adamw_8bit", "adamw_torch", "adamw_hf"])
     p.add_argument("--save-steps", type=int, default=None, help="不指定则与 max_steps 相同")
+    p.add_argument("--logging-steps", type=int, default=1, help="wandb/日志记录步频")
 
     # 数据集
     p.add_argument("--hf-dataset", type=str, default="open-r1/DAPO-Math-17k-Processed")
@@ -451,6 +551,20 @@ def build_parser():
     p.add_argument("--vllm-server-base-url", type=str, default="http://127.0.0.1:8000")
     p.add_argument("--load-in-4bit", type=str2bool, default=False)
     p.add_argument("--fast-inference", type=str2bool, default=False)
+
+    # ===== NEW: wandb 相关 =====
+    p.add_argument("--wandb", type=str2bool, default=True, help="启用 Weights & Biases 记录")
+    p.add_argument("--wandb-project", type=str, default="grpo-dapo-math", help="W&B 项目名")
+    p.add_argument("--wandb-entity", type=str, default=None, help="W&B 实体（团队/用户名），可不填")
+    p.add_argument("--wandb-run-name", type=str, default=None, help="W&B 运行名，不填则自动生成")
+    p.add_argument("--wandb-tags", type=str, default="dapo,grpo,unsloth", help="逗号分隔的标签")
+    p.add_argument("--wandb-mode", type=str, default="online", choices=["online", "offline", "disabled"],
+                   help="online=联网记录，offline=离线，disabled=完全关闭")
+    p.add_argument("--wandb-log-samples", type=str2bool, default=True,
+                   help="在奖励函数中按频率记录样例问答文本，便于排查训练质量")
+    p.add_argument("--wandb-upload-artifact", type=str2bool, default=True, help="训练结束上传 LoRA 适配器为 Artifact")
+    p.add_argument("--wandb-watch", type=str, default="none", choices=["none", "gradients", "all"],
+                   help="是否使用 wandb.watch 监控梯度/权重（可能较慢）")
 
     return p
 
