@@ -75,6 +75,8 @@ def parse_args() -> TrainConfig:
     parser.add_argument("--seed", type=int, default=TrainConfig.seed)
     parser.add_argument("--report_to", type=str, default=TrainConfig.report_to)
 
+    parser.add_argument("--data_files", type=str, default=None,help="逗号分隔的本地数据文件，如 data/train.jsonl")
+
     parser.add_argument("--output_dir", type=str, default="./outputs/qwen3_4b_thinking_lora")
     parser.add_argument("--save_steps", type=int, default=TrainConfig.save_steps)
     parser.add_argument("--save_total_limit", type=int, default=None)
@@ -149,6 +151,21 @@ def parse_args() -> TrainConfig:
     cfg.dataset_text_field = "text"
     return cfg
 
+def _safe_json_dumps(obj) -> str:
+    """尽量完整地打印样本，避免 numpy/int64 等类型导致的序列化报错"""
+    def _default(o):
+        try:
+            import numpy as np
+            if isinstance(o, (np.integer,)):
+                return int(o)
+            if isinstance(o, (np.floating,)):
+                return float(o)
+        except Exception:
+            pass
+        return str(o)
+    return json.dumps(obj, ensure_ascii=False, indent=2, default=_default)
+
+
 def prepare_dataset_openmath_thinking(cfg: TrainConfig, tokenizer, logger: logging.Logger, *, split: str = "cot") -> Dataset:
     """OpenMathReasoning-mini → conversations → text"""
     t0 = time.perf_counter()
@@ -196,10 +213,99 @@ def prepare_dataset_openmath_thinking(cfg: TrainConfig, tokenizer, logger: loggi
     logger.info("apply_chat_template 完成（用时 %.2fs）", time.perf_counter() - t2)
 
     # 预览（最终文本）
-    if len(ds) > 0 and "text" in ds.column_names:
-        logger.info("模板化样本#0.text: %s", clip_display_text(ds[0]["text"]))
-
+    if len(ds) > 0:
+        if "text" in ds.column_names:
+            logger.info("模板化样本#0.text(截断预览): %s", clip_display_text(ds[0]["text"]))
+        try:
+            logger.info("==== 样本#0 完整记录（OpenMath pipeline 之后） ====\n%s", _safe_json_dumps(ds[0]))
+        except Exception as e:
+            logger.warning("打印完整样本失败: %r", e)
     logger.info("数据集准备完成：%d 行，总耗时 %.2fs", len(ds), time.perf_counter() - t0)
+    return ds
+
+def _parse_data_files_arg(s: str) -> dict | list | str:
+    """
+    将 --data_files 的字符串解析为 datasets.load_dataset(data_files=...) 接受的形式。
+    支持：
+      - "data/train.jsonl"
+      - "train=data/train-*.jsonl"
+      - "train=... , validation=..."
+      - "a.jsonl,b.jsonl"（等价于单一 'train' 拆分的多文件列表）
+    """
+    s = (s or "").strip()
+    if not s:
+        return s
+    parts = [p.strip() for p in s.split(",") if p.strip()]
+    if all("=" in p for p in parts):
+        out = {}
+        for p in parts:
+            k, v = p.split("=", 1)
+            out[k.strip()] = v.strip()
+        return out  # e.g. {"train":"...", "validation":"..."}
+    if len(parts) == 1:
+        return parts[0]        # 单文件
+    return parts               # 多文件列表 → 单一拆分
+
+def prepare_dataset_from_json_files(cfg: TrainConfig, tokenizer, logger: logging.Logger) -> Dataset:
+    """
+    通用自定义数据集加载：
+      - 接受 conversations/messages/input+output 其中一种
+      - 统一生成 'text' 列供 SFT 使用
+    """
+    assert cfg.data_files, "cfg.data_files 不能为空"
+    df_arg = _parse_data_files_arg(cfg.data_files)
+
+    logger.info("从本地文件加载数据: %s", df_arg)
+    raw = load_dataset("json", data_files=df_arg)
+
+    # 选择拆分：优先 cfg.dataset_split；否则取第一个可用键；若 load_dataset 返回 Dataset 则直接用
+    if isinstance(raw, dict) or hasattr(raw, "keys"):  # DatasetDict
+        keys = list(raw.keys())
+        split = cfg.dataset_split if cfg.dataset_split in keys else (keys[0] if keys else "train")
+        ds = raw[split]
+        logger.info("已选择拆分: %s（可用: %s）", split, keys)
+    else:
+        ds = raw
+
+    cols = set(ds.column_names)
+    logger.info("原始字段: %s", cols)
+
+    # 预处理为 conversations
+    if "conversations" in cols:
+        conv_field = "conversations"
+    elif "messages" in cols:
+        conv_field = "messages"
+    elif {"input", "output"}.issubset(cols):
+        conv_field = None
+        def to_conv_io(batch):
+            convs = []
+            for x, y in zip(batch["input"], batch["output"]):
+                if isinstance(x, str) and isinstance(y, str) and x.strip() and y.strip():
+                    convs.append([{"role": "user", "content": x.strip()},
+                                  {"role": "assistant", "content": y.strip()}])
+            return {"conversations": convs}
+        ds = ds.map(to_conv_io, batched=True, desc="build_conversations_from_io")
+        conv_field = "conversations"
+    elif "text" in cols:
+        # 已经是最终文本，直接返回
+        logger.info("检测到已有 'text' 字段，跳过模板化。")
+        return ds
+    else:
+        raise KeyError("未检测到支持的数据格式。需要 'conversations'/'messages' 或 'input'+'output'，"
+                       "或直接提供 'text'。")
+
+    # 应用 chat 模板 → 生成 text
+    def _format(batch):
+        texts = [tokenizer.apply_chat_template(c, tokenize=False, add_generation_prompt=False)
+                 for c in batch[conv_field]]
+        return {"text": texts}
+    ds = ds.map(_format, batched=True, desc="apply_chat_template")
+    if len(ds) > 0:
+        try:
+            logger.info("==== 样本#0 完整记录（自定义数据 pipeline 之后） ====\n%s",_safe_json_dumps(ds[0]))
+        except Exception as e:
+            logger.warning("打印完整样本失败: %r", e)
+    logger.info("自定义数据集准备完成：%d 行。", len(ds))
     return ds
 
 def main(cfg: TrainConfig | None = None) -> None:
@@ -222,9 +328,12 @@ def main(cfg: TrainConfig | None = None) -> None:
     # 构建模型与 tokenizer
     model, tokenizer = build_model_and_tokenizer(cfg, logger)
 
-    # 准备数据集
-    dataset = prepare_dataset_openmath_thinking(cfg, tokenizer, logger, split="cot")
+    # 准备数据集：优先使用本地 data_files；否则用 OpenMathReasoning
 
+    if cfg.data_files:
+        dataset = prepare_dataset_from_json_files(cfg, tokenizer, logger)
+    else:
+        dataset = prepare_dataset_openmath_thinking(cfg, tokenizer, logger)
     # 构建 Trainer
     trainer = build_trainer(model, tokenizer, dataset, cfg, logger)
 

@@ -35,8 +35,37 @@ python inference_sft.py \
 python train_thinking.py
 使用的模型是： unsloth/Qwen3-4B-Thinking-2507
 
+## 自定义训练数据集
+1. 单文件（全部当作 `train`）
+
+```bash
+python unsloth_thinking.py \
+  --model_name unsloth/Qwen3-4B-Thinking-2507 \
+  --chat_template qwen3-thinking \
+  --data_files data/train.jsonl \
+  --dataset_split train
+```
+
+2. 明确训练/验证拆分
+
+```bash
+python unsloth_thinking.py \
+  --data_files "train=data/train.jsonl,validation=data/val.jsonl" \
+  --dataset_split train
+```
+
+3. 多分片通配
+
+```bash
+python unsloth_thinking.py \
+  --data_files "train=data/train-*.jsonl" \
+  --dataset_split train
+```
+
 ## Thinking模型训练后的模型测试
 python inference_thinking.py
+
+
 
 # GRPO强化学习训练， 需要安装vllm
 [unsloth_GRPO.py](unsloth_GRPO.py)
