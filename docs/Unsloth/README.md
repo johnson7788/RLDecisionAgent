@@ -112,6 +112,25 @@ CUDA_VISIBLE_DEVICES=2 python train_grpo.py \
   --use-vllm true \
   --vllm-server-base-url http://127.0.0.1:8000
 
+3）自定义数据集进行训练, 医疗分诊，用药数据集
+python train.py \
+  --model-name unsloth/Qwen3-4B-Base \
+  --hf-dataset json \
+  --hf-config none \
+  --hf-split train \
+  --data-files xiaosen_grpo.jsonl \
+  --max-seq-len 2048 \
+  --lora-rank 32 \
+  --max-steps 50 \
+  --batch-size 1 \
+  --grad-accum 1 \
+  --num-generations 4 \
+  --learning-rate 5e-6 \
+  --logging-steps 1 \
+  --output-dir outputs_grpo_custom \
+  --wandb true --wandb-project grpo-dapo-math --wandb-mode online
+
+
 ## 模型测试
 python inference_grpo.py --ckpt_dir outputs_qwen3_64r/grpo_lora --prompt "一道经典鸡兔同笼题：鸡和兔共有 20 个头，50 条腿，各有多少只？"
 

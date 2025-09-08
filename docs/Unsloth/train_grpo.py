@@ -82,7 +82,6 @@ system_prompt = (
     f"Place it between {reasoning_start} and {reasoning_end}.\n"
     f"Then, provide your solution between {solution_start}{solution_end}"
 )
-
 # =========================
 # 构造 Chat Template（重要）
 # =========================
@@ -358,7 +357,13 @@ def main(args):
 
     # 3) 加载数据集
     logger.info("加载数据集：%s (%s / %s)", args.hf_dataset, args.hf_config, args.hf_split)
-    ds = load_dataset(args.hf_dataset, args.hf_config, split=args.hf_split)
+    hf_name = None if (args.hf_config in [None, "", "none", "None", "-"]) else args.hf_config
+    load_kwargs = {"split": args.hf_split}
+    if args.data_files:
+        data_files = args.data_files.split(",") if "," in args.data_files else args.data_files
+        load_kwargs["data_files"] = data_files
+        logger.info("使用 data_files: %s", data_files)
+    ds = load_dataset(args.hf_dataset, hf_name, **load_kwargs)
     logger.info("数据集大小：%d", len(ds))
     logger.info("样例 prompt：%s", ds[0]["prompt"][:200].replace("\n", " "))
     logger.info("样例 solution：%s", ds[0]["solution"][:200].replace("\n", " "))
@@ -537,6 +542,8 @@ def build_parser():
     p.add_argument("--hf-dataset", type=str, default="open-r1/DAPO-Math-17k-Processed")
     p.add_argument("--hf-config",  type=str, default="en")
     p.add_argument("--hf-split",   type=str, default="train")
+    # 自定义数据， 典型用法：--hf-dataset json --hf-config none --hf-split train --data_files /path/to/data.jsonl
+    p.add_argument("--data-files", type=str, default=None,help = "自定义数据文件路径或通配（可逗号分隔）。与 --hf-dataset=json 等通用构建器配合使用。")
 
     # 预对齐
     p.add_argument("--enable-pre-sft", type=str2bool, default=False)
