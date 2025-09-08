@@ -80,7 +80,7 @@ python inference_thinking.py \
 python train_grpo.py
 使用的模型是： unsloth/Qwen3-4B-Base
 
-# 显卡1上启动vllm
+## 显卡1上启动vllm
 CUDA_VISIBLE_DEVICES=1 \
 trl vllm-serve --model unsloth/Qwen3-4B-Base \
   --tensor-parallel-size 1 \
@@ -89,7 +89,7 @@ trl vllm-serve --model unsloth/Qwen3-4B-Base \
   --max-model-len 2048 \
   --host 127.0.0.1 --port 8000
 
-# 显卡2上训练
+## 显卡2上训练
 1）默认参数
 CUDA_VISIBLE_DEVICES=2 python train_grpo.py
 2）指定参数训练
@@ -112,6 +112,8 @@ CUDA_VISIBLE_DEVICES=2 python train_grpo.py \
   --use-vllm true \
   --vllm-server-base-url http://127.0.0.1:8000
 
+## 模型测试
+python inference_grpo.py --ckpt_dir outputs_qwen3_64r/grpo_lora --prompt "一道经典鸡兔同笼题：鸡和兔共有 20 个头，50 条腿，各有多少只？"
 
 ## 对比SFT和Thinking
 两段代码的“骨架”几乎一样（Unsloth + LoRA + TRL 的 SFT），但**训练目标、数据与模板**完全不同，导致学到的能力、输出风格和部署注意点都不一样。一句话：
