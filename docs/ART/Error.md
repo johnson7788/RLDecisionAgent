@@ -1596,3 +1596,37 @@ Traceback (most recent call last):
 OSError: Consistency check failed: file should be of size 2776833 but has size 13264127 (vocab.json).
 This is usually due to network issues while downloading the file. Please retry with `force_download=True`.
 
+
+# 后台还有1个vllm启动呢，应该关掉
+[rank0]: During handling of the above exception, another exception occurred:
+
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/workspace/verl/backend/ART_Langgraph/train.py", line 454, in <module>
+[rank0]:     asyncio.run(main())
+[rank0]:   File "/usr/lib/python3.10/asyncio/runners.py", line 44, in run
+[rank0]:     return loop.run_until_complete(main)
+[rank0]:   File "/usr/lib/python3.10/asyncio/base_events.py", line 649, in run_until_complete
+[rank0]:     return future.result()
+[rank0]:   File "/workspace/verl/backend/ART_Langgraph/train.py", line 297, in main
+[rank0]:     await model.register(backend)
+[rank0]:   File "/workspace/verl/ART/src/art/model.py", line 322, in register
+[rank0]:     base_url, api_key = await backend._prepare_backend_for_training(
+[rank0]:   File "/workspace/verl/ART/src/art/local/backend.py", line 272, in _prepare_backend_for_training
+[rank0]:     await service.start_openai_server(config=config)
+[rank0]:   File "/workspace/verl/ART/src/art/unsloth/service.py", line 60, in start_openai_server
+[rank0]:     self.state.trainer.save_model(lora_path)
+[rank0]:   File "/usr/lib/python3.10/functools.py", line 981, in __get__
+[rank0]:     val = self.func(instance)
+[rank0]:   File "/workspace/verl/ART/src/art/unsloth/service.py", line 45, in state
+[rank0]:     return ModelState(self.config)
+[rank0]:   File "/workspace/verl/ART/src/art/unsloth/state.py", line 82, in __init__
+[rank0]:     unsloth.FastLanguageModel.from_pretrained(**config.get("init_args", {})),
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/unsloth/models/loader.py", line 402, in from_pretrained
+[rank0]:     model, tokenizer = dispatch_model.from_pretrained(
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/unsloth/models/qwen2.py", line 87, in from_pretrained
+[rank0]:     return FastLlamaModel.from_pretrained(
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/unsloth/models/llama.py", line 2041, in from_pretrained
+[rank0]:     llm = load_vllm(**load_vllm_kwargs)
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/unsloth_zoo/vllm_utils.py", line 1516, in load_vllm
+[rank0]:     raise RuntimeError(error)
+[rank0]: RuntimeError: Sleep mode can only be used for one instance per process.

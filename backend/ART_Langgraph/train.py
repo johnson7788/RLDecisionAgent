@@ -284,7 +284,7 @@ async def main():
     # 选择后端
     if USE_LOCAL_BACKEND:
         from art.local.backend import LocalBackend
-        backend = LocalBackend()
+        backend = LocalBackend(in_process=True)
     else:
         from art.skypilot.backend import SkyPilotBackend
         backend = await SkyPilotBackend.initialize_cluster(

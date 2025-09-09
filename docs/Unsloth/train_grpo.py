@@ -5,6 +5,15 @@
 使用 Unsloth + TRL 的 GRPO 在 open-r1/DAPO-Math-17k-Processed 数据集上训练推理格式与答案。
 本脚本在原版基础上 **集成 Weights & Biases（wandb）**，将训练过程的关键信息、指标与样例输出记录到 wandb，并在训练结束后可选上传 LoRA 适配器为 W&B Artifact。
 
+## 显卡1上启动vllm,方便进行使用
+CUDA_VISIBLE_DEVICES=1 \
+trl vllm-serve --model unsloth/Qwen3-4B-Base \
+  --tensor-parallel-size 1 \
+  --data-parallel-size 1 \
+  --gpu-memory-utilization 0.6 \
+  --max-model-len 2048 \
+  --host 127.0.0.1 --port 8000
+
 环境依赖（示例）：
 pip install -U "unsloth" "trl" "vllm" "datasets" "transformers==4.55.4" "bitsandbytes" "xformers" "torchvision" "pandas" wandb
 """
