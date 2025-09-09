@@ -276,6 +276,6 @@ async def unsupported_path(request: Request, path_name: str):
 check_cache_for_errors()
 
 if __name__ == "__main__":
+    # uvicorn LLM_cache:app --workers 8 --host 0.0.0.0 --port 6688
     import uvicorn
-
     uvicorn.run(app, host="0.0.0.0", port=6688)

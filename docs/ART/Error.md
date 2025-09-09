@@ -1630,3 +1630,53 @@ This is usually due to network issues while downloading the file. Please retry w
 [rank0]:   File "/usr/local/lib/python3.10/dist-packages/unsloth_zoo/vllm_utils.py", line 1516, in load_vllm
 [rank0]:     raise RuntimeError(error)
 [rank0]: RuntimeError: Sleep mode can only be used for one instance per process.
+
+
+
+DEBUG:openai._base_client:Encountered httpx.TimeoutException
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/dist-packages/litellm/llms/custom_httpx/aiohttp_transport.py", line 54, in map_aiohttp_exceptions
+    yield
+  File "/usr/local/lib/python3.10/dist-packages/litellm/llms/custom_httpx/aiohttp_transport.py", line 80, in __aiter__
+    async for chunk in self._aiohttp_response.content.iter_chunked(
+  File "/usr/local/lib/python3.10/dist-packages/aiohttp/streams.py", line 50, in __anext__
+    rv = await self.read_func()
+  File "/usr/local/lib/python3.10/dist-packages/aiohttp/streams.py", line 393, in read
+    await self._wait("read")
+  File "/usr/local/lib/python3.10/dist-packages/aiohttp/streams.py", line 312, in _wait
+    await waiter
+  File "/usr/lib/python3.10/asyncio/futures.py", line 285, in __await__
+    yield self  # This tells Task to wait for completion.
+aiohttp.client_exceptions.SocketTimeoutError: Timeout on reading data from socket
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.10/dist-packages/openai/_base_client.py", line 1529, in request
+    response = await self._client.send(
+  File "/usr/local/lib/python3.10/dist-packages/httpx/_client.py", line 1643, in send
+    raise exc
+  File "/usr/local/lib/python3.10/dist-packages/httpx/_client.py", line 1637, in send
+    await response.aread()
+  File "/usr/local/lib/python3.10/dist-packages/httpx/_models.py", line 979, in aread
+    self._content = b"".join([part async for part in self.aiter_bytes()])
+  File "/usr/local/lib/python3.10/dist-packages/httpx/_models.py", line 979, in <listcomp>
+    self._content = b"".join([part async for part in self.aiter_bytes()])
+  File "/workspace/verl/ART/src/art/auto_trajectory.py", line 123, in patched_aiter_bytes
+    async for chunk in original_aiter_bytes(self, chunk_size):
+  File "/usr/local/lib/python3.10/dist-packages/httpx/_models.py", line 997, in aiter_bytes
+    async for raw_bytes in self.aiter_raw():
+  File "/usr/local/lib/python3.10/dist-packages/httpx/_models.py", line 1055, in aiter_raw
+    async for raw_stream_bytes in self.stream:
+  File "/usr/local/lib/python3.10/dist-packages/httpx/_client.py", line 176, in __aiter__
+    async for chunk in self._stream:
+  File "/usr/local/lib/python3.10/dist-packages/httpx/_content.py", line 88, in __aiter__
+    async for part in self._stream:
+  File "/usr/local/lib/python3.10/dist-packages/litellm/llms/custom_httpx/aiohttp_transport.py", line 79, in __aiter__
+    with map_aiohttp_exceptions():
+  File "/usr/lib/python3.10/contextlib.py", line 153, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/usr/local/lib/python3.10/dist-packages/litellm/llms/custom_httpx/aiohttp_transport.py", line 68, in map_aiohttp_exceptions
+    raise mapped_exc(message) from exc
+httpx.ReadTimeout: Timeout on reading data from socket
+DEBUG:openai._base_client:1 retry left

@@ -169,7 +169,7 @@ async def rollout(model: art.Model, web_search_scenario: WebSearchScenario) -> P
     tools = [web_search_tool, return_final_answer_tool]
 
     # 关键：用 ART 的 init_chat_model 注入可训练/可记录的聊天模型
-    chat_model = init_chat_model(MODEL_NAME, temperature=1.0)
+    chat_model = init_chat_model(model.name, temperature=1.0)
     agent = create_react_agent(chat_model, tools)
 
     await agent.ainvoke(
@@ -284,7 +284,7 @@ async def main():
     # 选择后端
     if USE_LOCAL_BACKEND:
         from art.local.backend import LocalBackend
-        backend = LocalBackend(in_process=True)
+        backend = LocalBackend(in_process=False)
     else:
         from art.skypilot.backend import SkyPilotBackend
         backend = await SkyPilotBackend.initialize_cluster(
@@ -422,6 +422,7 @@ async def main():
 
         # 打分 & 训练
         if use_ruler:
+            # 不要设置timeout, "timeout": 10
             extra_litellm_params = {"api_base": "http://localhost:6688", "api_key": os.environ["OPENAI_API_KEY"]}
             judged = []
             for g in finished:
