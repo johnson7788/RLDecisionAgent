@@ -420,7 +420,7 @@ def main(args):
     logger.info("max_prompt_length=%d, max_completion_length=%d",
                 max_prompt_length, max_completion_length)
 
-    # === NEW: 将上述统计同步到 W&B ===
+    # === 将上述统计同步到 W&B ===
     if wandb_enabled:
         wandb.summary["dataset/size"] = len(ds)
         wandb.summary["prompt_len/q90"] = max_prompt_len_q90
@@ -496,7 +496,7 @@ def main(args):
     tokenizer.save_pretrained(lora_save_dir)
     logger.info("模型已保存至: %s", lora_save_dir)
 
-    # === NEW: 上传为 W&B Artifact（可选） ===
+    # ===上传为 W&B Artifact（可选） ===
     if wandb_enabled and args.wandb_upload_artifact:
         try:
             safe_model_name = args.model_name.replace('/', '-').replace(' ', '_')
