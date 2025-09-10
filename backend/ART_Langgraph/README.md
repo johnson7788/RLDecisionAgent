@@ -23,7 +23,7 @@ response = WebSearchClient.web_search.web_search(
 
 ## 配置
 cd RLDecisionAgent/backend/ART_mcp-rl
-python LLM_cache.py
+uvicorn LLM_cache:app --workers 8 --host 0.0.0.0 --port 6688
 
 ## 训练
 cp env_template .env  # 注意修改Key

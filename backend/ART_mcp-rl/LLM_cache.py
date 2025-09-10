@@ -173,7 +173,8 @@ async def proxy_request(request: Request):
         lines = []
         max_retries = 5
         retry_delay = 1
-        fallback_model = "qwen-turbo-latest"
+        # fallback_model = "qwen-turbo-latest"
+        fallback_model = "deepseek-v3-250324"
 
         nonlocal provider_url, body  # 允许修改外层变量
 
@@ -199,6 +200,8 @@ async def proxy_request(request: Request):
                         headers["Authorization"] = request.headers.get("Authorization")
                     if has_switched and fallback_model == "qwen-turbo-latest":
                         headers["Authorization"] = os.environ["ALI_API_KEY"]
+                    if has_switched and fallback_model == "deepseek-v3-250324":
+                        headers["Authorization"] = os.environ["DOUBAO_API_KEY"]
 
                     async with client.stream(
                             "POST",
