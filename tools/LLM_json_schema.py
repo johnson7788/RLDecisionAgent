@@ -11,11 +11,13 @@ import re
 import time
 import uuid
 from typing import AsyncGenerator, Dict, Any, Optional
+import logging
 
 import httpx
-from fastapi import FastAPI, Request, Response, Header
+from fastapi import FastAPI, Request, Response, Header, HTTPException
 from fastapi.responses import StreamingResponse, JSONResponse
 
+logging.basicConfig(level=logging.INFO)
 app = FastAPI()
 
 # === 上游模型路由配置 ===
@@ -39,7 +41,7 @@ MODEL_MAP = {
 }
 
 # === 解析策略：从文本里提取 JSON（弱约束示例） ===
-JSON_CANDIDATE = re.compile(r"hello", re.DOTALL)
+JSON_CANDIDATE = re.compile(r"```json\s*(\{.*?\})\s*```|(\{.*?\})", re.DOTALL)
 
 def extract_json_obj(text: str) -> Optional[Dict[str, Any]]:
     """
@@ -68,48 +70,66 @@ def resolve_provider(model: str):
         raise ValueError(f"Unknown model: {model}")
     return key, PROVIDERS[key]
 
+
 @app.post("/v1/chat/completions")
 async def chat_completions(
     request: Request,
-    authorization: str = Header(None),
-    x_proxy_parse: str = Header("on"),  # "on"|"off": 非流式时是否在响应里附带解析产物
+    authorization: Optional[str] = Header(None, alias="Authorization"),
+    x_proxy_parse: str = Header("on"),
 ):
     body = await request.json()
     model = body.get("model")
     stream = bool(body.get("stream", False))
 
-    route_key, provider = resolve_provider(model)
+    try:
+        route_key, provider = resolve_provider(model)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
-    upstream_key = authorization.split("Bearer ")[-1] if authorization else ""
+    upstream_key = ""
+    if authorization and authorization.lower().startswith("bearer "):
+        upstream_key = authorization.split(" ", 1)[1].strip()
+
+    if not upstream_key:
+        # 明确返回 401，避免客户端误判
+        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header (Bearer token)")
+
     headers = {
         "Content-Type": "application/json",
         **provider["auth_header"](upstream_key),
     }
     upstream_body = provider["map_body"](body)
 
-    # 打上链路 ID，便于后续查询解析结果
     req_id = f"proxy-{int(time.time())}-{uuid.uuid4().hex[:8]}"
-
     timeout = httpx.Timeout(connect=10.0, read=300.0, write=30.0, pool=10.0)
 
     async with httpx.AsyncClient(timeout=timeout) as client:
         if stream:
-            # === 流式模式：边转发边累积 ===
+            # 使用 stream=True 发送请求，以便先读取状态码和头
+            req = client.build_request("POST", provider["base_url"], headers=headers, json=upstream_body)
+            r = await client.send(req, stream=True)
+
+            # 如果上游返回非 200，则读取完整错误信息并作为 JSON 返回
+            if r.status_code != 200:
+                await r.aread()
+                try:
+                    payload = r.json()
+                except Exception:
+                    payload = {"error": r.text}
+                resp = JSONResponse(status_code=r.status_code, content=payload)
+                resp.headers["x-proxy-request-id"] = req_id
+                return resp
+
+            # 上游返回 200，正常进行流式转发
             async def event_stream() -> AsyncGenerator[bytes, None]:
                 full_text = []
-                async with client.stream(
-                    "POST", provider["base_url"], headers=headers, json=upstream_body
-                ) as r:
-                    # 透传初始响应头（有限制，只能在开始前设置）
-                    # 我们用响应对象外层设置 headers（见 StreamingResponse）
+                try:
                     async for line in r.aiter_lines():
                         if not line:
                             continue
-                        # OpenAI 风格：以 'data: ' 开头
                         if line.startswith("data: "):
-                            payload = line[len("data: ") :]
+                            payload = line[len("data: "):]
                             if payload == "[DONE]":
-                                # 存储解析产物
                                 text_full = "".join(full_text)
                                 parsed = extract_json_obj(text_full)
                                 PARSED_STORE[req_id] = {
@@ -118,24 +138,20 @@ async def chat_completions(
                                     "raw_text": text_full,
                                     "ts": time.time(),
                                 }
-                                # 结束事件
                                 yield b"data: [DONE]\n\n"
                                 break
                             else:
                                 try:
                                     j = json.loads(payload)
-                                    # 从 delta 里累计文本
                                     choices = j.get("choices") or []
                                     if choices:
                                         delta = choices[0].get("delta") or {}
-                                        if "content" in delta and delta["content"] is not None:
+                                        if delta.get("content") is not None:
                                             full_text.append(delta["content"])
                                 except Exception:
-                                    # 即使上游有偶发非 JSON 行，也保持透传
                                     pass
-                                # 原样透传
                                 yield (f"data: {payload}\n\n").encode("utf-8")
-                    # 保险：若未遇到 [DONE]，也补一次解析存储
+                    # 确保即使循环未正常结束（如上游提前关闭），也能保存已收到的文本
                     if req_id not in PARSED_STORE:
                         text_full = "".join(full_text)
                         parsed = extract_json_obj(text_full)
@@ -145,20 +161,23 @@ async def chat_completions(
                             "raw_text": text_full,
                             "ts": time.time(),
                         }
+                finally:
+                    await r.aclose()
 
             resp = StreamingResponse(event_stream(), media_type="text/event-stream")
-            # 在响应头里塞入 proxy 请求 ID，客户端可据此二次拉取解析结果
             resp.headers["x-proxy-request-id"] = req_id
             resp.headers["cache-control"] = "no-cache"
             return resp
 
-        else:
-            # === 非流式模式：拿完整 JSON，做解析后可附带返回 ===
+        else: # Non-streaming
             r = await client.post(provider["base_url"], headers=headers, json=upstream_body)
-            r.raise_for_status()
-            data = r.json()
+            if r.status_code != 200:
+                try:
+                    return JSONResponse(status_code=r.status_code, content=r.json())
+                except Exception:
+                    return JSONResponse(status_code=r.status_code, content={"error": r.text})
 
-            # 聚合文本（OpenAI 兼容）
+            data = r.json()
             text_full = "".join([c.get("message", {}).get("content", "") for c in data.get("choices", [])])
             parsed = extract_json_obj(text_full)
             PARSED_STORE[req_id] = {
@@ -168,20 +187,13 @@ async def chat_completions(
                 "usage": data.get("usage"),
                 "ts": time.time(),
             }
-
             if (x_proxy_parse or "").lower() == "on":
-                data["proxy_parsed"] = parsed  # 注意：部分严格客户端可能不接受未知字段
+                data["proxy_parsed"] = parsed
             resp = JSONResponse(data)
             resp.headers["x-proxy-request-id"] = req_id
             return resp
 
-@app.get("/v1/proxy/parsed/{request_id}")
-async def get_parsed(request_id: str):
-    item = PARSED_STORE.get(request_id)
-    if not item:
-        return JSONResponse({"error": "not_found"}, status_code=404)
-    return item
 
 if __name__ == '__main__':
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=7300)

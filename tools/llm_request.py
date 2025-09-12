@@ -7,9 +7,11 @@
 # @Desc  :
 import os
 import dotenv
+import logging
 from openai import OpenAI
 dotenv.load_dotenv()
-client = OpenAI(api_key=os.environ["OPENAI_API_KEY"], base_url="http://127.0.0.1:8000/v1")
+logging.basicConfig(level=logging.DEBUG)
+client = OpenAI(api_key=os.environ["OPENAI_API_KEY"], base_url="http://127.0.0.1:7300/v1")
 
 response = client.chat.completions.create(
     model='gpt-4o-mini',
