@@ -6,7 +6,6 @@
 # @Contact : github: johnson7788
 # @Desc  : 测试网络搜索
 import os
-
 import dotenv
 from pydantic import BaseModel, Field
 from zai import ZhipuAiClient
