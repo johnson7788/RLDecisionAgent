@@ -187,35 +187,86 @@ async def ruler(
     if supports_structured:
         litellm_kwargs["response_format"] = Response
 
-    response = await acompletion(
-        model=judge_model,
-        messages=messages,
-        caching=False,
-        **litellm_kwargs,
-    )
-    assert isinstance(response, ModelResponse)
+    # ========== 针对不支持 structured output 的模型（如 DeepSeek）加入重试 ==========
+    # 逻辑：
+    # - 不支持 structured 的：最多重试 3 次；3 次后降级为 0 分返回
+    # - 支持 structured 的：保持一次尝试失败即抛错（以便尽快暴露问题）
+    max_retries = 3 if not supports_structured else 1
+    parsed: Response | None = None
+    last_raw_content: str | dict | None = None
+    last_error: Exception | None = None
 
-    if len(response.choices) == 0:
-        raise ValueError(f"No choices in response: {response}")
-    first_choice = response.choices[0]
+    for attempt in range(1, max_retries + 1):
+        # 针对后续重试，追加更强 system 约束
+        retry_messages = list(messages)
+        if attempt > 1 and not supports_structured:
+            retry_messages = retry_messages + [{
+                "role": "system",
+                "content": "Reminder: Return ONLY a single strict JSON object matching the schema. "
+                           "No code fences, no extra text, no trailing commas. If previous reply was invalid, fix it now."
+            }]
+            # 在重试时，尽量降低采样温度（若用户未显式设置）
+            if "temperature" not in litellm_kwargs:
+                litellm_kwargs["temperature"] = 0
 
-    raw_content = first_choice.message.content or "{}"  # type: ignore[attr-defined]
-    if debug:
         try:
-            parsed_preview = json.loads(raw_content) if isinstance(raw_content, str) else raw_content
-            print("\n[RULER] Pretty-printed LLM choice JSON (raw):")
-            print(parsed_preview)
-        except json.JSONDecodeError:
-            print("\n[RULER] Raw choice content (non-JSON):")
-            print(raw_content)
+            response = await acompletion(
+                model=judge_model,
+                messages=retry_messages,
+                caching=False,
+                **litellm_kwargs,
+            )
+            assert isinstance(response, ModelResponse)
+            if len(response.choices) == 0:
+                raise ValueError(f"No choices in response: {response}")
 
-    # NEW: 统一解析，无论是否使用了 response_format
-    try:
-        parsed = _parse_response_to_model(raw_content)
-    except (ValidationError, ValueError) as e:
-        raise ValueError(f"Failed to parse/validate judge response: {e}\nRaw content: {raw_content}") from e
+            first_choice = response.choices[0]
+            raw_content = first_choice.message.content or "{}"  # type: ignore[attr-defined]
+            last_raw_content = raw_content
 
-    # NEW: 如果模型没按要求返回完整列表，进行最小化一致性检查
+            if debug:
+                try:
+                    parsed_preview = json.loads(raw_content) if isinstance(raw_content, str) else raw_content
+                    print(f"\n[RULER] Attempt {attempt} pretty-printed LLM choice JSON (raw):")
+                    print(parsed_preview)
+                except json.JSONDecodeError:
+                    print(f"\n[RULER] Attempt {attempt} raw choice content (non-JSON):")
+                    print(raw_content)
+
+            parsed = _parse_response_to_model(raw_content)
+            # 成功解析直接跳出
+            break
+
+        except (ValidationError, ValueError, AssertionError) as e:
+            last_error = e
+            if debug:
+                print(f"[RULER] Attempt {attempt} parse/validate failed: {e}")
+            # 如果还有机会，继续下一轮；否则结束循环
+            continue
+
+    # 如果解析仍然失败
+    if parsed is None:
+        if supports_structured:
+            # 对于支持 structured 的模型，仍按原逻辑抛错
+            raise ValueError(
+                f"Failed to parse/validate judge response after {max_retries} attempt(s). "
+                f"Last error: {last_error}\nRaw content: {last_raw_content}"
+            )
+        else:
+            # 对于 DeepSeek 等，按你的要求：返回全 0 分，保证流程不中断
+            if debug:
+                print("[RULER] Falling back to zero scores after 3 failed attempts.")
+            zero_scores: List[TrajectoryScore] = [
+                TrajectoryScore(
+                    trajectory_id=str(i + 1),
+                    explanation="(fallback) JSON parse failed after 3 attempts",
+                    score=0.0,
+                )
+                for i in range(len(message_lists))
+            ]
+            return zero_scores
+
+    # 如果模型没按要求返回完整列表，进行最小化一致性检查
     if len(parsed.scores) != len(message_lists):
         # 若数量不符，尝试按顺序补齐/截断（保守处理）
         fixed_scores: List[TrajectoryScore] = []
@@ -239,7 +290,7 @@ async def ruler_score_group(
     rubric: str = DEFAULT_RUBRIC,
     *,
     swallow_exceptions: bool = False,
-    debug: bool = False,
+    debug: bool = True,
 ) -> art.TrajectoryGroup | None:
     """Score a trajectory group using RULER for use in training loops."""
     for traj in group.trajectories:

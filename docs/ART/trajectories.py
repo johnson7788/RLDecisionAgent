@@ -77,19 +77,11 @@ async def main() -> None:
     trajectories = build_math_trajectories()
     group = art.TrajectoryGroup(trajectories)
 
-    # 2) 用 RULER 进行相对打分（无需任何训练）
-    # scored_group = await ruler_score_group(
-    #     group,
-    #     judge_model="openai/gpt-4o-mini",   # 可改为 "openai/o3"
-    #     extra_litellm_params={"temperature": 0, "max_tokens": 500},
-    #     swallow_exceptions=False,           # 示例中直接抛错，便于调试
-    #     debug=True,                         # 打开可在控制台看到评审模型的 JSON 推理
-    # )
-    #
+    # 2) 用 RULER 进行相对打分
     scored_group = await ruler_score_group(
         group,
-        judge_model="openai/deepseek-chat",   # 可改为 "openai/o3"
-        extra_litellm_params={"temperature": 0, "max_tokens": 500, "api_base": "https://api.deepseek.com/v1", "api_key": os.getenv("DEEPSEEK_API_KEY")},
+        judge_model=os.environ["RULTER_MODEL"],   # 可改为 "openai/o3"
+        extra_litellm_params={"temperature": 0, "max_tokens": 500, "api_base": os.environ["RULTER_API_BASE"], "api_key": os.getenv("RULTER_API_KEY")},
         swallow_exceptions=False,           # 示例中直接抛错，便于调试
         debug=True,                         # 打开可在控制台看到评审模型的 JSON 推理
     )
