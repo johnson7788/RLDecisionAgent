@@ -1,6 +1,9 @@
 # 代码
 https://github.com/OpenPipe/ART/tree/main
 
+# 文件
+[trajectories.py](trajectories.py) 运行1个轨迹
+
 文档:
 https://art.openpipe.ai/
 https://deepwiki.com/OpenPipe/ART
