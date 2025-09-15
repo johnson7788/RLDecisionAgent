@@ -234,3 +234,51 @@ python inference_grpo.py --ckpt_dir outputs_grpo_custom/grpo_saved_lora --prompt
 * **只训答案**：若你不想让模型学会“吐思维过程”，在数据阶段剥离思维段，或在遮蔽规则上单独屏蔽“思维标记”到最终答案之间的内容。
 
 
+# 一条带工具的数据
+```
+{
+    "conversations": [
+        {
+            "from": "human",
+            "value": "你好，我需要一个1到100之间的随机数。"
+        },
+        {
+            "from": "function_call",
+            "value": "{\"name\": \"generate_random_number\", \"arguments\": {\"min\": 1, \"max\": 100}}"
+        },
+        {
+            "from": "observation",
+            "value": "{\"number\": 57}"
+        },
+        {
+            "from": "gpt",
+            "value": "生成的随机数在1到100之间，是57。"
+        },
+        {
+            "from": "human",
+            "value": "好的，可以。这次生成一个长度在200到300之间的句子。"
+        },
+        {
+            "from": "function_call",
+            "value": "{\"name\": \"generate_random_number\", \"arguments\": {\"min\": 200, \"max\": 300}}"
+        },
+        {
+            "from": "observation",
+            "value": "{\"number\": 267}"
+        },
+        {
+            "from": "gpt",
+            "value": "生成的随机数在200到300之间，是267。"
+        },
+        {
+            "from": "human",
+            "value": "谢谢，这些就是我需要的全部。"
+        },
+        {
+            "from": "gpt",
+            "value": "不客气！如果你还需要其他什么，随时问。"
+        }
+    ],
+    "tools": "[{\"name\": \"generate_random_number\", \"description\": \"在指定范围内生成一个随机数\", \"parameters\": {\"type\": \"object\", \"properties\": {\"min\": {\"type\": \"integer\", \"description\": \"最小值\"}, \"max\": {\"type\": \"integer\", \"description\": \"最大值\"}}, \"required\": [\"min\", \"max\"]}}]"
+}
+```
