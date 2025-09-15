@@ -275,9 +275,9 @@ def get_lng_price(region: str, start_date: str, end_date: Optional[str] = None) 
     return prices
 
 if __name__ == '__main__':
+    mcp.run(transport="sse", host="127.0.0.1", port=9000)
     # 固定种子（可选）：不调用也会使用默认种子
     set_seed(20250422)
-
     # 示例1：查询最近3天内蒙古竞拍价 & 内蒙古工厂A/B出厂价
     today = datetime.now().date()
     start = (today - timedelta(days=2)).strftime("%Y-%m-%d")
