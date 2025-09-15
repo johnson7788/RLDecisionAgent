@@ -73,13 +73,15 @@ class KnowledgeAgent:
         self.model = create_model()
         self.mcp_config = mcp_config
         select_tools = []
-        for tool_name in select_tool_names:
-            if tool_name in ["search_document_db", "search_personal_db", "search_guideline_db"]:
-                select_tools.append(eval(tool_name))
-            else:
-                select_tools.append(tool_name)
+        if "all" in select_tool_names:
+            select_tools.extend(ALL_TOOLS)
+        else:
+            for tool_name in select_tool_names:
+                if tool_name in ["search_document_db", "search_personal_db", "search_guideline_db"]:
+                    select_tools.append(eval(tool_name))
+                else:
+                    select_tools.append(tool_name)
         self.tools = select_tools
-        tool_names = '、'.join(select_tool_names)
         self.SYSTEM_INSTRUCTION = prompt.AGENT_PROMPT
         self.graphes = {} # 等异步初始化完才赋值
 
