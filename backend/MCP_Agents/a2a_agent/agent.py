@@ -6,11 +6,12 @@ from collections.abc import AsyncIterable
 from typing import Any, Literal,Dict
 from langgraph.prebuilt.chat_agent_executor import AgentState
 from langgraph.prebuilt import create_react_agent
-from tools import search_document_db,search_personal_db,search_guideline_db
+from tools import ALL_TOOLS
 from langchain_core.messages.utils import trim_messages, count_tokens_approximately
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
 from langchain_mcp_adapters.client import MultiServerMCPClient
+import prompt
 from models import create_model
 from custom_state import CustomState
 import dotenv
@@ -61,7 +62,7 @@ def load_mcp_servers(config_path: str) -> Dict[str, Any]:
 class KnowledgeAgent:
     """知识库问答 Agent"""
     SUPPORTED_CONTENT_TYPES = ['text', 'text/plain']
-    def __init__(self, mcp_config=None, select_tool_names=["search_document_db", "search_personal_db", "search_guideline_db"]):
+    def __init__(self, mcp_config=None, select_tool_names=["all"]):
         """
         初始化Agent
         Args:
@@ -79,18 +80,7 @@ class KnowledgeAgent:
                 select_tools.append(tool_name)
         self.tools = select_tools
         tool_names = '、'.join(select_tool_names)
-        self.SYSTEM_INSTRUCTION = """
-你是一位擅长应对复杂问题的医学助手，具备高级推理能力和信息检索能力。你的任务是理解并拆解用户的问题，积极调用搜索工具获取足够高质量的信息，再进行全面、准确、可信的回答。
-    请严格遵循以下规则：
-    1. 深度理解问题：理解用户提出的问题核心，可在必要时进行分解、重构或澄清，确保回答覆盖全部用户关心的点；
-    2. 充分使用多个搜索工具{tool_names}，你可以多轮搜索，直到获取充分、权威且相关的信息，避免仅基于初步结果回答；
-    3. 高质量整合：结合搜索内容，使用你自己的语言输出结构清晰、信息全面、有逻辑支撑的答案，不要只复述资料，而应体现归纳、比较和推理能力；
-    4. 坦诚应对不确定性：如果在检索中找不到明确答案，应如实说明，并基于现有信息提出合理推测、分析路径或建议；
-    5. 标注引用来源：在使用搜索工具后，需要在涉及引用信息的句末，使用Markdown脚注格式标注出处，如：“该方法已被某个研究验证[^02-772-2]。”
-    6. 鼓励详细阐述：回答时应尽量详尽，包括背景信息、可能的多种观点或方法、优缺点分析等，避免简略回答或仅下结论。
-    7. 可以不用输出markdown的段落之间的分割线。
-    8. 不要在回答结束时列出所有参考的引用来源。
-        """
+        self.SYSTEM_INSTRUCTION = prompt.AGENT_PROMPT
         self.graphes = {} # 等异步初始化完才赋值
 
     async def create_graph(self, tool_names=[], mcp_urls=[]):
