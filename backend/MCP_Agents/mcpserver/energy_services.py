@@ -6,13 +6,6 @@
 # @Contact : github: johnson7788
 # @Desc  : 一体化的 LNG 价格信息 & LNG 工厂利润（模拟）查询服务
 #
-# 变更要点：
-# - 合并 Factory_Profit.py 与 LNG_Price.py
-# - 统一 FastMCP 实例
-# - 固定随机数种子，保证同参同结果
-# - 修复 get_lng_price 的地区名 lower() 问题
-# - 修正 __main__ 示例参数类型
-
 from fastmcp import FastMCP
 from typing import List, Dict, Optional
 from datetime import datetime, timedelta, date
@@ -281,7 +274,6 @@ def get_lng_price(region: str, start_date: str, end_date: Optional[str] = None) 
 
     return prices
 
-# ========== 示例运行 ==========
 if __name__ == '__main__':
     # 固定种子（可选）：不调用也会使用默认种子
     set_seed(20250422)
