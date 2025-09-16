@@ -69,21 +69,34 @@ class KnowledgeAgent:
             mcp_config: mcp工具
             select_tool_names: 内置的可选工具
         """
-        self.default_select_tool_names = select_tool_names
+        self.default_select_tool_names = list(select_tool_names) if select_tool_names else []
         self.model = create_model()
         self.mcp_config = mcp_config
-        select_tools = []
+        self._builtin_tool_map = {}
+        for t in ALL_TOOLS:
+            # 尽量取工具可读名；不同框架可能字段不同：name / func.__name__ 等
+            name = getattr(t, "name", None) or getattr(t, "__name__", None) or str(t)
+            self._builtin_tool_map[name] = t
         if not select_tool_names:
-            select_tools.extend(ALL_TOOLS)
+            self.tools = list(self._builtin_tool_map.values())
         else:
-            for tool_name in select_tool_names:
-                if tool_name in ["search_document_db", "search_personal_db", "search_guideline_db"]:
-                    select_tools.append(eval(tool_name))
+            # 如果传进来的是字符串名，按映射解析；如果是对象，就直接用
+            resolved = []
+            for x in select_tool_names:
+                if isinstance(x, str):
+                    if x in self._builtin_tool_map:
+                        resolved.append(self._builtin_tool_map[x])
+                    else:
+                        # 兼容老逻辑里少数需要特殊处理的名字；如果确实需要，自己补映射
+                        print(f"[warn] unknown builtin tool name `{x}`, skipped")
                 else:
-                    select_tools.append(tool_name)
-        self.tools = select_tools
+                    resolved.append(x)
+            self.tools = resolved
+        # MCP 工具映射稍后加载后再补充
+        self._mcp_tool_map = {}
         self.SYSTEM_INSTRUCTION = prompt.AGENT_ANSWER_PROMPT
         self.graphes = {} # 等异步初始化完才赋值
+
 
     async def create_graph(self, tool_names=[], mcp_urls=[]):
         """
@@ -93,22 +106,46 @@ class KnowledgeAgent:
             mcp_urls: list[dict], 可以添加自定义的mcp工具, [{"name": "websearch", "url": "http://127.0.0.1:8300/sse"}]
         Returns:
         """
+        tool_names = list(tool_names) if tool_names else []  # 复制，避免外部被改
+        mcp_urls = list(mcp_urls) if mcp_urls else []
         select_tools = []
-        if tool_names == []:
-            tool_names = self.default_select_tool_names
-            print(f"传入的tool_names为空，使用默认所有工具： {tool_names}")
-        for tool_name in tool_names:
-            select_tools.append(eval(tool_name))
+        if not tool_names:
+            print(f"传入的tool_names为空，使用默认工具对象（共 {len(self.tools)} 个）")
+            select_tools.extend(self.tools)
+        else:
+            # 情况 B：指定了 -> 逐个解析
+            for x in tool_names:
+                if not isinstance(x, str):
+                    # 传的是对象
+                    select_tools.append(x)
+                    continue
+                # 先在内置里找
+                if x in self._builtin_tool_map:
+                    select_tools.append(self._builtin_tool_map[x])
+                # 再在已加载的 MCP 里找
+                elif x in self._mcp_tool_map:
+                    select_tools.append(self._mcp_tool_map[x])
+                else:
+                    print(f"[warn] tool name `{x}` not found in builtin/MCP maps, skipped")
         if self.mcp_config and os.path.exists(self.mcp_config):
             print(f"提供了mcp_config，开始加载mcp_config: {self.mcp_config}")
             mcp_config_tools = load_mcp_servers(config_path=self.mcp_config)
             client = MultiServerMCPClient(mcp_config_tools)
-            tools = await client.get_tools()
-            select_tools.extend(tools)
-            tool_names.extend([one.name for one in tools])
-        print(f"LLM可用的工具总数是: {len(select_tools)}")
+            mcp_tools = await client.get_tools()  # 这是“工具对象”
+            # 更新映射
+            for t in mcp_tools:
+                self._mcp_tool_map[t.name] = t
+            # 加入可用列表（避免重复）
+            existing_ids = {id(t) for t in select_tools}
+            select_tools.extend([t for t in mcp_tools if id(t) not in existing_ids])
+        tool_names_for_prompt = []
+        for t in select_tools:
+            tool_names_for_prompt.append(
+                getattr(t, "name", None) or getattr(t, "__name__", None) or str(t)
+            )
+        print(f"LLM可用的工具总数是: {len(tool_names_for_prompt)}")
 
-        SYSTEM_INSTRUCTION = self.SYSTEM_INSTRUCTION.format(tool_names=tool_names)
+        SYSTEM_INSTRUCTION = self.SYSTEM_INSTRUCTION.format(tool_names=tool_names_for_prompt)
         graph = create_react_agent(
             self.model,
             tools=select_tools,

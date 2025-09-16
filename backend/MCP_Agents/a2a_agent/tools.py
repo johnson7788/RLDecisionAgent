@@ -44,5 +44,5 @@ def search_document_db(keyword: str, tool_call_id: Annotated[str, InjectedToolCa
         ]
     })
 
-# ALL_TOOLS = ["search_document_db"]
+# ALL_TOOLS = [search_document_db]
 ALL_TOOLS = []

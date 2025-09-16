@@ -10,7 +10,7 @@ This script:
 - saves LoRA adapters and (optionally) a merged 16-bit checkpoint for vLLM
 
 Usage example:
-python train_tool_sft.py --data_path ./glaive_toolcall.jsonl --epochs 3 --lr 2e-4 --batch_size 8 --grad_accum 2
+python train_tool_sft.py --data_path ./glaive_toolcall.jsonl --epochs 3 --lr 2e-4 --batch_size 8 --grad_accum 2 --wandb_project toolsft
 
 Environment variables expected (if using these services):
 - WANDB_API_KEY
