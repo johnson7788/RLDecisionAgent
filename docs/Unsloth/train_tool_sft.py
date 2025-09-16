@@ -4,7 +4,7 @@
 This script:
 - logs to Weights & Biases (optional)
 - authenticates to Hugging Face (optional)
-- loads "unsloth/Meta-Llama-3.1-8B-Instruct"
+- loads "unsloth/Qwen3-4B-Instruct-2507" (default)
 - formats *local* glaive_toolcall.jsonl into chat template tokens (tool-calling aware)
 - runs SFT with LoRA via Unsloth
 - saves LoRA adapters and (optionally) a merged 16-bit checkpoint for vLLM
@@ -73,9 +73,12 @@ def maybe_login_hf():
 
 @dataclass
 class TrainConfig:
-    model_name: str = "unsloth/Meta-Llama-3.1-8B-Instruct"
-
-    # Local dataset config
+    model_name: str = "unsloth/Qwen3-4B-Instruct-2507"
+    # "unsloth/Meta-Llama-3.1-8B-Instruct" 和 unsloth/Qwen3-4B-Instruct-2507
+    #"llama-3" 或者"qwen-3"
+    chat_template= "qwen-3"
+    enable_thinking: bool = False  # Qwen3 Instruct 建议显式关闭
+    # 数据集
     data_path: str = "glaive_toolcall.jsonl"
     subset_size: int = 0  # 0 or negative means full
 
@@ -113,8 +116,13 @@ class TrainConfig:
 
 
 def build_argparser():
-    p = argparse.ArgumentParser(description="Fine-tune Llama 3.1 8B for function calling via LoRA (Unsloth) on local Glaive jsonl.")
+    p = argparse.ArgumentParser(description="Fine-tune Qwen3 Instruct for function calling via LoRA (Unsloth) on local Glaive jsonl.")
     p.add_argument("--model_name", default=TrainConfig.model_name)
+
+    # chat template & thinking
+    p.add_argument("--chat_template", default=TrainConfig.chat_template, help='e.g. "qwen-3" or "qwen-2.5"')
+    p.add_argument("--enable_thinking", action="store_true",
+                        help="Enable Qwen3 thinking tags <think>...</think>. Default off for Instruct.")
 
     # local data
     p.add_argument("--data_path", default=TrainConfig.data_path, help="Path to glaive_toolcall.jsonl")
@@ -237,13 +245,13 @@ def _convert_conversations_glaive(conversations: List[Dict[str, Any]],
     return messages
 
 
-def format_glaive_dataset(tokenizer, dataset):
+def format_glaive_dataset(tokenizer, dataset, chat_template: str, enable_thinking: bool):
     """
-    Build Unsloth chat template 'llama-3' without role mapping (we already converted to OpenAI schema).
+    Build Unsloth chat template Qwen (qwen-3; fallback qwen-2.5)  without role mapping (we already converted to OpenAI schema).
     """
     tokenizer = get_chat_template(
         tokenizer,
-        chat_template="llama-3",
+        chat_template=chat_template,
         map_eos_token=True,
     )
 
@@ -308,7 +316,7 @@ def main():
         print(f"[Data] Using full dataset of {len(dataset)} samples.")
 
     # Tokenize/format
-    tokenizer, dataset = format_glaive_dataset(tokenizer, dataset)
+    tokenizer, dataset = format_glaive_dataset(tokenizer, dataset, args.chat_template, args.enable_thinking)
 
     # Training args
     train_args = TrainingArguments(
