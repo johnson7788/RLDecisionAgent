@@ -253,7 +253,7 @@ def format_glaive_dataset(tokenizer, dataset, chat_template: str, enable_thinkin
     tokenizer = get_chat_template(
         tokenizer,
         chat_template=chat_template,
-        map_eos_token=True,
+        map_eos_token=False,
     )
 
     def _format_batch(examples: Dict[str, List[Any]]):
