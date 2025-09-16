@@ -382,7 +382,7 @@ def main():
     os.makedirs(args.lora_dir, exist_ok=True)
     model.save_pretrained(args.lora_dir)
     tokenizer.save_pretrained(args.lora_dir)
-    print(f"[Save] LoRA adapters saved to: {args.lora_dir}")
+    print(f"[Save] LoRA adapters 保存模型到: {args.lora_dir}")
 
     # Push LoRA to hub
     if args.push_to_hub and args.hf_username:
