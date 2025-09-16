@@ -32,7 +32,8 @@ import re
 import json
 import argparse
 from typing import Any, Dict, List, Tuple
-
+import hashlib
+import random
 import requests
 from datetime import datetime
 
@@ -63,6 +64,14 @@ WEATHER_API_KEY = os.getenv("WEATHER_API_KEY")
 NASA_API_KEY = os.getenv("NASA_API_KEY")
 STOCK_API_KEY = os.getenv("STOCK_API_KEY")
 
+def _stable_int(seed: str) -> int:
+    """Deterministic hash -> int for reproducible mocks."""
+    return int(hashlib.sha256(seed.encode("utf-8")).hexdigest(), 16)
+
+def _rng(seed: str) -> random.Random:
+    r = random.Random()
+    r.seed(_stable_int(seed))
+    return r
 
 def get_current_date() -> str:
     """Return current date in YYYY-MM-DD."""
@@ -70,19 +79,16 @@ def get_current_date() -> str:
 
 
 def get_current_weather(location: str) -> Dict[str, Any]:
-    """Get current weather using OpenWeatherMap (metric units)."""
-    if not WEATHER_API_KEY:
-        return {"error": "WEATHER_API_KEY not set"}
-    url = f"http://api.openweathermap.org/data/2.5/weather?q={location}&appid={WEATHER_API_KEY}&units=metric"
-    try:
-        data = requests.get(url, timeout=15).json()
-        return {
-            "description": data["weather"][0]["description"],
-            "temperature": data["main"]["temp"],
-            "humidity": data["main"]["humidity"],
-        }
-    except Exception as e:
-        return {"error": str(e)}
+    """Get current weather; mocked when USE_MOCK_TOOLS=True."""
+    r = _rng(f"weather::{location}")
+    descs = ["clear sky", "few clouds", "scattered clouds", "broken clouds",
+             "shower rain", "light rain", "moderate rain", "thunderstorm",
+             "mist", "snow"]
+    return {
+        "description": r.choice(descs),
+        "temperature": round(r.uniform(-10.0, 35.0), 1),  # °C
+        "humidity": r.randint(20, 95),                   # %
+    }
 
 
 def celsius_to_fahrenheit(celsius: float) -> float:
@@ -91,36 +97,27 @@ def celsius_to_fahrenheit(celsius: float) -> float:
 
 
 def get_nasa_picture_of_the_day(date: str) -> Dict[str, Any]:
-    """Fetch NASA APOD for a given date via nasapy (if installed)."""
-    if not _HAS_NASAPY:
-        return {"error": "nasapy not installed"}
-    if not NASA_API_KEY:
-        return {"error": "NASA_API_KEY not set"}
-    try:
-        nasa = nasapy.Nasa(key=NASA_API_KEY)
-        apod = nasa.picture_of_the_day(date=date, hd=True)
-        return {
-            "title": apod.get("title"),
-            "explanation": apod.get("explanation"),
-            "url": apod.get("url"),
-        }
-    except Exception as e:
-        return {"error": str(e)}
-
+    """Fetch NASA APOD; mocked when USE_MOCK_TOOLS=True."""
+    r = _rng(f"apod::{date}")
+    themes = ["Nebula", "Galaxy", "Star Field", "Lunar Surface", "Aurora", "Comet",
+              "Exoplanet", "Solar Flare", "Milky Way", "ISS Earth View"]
+    title = f"{themes[r.randrange(len(themes))]} — {date}"
+    return {
+        "title": title,
+        "explanation": "This is a simulated APOD entry for testing purposes (no external API).",
+        "url": f"https://example.com/apod/{date.replace('-', '')}.jpg",
+    }
 
 def get_stock_price(ticker: str, date: str) -> Tuple[str, str]:
-    """Return (low, high) for ticker on date via AlphaVantage."""
-    if not STOCK_API_KEY:
-        return ("none", "none")
-    try:
-        url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={ticker}&apikey={STOCK_API_KEY}"
-        data = requests.get(url, timeout=20).json()
-        low = data["Time Series (Daily)"][date]["3. low"]
-        high = data["Time Series (Daily)"][date]["2. high"]
-        return (low, high)
-    except Exception:
-        return ("none", "none")
-
+    """Return (low, high) for ticker on date; mocked when USE_MOCK_TOOLS=True."""
+    r = _rng(f"stock::{ticker.upper()}::{date}")
+    base = 20 + (sum(ord(c) for c in ticker.upper()) % 80)  # 20~99
+    drift = (int(date.replace("-", "")) % 13) - 6            # -6~+6
+    price = max(3.0, base + drift + r.uniform(-1.5, 1.5))
+    spread = max(0.5, r.uniform(0.5, 5.0))
+    low = round(price - spread/2, 2)
+    high = round(price + spread/2, 2)
+    return (f"{low:.2f}", f"{high:.2f}")
 
 AVAILABLE_FUNCTIONS = {
     "get_current_date": get_current_date,
