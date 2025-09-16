@@ -11,9 +11,12 @@ from a2a.types import (
     MessageSendParams,
     SendStreamingMessageRequest,
 )
+from mcpserver.mcp_client import get_mcp_tools
 
 PUBLIC_AGENT_CARD_PATH = '/.well-known/agent.json'
 EXTENDED_AGENT_CARD_PATH = '/agent/authenticatedExtendedCard'
+MCP_CONFIG_PATH = 'a2a_agent/mcp_config.json'
+
 
 async def get_agent_response(client: A2AClient, question: str) -> List[Dict[str, Any]]:
     """Sends a question to the agent and returns the conversation history in the desired format."""
@@ -99,6 +102,27 @@ async def main() -> None:
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
 
+    # Load MCP tools from config
+    try:
+        with open(MCP_CONFIG_PATH, 'r', encoding='utf-8') as f:
+            mcp_config = json.load(f)
+    except FileNotFoundError:
+        logger.error(f"MCP config file not found at {MCP_CONFIG_PATH}")
+        return
+
+    mcp_servers = mcp_config.get("mcpServers", {})
+    all_tools = []
+    for server_name, server_info in mcp_servers.items():
+        if not server_info.get("disabled"):
+            url = server_info.get("url")
+            if url:
+                logger.info(f"Fetching tools from '{server_name}' at {url}...")
+                server_tools = await get_mcp_tools(url)
+                all_tools.extend(server_tools)
+    
+    logger.info(f"Loaded {len(all_tools)} tools from MCP servers.")
+
+
     base_url = 'http://localhost:10066'
 
     async with httpx.AsyncClient(timeout=60.0) as httpx_client:
@@ -139,7 +163,7 @@ async def main() -> None:
                 conversations = await get_agent_response(client, question)
                 
                 training_entry = {
-                    "tools": tools,
+                    "tools": json.dumps(all_tools, ensure_ascii=False),
                     "conversations": conversations
                 }
                 
