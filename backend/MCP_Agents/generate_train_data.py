@@ -1,5 +1,3 @@
-
-import time
 import logging
 from typing import Any, Dict, List
 from uuid import uuid4
@@ -17,8 +15,10 @@ from a2a.types import (
 PUBLIC_AGENT_CARD_PATH = '/.well-known/agent.json'
 EXTENDED_AGENT_CARD_PATH = '/agent/authenticatedExtendedCard'
 
-async def get_agent_response(client: A2AClient, question: str) -> str:
-    """Sends a question to the agent and returns the aggregated response based on the A2A protocol."""
+async def get_agent_response(client: A2AClient, question: str) -> List[Dict[str, Any]]:
+    """Sends a question to the agent and returns the conversation history in the desired format."""
+    conversations = [{"from": "human", "value": question}]
+    
     parts = [{'kind': 'text', 'text': question}]
     multiturn_first: dict[str, Any] = {
         'message': {
@@ -34,9 +34,7 @@ async def get_agent_response(client: A2AClient, question: str) -> str:
     )
     stream_response = client.send_message_streaming(streaming_request)
 
-    tool_outputs = []
     text_response = ""
-
     async for chunk in stream_response:
         chunk_data = chunk.model_dump(mode='json', exclude_none=True)
         
@@ -61,32 +59,41 @@ async def get_agent_response(client: A2AClient, question: str) -> str:
                 data1 = part.get("data")
                 if data1 and data1.get("data"):
                     for item in data1.get("data"):
+                        # This is a tool call
+                        if item and item.get("type") == "function":
+                            function_call = item.get("function")
+                            if function_call:
+                                conversations.append({
+                                    "from": "function_call",
+                                    "value": json.dumps(function_call, ensure_ascii=False)
+                                })
+                        # This is a tool observation
                         if item and item.get("tool_output") is not None:
-                            tool_outputs.append(item.get("tool_output"))
+                            tool_output = item.get("tool_output")
+                            observation_value = ""
+                            try:
+                                parsed_output = json.loads(tool_output)
+                                if isinstance(parsed_output, (dict, list)):
+                                    observation_value = tool_output
+                                else:
+                                    observation_value = json.dumps({"result": parsed_output})
+                            except (json.JSONDecodeError, TypeError):
+                                observation_value = json.dumps({"result": tool_output})
+
+                            conversations.append({
+                                "from": "observation",
+                                "value": observation_value
+                            })
             elif part.get("kind") == "text":
                 text = part.get("text")
                 if text:
                     text_response += text
+    
+    if text_response:
+        conversations.append({"from": "gpt", "value": text_response.strip()})
 
-    final_result = None
-    if tool_outputs:
-        if len(tool_outputs) == 1:
-            final_result = tool_outputs[0]
-        else:
-            final_result = tool_outputs
-    elif text_response:
-        final_result = text_response
+    return conversations
 
-    if final_result is not None:
-        try:
-            # If the result is a string that is valid JSON, parse it to embed it as an object.
-            parsed_result = json.loads(final_result)
-            return json.dumps({"result": parsed_result}, ensure_ascii=False)
-        except (json.JSONDecodeError, TypeError):
-            # Otherwise, treat as a plain string.
-            return json.dumps({"result": final_result}, ensure_ascii=False)
-
-    return json.dumps({})
 
 async def main() -> None:
     logging.basicConfig(level=logging.INFO)
@@ -122,28 +129,24 @@ async def main() -> None:
 
         with open(QUESTION_FILE, 'r', encoding='utf-8') as f:
             questions = [line.strip() for line in f if line.strip()]
-        questions = questions[:2]
-        training_data: List[Dict[str, str]] = []
-        for question in questions:
-            logger.info(f"Processing question: {question}")
-            answer = await get_agent_response(client, question)
-            
-            try:
-                # Attempt to parse the answer as JSON, then dump it back to a string with indentation
-                parsed_answer = json.loads(answer)
-                formatted_answer = json.dumps(parsed_answer, ensure_ascii=False, indent=2)
-            except json.JSONDecodeError:
-                # If it's not a valid JSON string, use the raw answer
-                formatted_answer = answer
-            
-            training_data.append({"question": question, "answer": formatted_answer})
-            logger.info(f"Received answer for question: {question}")
-
-
-        with open(OUTLINE_DATA, 'w', encoding='utf-8') as f:
-            json.dump(training_data, f, ensure_ascii=False, indent=2)
         
-        logger.info("Successfully generated training data and saved to example_one_data.json")
+        questions = questions[:2]
+        
+        with open(OUTLINE_DATA, 'w', encoding='utf-8') as f:
+            for question in questions:
+                logger.info(f"Processing question: {question}")
+                
+                conversations = await get_agent_response(client, question)
+                
+                training_entry = {
+                    "tools": tools,
+                    "conversations": conversations
+                }
+                
+                f.write(json.dumps(training_entry, ensure_ascii=False) + '\n')
+                logger.info(f"Finished processing and saved entry for question: {question}")
+
+        logger.info(f"Successfully generated training data and saved to {OUTLINE_DATA}")
 
 
 if __name__ == '__main__':

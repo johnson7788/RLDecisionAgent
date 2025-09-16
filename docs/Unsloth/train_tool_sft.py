@@ -30,10 +30,9 @@ from datasets import load_dataset
 from huggingface_hub import login
 from transformers import TrainingArguments
 from trl import SFTConfig, SFTTrainer
-from trl import SFTTrainer
 
 # Unsloth imports
-from unsloth import FastLanguageModel, unsloth_train
+from unsloth import FastModel
 from unsloth.chat_templates import get_chat_template
 
 
@@ -77,7 +76,8 @@ class TrainConfig:
     model_name: str = "unsloth/Qwen3-4B-Instruct-2507"
     # "unsloth/Meta-Llama-3.1-8B-Instruct" 和 unsloth/Qwen3-4B-Instruct-2507
     #"llama-3" 或者"qwen-3"
-    chat_template= "qwen-3"
+    # chat_template= "qwen-3"
+    chat_template= "qwen3-instruct"
     enable_thinking: bool = False  # Qwen3 Instruct 建议显式关闭
     # 数据集
     data_path: str = "glaive_toolcall.jsonl"
@@ -285,15 +285,17 @@ def main():
 
     # Load base model
     dtype = None if args.dtype == "auto" else getattr(torch, args.dtype)
-    model, tokenizer = FastLanguageModel.from_pretrained(
+    model, tokenizer = FastModel.from_pretrained(
         model_name=args.model_name,
         max_seq_length=args.max_seq_len,
-        dtype=dtype,
         load_in_4bit=args.use_4bit,
+        load_in_8bit=False,
+        full_finetuning=False,
+        dtype=dtype,
     )
 
     # Configure LoRA PEFT
-    model = FastLanguageModel.get_peft_model(
+    model = FastModel.get_peft_model(
         model,
         r=args.lora_r,
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
@@ -362,7 +364,7 @@ def main():
         print(f"[GPU] {gpu_stats.name}. Max memory = {max_mem} GB. Reserved at start = {start_gpu_mem} GB.")
 
     # Train
-    stats = unsloth_train(trainer)
+    stats = trainer.train()
     print(stats)
 
     # Final memory

@@ -21,7 +21,7 @@ Environment variables (optional):
 python inference_tool_sft.py --model ./merged_model_16bit \
   --engine unsloth \
   --query "IBM 总部今天的天气如何？顺便把 23 摄氏度转为华氏度。"
-# 使用vllm作为推理引擎
+
 python eval_model.py --model your-hf/merged_model_16bit --engine vllm
 
 References:
