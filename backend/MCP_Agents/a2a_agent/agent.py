@@ -82,7 +82,7 @@ class KnowledgeAgent:
                 else:
                     select_tools.append(tool_name)
         self.tools = select_tools
-        self.SYSTEM_INSTRUCTION = prompt.AGENT_PROMPT
+        self.SYSTEM_INSTRUCTION = prompt.AGENT_ANSWER_PROMPT
         self.graphes = {} # 等异步初始化完才赋值
 
     async def create_graph(self, tool_names=[], mcp_urls=[]):

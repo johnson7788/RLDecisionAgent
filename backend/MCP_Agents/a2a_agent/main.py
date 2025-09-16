@@ -26,15 +26,15 @@ async def start_server(host, port, mcp_config, select_tool_names):
     capabilities = AgentCapabilities(streaming=True)
     skill = AgentSkill(
         id='knowledge_search',
-        name='知识库问答能力',
-        description='可以从文档、个人知识库和指南中检索信息并回答用户问题',
+        name='工具助手Agent',
+        description='会使用工具的Agent',
         tags=['知识检索', '多轮问答', '智能助手'],
-        examples=['帕金森的治疗方案有哪些？', '我在指南中能找到哪些营养建议？'],
+        examples=['今天的日期？', '计算浙江 2025 年 4 月与 2025 年 3 月的月均 LNG 价格差。'],
     )
     CARD_URL = os.environ.get('CARD_URL', f'http://{host}:{port}/')
     agent_card = AgentCard(
-        name='知识库问答 Agent',
-        description='可以根据用户的问题从多个知识库中检索并回答',
+        name='knowledge_search',
+        description='根据用户的问题合理的使用工具的解决用户的问题',
         url=CARD_URL,
         version='1.0.0',
         defaultInputModes=KnowledgeAgent.SUPPORTED_CONTENT_TYPES,
@@ -59,7 +59,7 @@ async def start_server(host, port, mcp_config, select_tool_names):
 
 @click.command()
 @click.option('--host', default='localhost')
-@click.option('--port', default=10000)
+@click.option('--port', default=10066)
 @click.option('--mcp', default="mcp_config.json", help='MCP 配置文件路径')
 @click.option('--select_tool_names', default="all", help='使用的内部工具，逗号分隔')
 def main(host, port, mcp, select_tool_names):

@@ -20,7 +20,7 @@ async def main() -> None:
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
 
-    base_url = 'http://localhost:10000'
+    base_url = 'http://localhost:10066'
 
     async with httpx.AsyncClient(timeout=60.0) as httpx_client:
         resolver = A2ACardResolver(httpx_client=httpx_client, base_url=base_url)
@@ -58,15 +58,14 @@ async def main() -> None:
         logger.info('A2AClient 初始化完成。')
 
         # === 多轮对话 ===
-        # parts = [{'kind': 'text', 'text': '帕金森的治疗方案有哪些？'}]
-        parts = [{'kind': 'text', 'text': '阿莫西林有什么作用？'}]
+        parts = [{'kind': 'text', 'text': '今天是几月几日？'}]
         logger.info("开始进行对话...")
         multiturn_first: dict[str, Any] = {
             'message': {
                 'role': 'user',
                 'parts': parts,
                 'messageId': uuid4().hex,
-                'metadata': {'language': "English", "tools": ["search_document_db", "search_personal_db"], "user_id": 123456}
+                'metadata': {'language': "English", "user_id": 123456}
             },
         }
         # === 流式对话 ===
