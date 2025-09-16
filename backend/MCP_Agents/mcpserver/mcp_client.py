@@ -8,15 +8,9 @@
 
 from fastmcp import Client
 
-# Standard MCP configuration with multiple servers
-config = {
-    "mcpServers": {
-        "energy": {"url": "http://127.0.0.1:9000/sse"},
-    }
-}
-
-# Create a client that connects to all servers
-client = Client(config)
+# Configuration for the MCP server
+# Since we have only one server, we can pass the URL directly.
+client = Client("http://127.0.0.1:9000/sse")
 
 async def main():
     async with client:
