@@ -279,6 +279,28 @@ python inference_grpo.py --ckpt_dir outputs_grpo_custom/grpo_saved_lora --prompt
             "value": "不客气！如果你还需要其他什么，随时问。"
         }
     ],
-    "tools": "[{\"name\": \"generate_random_number\", \"description\": \"在指定范围内生成一个随机数\", \"parameters\": {\"type\": \"object\", \"properties\": {\"min\": {\"type\": \"integer\", \"description\": \"最小值\"}, \"max\": {\"type\": \"integer\", \"description\": \"最大值\"}}, \"required\": [\"min\", \"max\"]}}]"
+    "tools": [
+        {
+            "name": "generate_random_number",
+            "description": "在指定范围内生成一个随机数",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "min": {
+                        "type": "integer",
+                        "description": "最小值"
+                    },
+                    "max": {
+                        "type": "integer",
+                        "description": "最大值"
+                    }
+                },
+                "required": [
+                    "min",
+                    "max"
+                ]
+            }
+        }
+    ]
 }
 ```
