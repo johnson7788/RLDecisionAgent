@@ -12,7 +12,7 @@
 - 保留原有 CLI 风格（常用参数）
 # 使用自己的数据进行训练
 python train_sft.py --data_files xiaosen_sft.jsonl
-python train_sft.py --data_files glaive_toolcall.jsonl
+
 """
 from __future__ import annotations
 import argparse
