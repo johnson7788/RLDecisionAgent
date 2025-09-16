@@ -29,10 +29,9 @@ import torch
 from datasets import load_dataset
 from huggingface_hub import login
 from transformers import TrainingArguments
-from trl import SFTConfig, SFTTrainer
-
 # Unsloth imports
 from unsloth import FastModel
+from trl import SFTConfig, SFTTrainer
 from unsloth.chat_templates import get_chat_template
 
 
@@ -77,7 +76,7 @@ class TrainConfig:
     # "unsloth/Meta-Llama-3.1-8B-Instruct" 和 unsloth/Qwen3-4B-Instruct-2507
     #"llama-3" 或者"qwen-3"
     # chat_template= "qwen-3"
-    chat_template= "qwen3-instruct"
+    chat_template= "qwen-3"
     enable_thinking: bool = False  # Qwen3 Instruct 建议显式关闭
     # 数据集
     data_path: str = "glaive_toolcall.jsonl"
