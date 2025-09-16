@@ -62,7 +62,7 @@ def load_mcp_servers(config_path: str) -> Dict[str, Any]:
 class KnowledgeAgent:
     """知识库问答 Agent"""
     SUPPORTED_CONTENT_TYPES = ['text', 'text/plain']
-    def __init__(self, mcp_config=None, select_tool_names=["all"]):
+    def __init__(self, mcp_config=None, select_tool_names=[]):
         """
         初始化Agent
         Args:
@@ -73,7 +73,7 @@ class KnowledgeAgent:
         self.model = create_model()
         self.mcp_config = mcp_config
         select_tools = []
-        if "all" in select_tool_names:
+        if not select_tool_names:
             select_tools.extend(ALL_TOOLS)
         else:
             for tool_name in select_tool_names:
@@ -105,7 +105,8 @@ class KnowledgeAgent:
             client = MultiServerMCPClient(mcp_config_tools)
             tools = await client.get_tools()
             select_tools.extend(tools)
-        print(f"LLM可用的工具总数是: {len(self.tools)}")
+            tool_names.extend([one.name for one in tools])
+        print(f"LLM可用的工具总数是: {len(select_tools)}")
 
         SYSTEM_INSTRUCTION = self.SYSTEM_INSTRUCTION.format(tool_names=tool_names)
         graph = create_react_agent(
