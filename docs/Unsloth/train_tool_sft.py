@@ -29,6 +29,7 @@ import torch
 from datasets import load_dataset
 from huggingface_hub import login
 from transformers import TrainingArguments
+from trl import SFTConfig, SFTTrainer
 from trl import SFTTrainer
 
 # Unsloth imports
@@ -318,8 +319,8 @@ def main():
     # Tokenize/format
     tokenizer, dataset = format_glaive_dataset(tokenizer, dataset, args.chat_template, args.enable_thinking)
 
-    # Training args
-    train_args = TrainingArguments(
+    sft_args = SFTConfig(
+        # === 训练超参（你的 TrainingArguments 原样迁移）===
         per_device_train_batch_size=args.batch_size,
         gradient_accumulation_steps=args.grad_accum,
         warmup_steps=args.warmup_steps,
@@ -332,12 +333,17 @@ def main():
         lr_scheduler_type=args.scheduler,
         seed=args.seed,
         output_dir=args.out_dir,
-        report_to="wandb" if args.wandb_project else "none",
+        report_to=("wandb" if args.wandb_project else "none"),
         logging_steps=1,
         logging_strategy="steps",
         save_strategy="no",
-        load_best_model_at_end=False,  # no eval/save cycle
+        load_best_model_at_end=False,
         save_only_model=False,
+        # === 数据相关（新版在 SFTConfig 里）===
+        dataset_text_field="text",  # 可省略；默认就是 "text"
+        dataset_num_proc=2,
+        max_length=args.max_seq_len,  # 注意：字段名是 max_length（不是 max_seq_length）
+        packing=False,
     )
 
     # Trainer
@@ -345,11 +351,7 @@ def main():
         model=model,
         processing_class=tokenizer,
         train_dataset=dataset,
-        dataset_text_field="text",
-        max_seq_length=args.max_seq_len,
-        dataset_num_proc=2,
-        packing=False,
-        args=train_args,
+        args=sft_args,
     )
 
     # Memory stats (optional)

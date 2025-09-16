@@ -1,4 +1,4 @@
-import os
+
 import time
 import logging
 from typing import Any, Dict, List
@@ -11,17 +11,14 @@ from a2a.client import A2ACardResolver, A2AClient
 from a2a.types import (
     AgentCard,
     MessageSendParams,
-    SendMessageRequest,
     SendStreamingMessageRequest,
 )
 
 PUBLIC_AGENT_CARD_PATH = '/.well-known/agent.json'
 EXTENDED_AGENT_CARD_PATH = '/agent/authenticatedExtendedCard'
 
-# 生成训练数据
-
 async def get_agent_response(client: A2AClient, question: str) -> str:
-    """Sends a question to the agent and returns the aggregated response."""
+    """Sends a question to the agent and returns the aggregated response based on the A2A protocol."""
     parts = [{'kind': 'text', 'text': question}]
     multiturn_first: dict[str, Any] = {
         'message': {
@@ -37,14 +34,59 @@ async def get_agent_response(client: A2AClient, question: str) -> str:
     )
     stream_response = client.send_message_streaming(streaming_request)
 
-    response_text = ""
+    tool_outputs = []
+    text_response = ""
+
     async for chunk in stream_response:
-        # Assuming the relevant text is in a field named 'text' within a part of kind 'text'
-        if chunk.delta and chunk.delta.parts:
-            for part in chunk.delta.parts:
-                if part.kind == 'text' and part.text:
-                    response_text += part.text
-    return response_text
+        chunk_data = chunk.model_dump(mode='json', exclude_none=True)
+        
+        result = chunk_data.get("result")
+        if not result or result.get("kind") != "status-update":
+            continue
+
+        status = result.get("status")
+        if not status:
+            continue
+        
+        message = status.get("message")
+        if not message:
+            continue
+
+        parts = message.get("parts")
+        if not parts:
+            continue
+
+        for part in parts:
+            if part.get("kind") == "data":
+                data1 = part.get("data")
+                if data1 and data1.get("data"):
+                    for item in data1.get("data"):
+                        if item and item.get("tool_output") is not None:
+                            tool_outputs.append(item.get("tool_output"))
+            elif part.get("kind") == "text":
+                text = part.get("text")
+                if text:
+                    text_response += text
+
+    final_result = None
+    if tool_outputs:
+        if len(tool_outputs) == 1:
+            final_result = tool_outputs[0]
+        else:
+            final_result = tool_outputs
+    elif text_response:
+        final_result = text_response
+
+    if final_result is not None:
+        try:
+            # If the result is a string that is valid JSON, parse it to embed it as an object.
+            parsed_result = json.loads(final_result)
+            return json.dumps({"result": parsed_result}, ensure_ascii=False)
+        except (json.JSONDecodeError, TypeError):
+            # Otherwise, treat as a plain string.
+            return json.dumps({"result": final_result}, ensure_ascii=False)
+
+    return json.dumps({})
 
 async def main() -> None:
     logging.basicConfig(level=logging.INFO)
@@ -77,18 +119,17 @@ async def main() -> None:
 
         client = A2AClient(httpx_client=httpx_client, agent_card=final_agent_card_to_use)
         logger.info('A2AClient initialized.')
-        questions_file = './questions.txt'
-        assert os.path.exists(questions_file), f'{questions_file} 问题文件不存在'
-        with open(questions_file, 'r', encoding='utf-8') as f:
-            questions = [line.strip() for line in f if line.strip()]
 
+        with open(QUESTION_FILE, 'r', encoding='utf-8') as f:
+            questions = [line.strip() for line in f if line.strip()]
+        questions = questions[:2]
         training_data: List[Dict[str, str]] = []
         for question in questions:
             logger.info(f"Processing question: {question}")
             answer = await get_agent_response(client, question)
-            # The answer from the agent might be a JSON string, so we load it to format it nicely
+            
             try:
-                # Attempt to parse the answer as JSON, then dump it back to a string
+                # Attempt to parse the answer as JSON, then dump it back to a string with indentation
                 parsed_answer = json.loads(answer)
                 formatted_answer = json.dumps(parsed_answer, ensure_ascii=False, indent=2)
             except json.JSONDecodeError:
@@ -99,7 +140,7 @@ async def main() -> None:
             logger.info(f"Received answer for question: {question}")
 
 
-        with open('../example_one_data.json', 'w', encoding='utf-8') as f:
+        with open(OUTLINE_DATA, 'w', encoding='utf-8') as f:
             json.dump(training_data, f, ensure_ascii=False, indent=2)
         
         logger.info("Successfully generated training data and saved to example_one_data.json")
@@ -107,4 +148,6 @@ async def main() -> None:
 
 if __name__ == '__main__':
     import asyncio
+    QUESTION_FILE ="./questions.txt"
+    OUTLINE_DATA="train.jsonl"
     asyncio.run(main())
