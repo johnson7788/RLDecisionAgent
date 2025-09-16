@@ -64,6 +64,8 @@ async def start_server(host, port, mcp_config, select_tool_names):
 @click.option('--select_tool_names', default="", help='使用的内部工具，逗号分隔')
 def main(host, port, mcp, select_tool_names):
     select_tool_names = select_tool_names.split(",")
+    if select_tool_names == ['']:
+        select_tool_names = []
     asyncio.run(start_server(host, port, mcp, select_tool_names))
 
 if __name__ == '__main__':
