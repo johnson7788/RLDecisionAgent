@@ -5,12 +5,12 @@ This script:
 - logs to Weights & Biases (optional)
 - authenticates to Hugging Face (optional)
 - loads "unsloth/Meta-Llama-3.1-8B-Instruct"
-- formats Salesforce/xlam-function-calling-60k into chat template tokens
+- formats *local* glaive_toolcall.jsonl into chat template tokens (tool-calling aware)
 - runs SFT with LoRA via Unsloth
 - saves LoRA adapters and (optionally) a merged 16-bit checkpoint for vLLM
 
 Usage example:
-python train_tool_sft.py --wandb_project my-project --wandb_run llama31-fc --subset_size 15000 --epochs 3 --lr 2e-4 --batch_size 8 --grad_accum 2
+python train_tool_sft.py --data_path ./glaive_toolcall.jsonl --epochs 3 --lr 2e-4 --batch_size 8 --grad_accum 2
 
 Environment variables expected (if using these services):
 - WANDB_API_KEY
@@ -18,12 +18,12 @@ Environment variables expected (if using these services):
 
 References:
 - Unsloth docs: https://docs.unsloth.ai
-- Medium article: https://gautam75.medium.com/fine-tuning-llama-3-1-8b-for-function-calling-using-lora-159b9ee66060
 """
 import os
+import json
 import argparse
 from dataclasses import dataclass
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 import torch
 from datasets import load_dataset
@@ -34,6 +34,7 @@ from trl import SFTTrainer
 # Unsloth imports
 from unsloth import FastLanguageModel, unsloth_train
 from unsloth.chat_templates import get_chat_template
+
 
 def maybe_login_wandb(project: str = None, run: str = None):
     """Initialize Weights & Biases logging if a project is provided."""
@@ -73,8 +74,12 @@ def maybe_login_hf():
 @dataclass
 class TrainConfig:
     model_name: str = "unsloth/Meta-Llama-3.1-8B-Instruct"
-    dataset_name: str = "Salesforce/xlam-function-calling-60k"
-    subset_size: int = 15000
+
+    # Local dataset config
+    data_path: str = "glaive_toolcall.jsonl"
+    subset_size: int = 0  # 0 or negative means full
+
+    # Output
     out_dir: str = "outputs"
     lora_dir: str = "lora_model"
     merged_dir: str = "merged_model_16bit"
@@ -108,10 +113,14 @@ class TrainConfig:
 
 
 def build_argparser():
-    p = argparse.ArgumentParser(description="Fine-tune Llama 3.1 8B for function calling via LoRA (Unsloth).")
+    p = argparse.ArgumentParser(description="Fine-tune Llama 3.1 8B for function calling via LoRA (Unsloth) on local Glaive jsonl.")
     p.add_argument("--model_name", default=TrainConfig.model_name)
-    p.add_argument("--dataset_name", default=TrainConfig.dataset_name)
-    p.add_argument("--subset_size", type=int, default=TrainConfig.subset_size)
+
+    # local data
+    p.add_argument("--data_path", default=TrainConfig.data_path, help="Path to glaive_toolcall.jsonl")
+    p.add_argument("--subset_size", type=int, default=TrainConfig.subset_size, help="Use first N samples (0 = full).")
+
+    # outputs
     p.add_argument("--out_dir", default=TrainConfig.out_dir)
     p.add_argument("--lora_dir", default=TrainConfig.lora_dir)
     p.add_argument("--merged_dir", default=TrainConfig.merged_dir)
@@ -119,6 +128,7 @@ def build_argparser():
     p.add_argument("--push_to_hub", action="store_true")
     p.add_argument("--save_merged", action="store_true")
 
+    # LoRA / dtype
     p.add_argument("--max_seq_len", type=int, default=TrainConfig.max_seq_len)
     p.add_argument("--lora_r", type=int, default=TrainConfig.lora_r)
     p.add_argument("--lora_alpha", type=int, default=TrainConfig.lora_alpha)
@@ -127,6 +137,7 @@ def build_argparser():
     p.add_argument("--use_4bit", action="store_true")
     p.add_argument("--dtype", default=TrainConfig.dtype, help='Use "auto" for automatic dtype.')
 
+    # training
     p.add_argument("--batch_size", type=int, default=TrainConfig.batch_size)
     p.add_argument("--grad_accum", type=int, default=TrainConfig.grad_accum)
     p.add_argument("--epochs", type=int, default=TrainConfig.epochs)
@@ -137,45 +148,121 @@ def build_argparser():
     p.add_argument("--scheduler", default=TrainConfig.scheduler)
     p.add_argument("--optim", default=TrainConfig.optim)
 
+    # logging
     p.add_argument("--wandb_project", default=TrainConfig.wandb_project)
     p.add_argument("--wandb_run", default=TrainConfig.wandb_run)
     return p
 
 
-def format_dataset(tokenizer, dataset):
-    # Use Unsloth chat template "llama-3" with ShareGPT-style mapping.
+def _tools_to_system_text(tools: Optional[List[Dict[str, Any]]]) -> str:
+    if not tools:
+        return "你是一个可以进行函数调用的助手。"
+    return "你是一个可以进行函数调用的助手。可用工具如下（JSON Schema）：\n" + \
+           json.dumps(tools, ensure_ascii=False, indent=2)
+
+
+def _convert_conversations_glaive(conversations: List[Dict[str, Any]],
+                                  tools: Optional[List[Dict[str, Any]]] = None) -> List[Dict[str, Any]]:
+    """
+    Convert Glaive-style conversation list into OpenAI/llama3 tool-calling schema:
+    - human -> user
+    - gpt -> assistant (natural text)
+    - function_call -> assistant with tool_calls
+    - observation -> tool (tool result)
+    """
+    messages: List[Dict[str, Any]] = []
+    # 1) System with tool list
+    messages.append({"role": "system", "content": _tools_to_system_text(tools)})
+
+    call_counter = 1
+    last_call_id: Optional[str] = None
+    last_func_name: Optional[str] = None
+
+    for turn in conversations:
+        role = turn.get("from")
+        value = turn.get("value", "")
+
+        if role == "human":
+            messages.append({"role": "user", "content": str(value)})
+
+        elif role == "gpt":
+            messages.append({"role": "assistant", "content": str(value)})
+
+        elif role == "function_call":
+            try:
+                fc = json.loads(value)
+                name = fc.get("name", "")
+                args = fc.get("arguments", {})
+            except Exception:
+                # 若出现非 JSON，尽量兜底为字符串参数
+                name, args = "unknown_function", {"raw": str(value)}
+            call_id = f"call_{call_counter}"
+            call_counter += 1
+            last_call_id = call_id
+            last_func_name = name
+            messages.append({
+                "role": "assistant",
+                "content": "",
+                "tool_calls": [
+                    {
+                        "id": call_id,
+                        "type": "function",
+                        "function": {
+                            "name": name,
+                            "arguments": json.dumps(args, ensure_ascii=False),
+                        },
+                    }
+                ],
+            })
+
+        elif role == "observation":
+            # 工具输出内容直接作为 tool 消息；若没有上一个 function_call，则降级为 system 附注。
+            if last_call_id and last_func_name:
+                messages.append({
+                    "role": "tool",
+                    "tool_call_id": last_call_id,
+                    "name": last_func_name,
+                    "content": str(value),
+                })
+            else:
+                messages.append({
+                    "role": "system",
+                    "content": f"（工具返回）{value}",
+                })
+
+        else:
+            # 未知角色，写入系统注释，避免丢样本
+            messages.append({"role": "system", "content": f"（未识别角色 {role}）{value}"})
+
+    return messages
+
+
+def format_glaive_dataset(tokenizer, dataset):
+    """
+    Build Unsloth chat template 'llama-3' without role mapping (we already converted to OpenAI schema).
+    """
     tokenizer = get_chat_template(
         tokenizer,
         chat_template="llama-3",
-        mapping={"role": "from", "content": "value", "user": "human", "assistant": "gpt"},
         map_eos_token=True,
     )
 
     def _format_batch(examples: Dict[str, List[Any]]):
-        convos = []
-        queries = examples.get("query") or examples.get("question") or []
-        tools_list = examples.get("tools") or []
-        answers = examples.get("answers") or examples.get("answer") or []
+        texts = []
+        conv_batches = examples["conversations"]
+        tools_batches = examples.get("tools", [None] * len(conv_batches))
 
-        for query, tools, ans in zip(queries, tools_list, answers):
-            system_msg = {
-                "role": "system",
-                "content": (
-                    "You are a helpful assistant with access to the following tools or function calls. "
-                    "Your task is to produce a sequence of tools or function calls necessary to generate "
-                    "response to the user utterance. Use the following tools or function calls as required:\n"
-                    f"{tools}"
-                ),
-            }
-            user_msg = {"role": "user", "content": str(query)}
-            asst_msg = {"role": "assistant", "content": str(ans)}
-            convos.append([system_msg, user_msg, asst_msg])
-
-        texts = [tokenizer.apply_chat_template(c, tokenize=False, add_generation_prompt=False) for c in convos]
+        for conv, tools in zip(conv_batches, tools_batches):
+            msgs = _convert_conversations_glaive(conv, tools)
+            text = tokenizer.apply_chat_template(
+                msgs,
+                tokenize=False,
+                add_generation_prompt=False,
+            )
+            texts.append(text)
         return {"text": texts}
 
-    dataset = dataset.map(_format_batch, batched=True, desc="Formatting to chat template")
-    return tokenizer, dataset
+    return tokenizer, dataset.map(_format_batch, batched=True, desc="Formatting Glaive to chat template")
 
 
 def main():
@@ -210,9 +297,10 @@ def main():
         loftq_config=None,
     )
 
-    # Load dataset
-    hf_token = os.getenv("HUGGINGFACE_TOKEN")
-    dataset = load_dataset(args.dataset_name, split="train", token=hf_token)
+    # Load local dataset
+    if not os.path.exists(args.data_path):
+        raise FileNotFoundError(f"[Data] Could not find file: {args.data_path}")
+    dataset = load_dataset("json", data_files=args.data_path, split="train")
     if args.subset_size and args.subset_size > 0:
         dataset = dataset.select(range(min(args.subset_size, len(dataset))))
         print(f"[Data] Using subset of {len(dataset)} samples.")
@@ -220,7 +308,7 @@ def main():
         print(f"[Data] Using full dataset of {len(dataset)} samples.")
 
     # Tokenize/format
-    tokenizer, dataset = format_dataset(tokenizer, dataset)
+    tokenizer, dataset = format_glaive_dataset(tokenizer, dataset)
 
     # Training args
     train_args = TrainingArguments(
@@ -240,7 +328,7 @@ def main():
         logging_steps=1,
         logging_strategy="steps",
         save_strategy="no",
-        load_best_model_at_end=True,
+        load_best_model_at_end=False,  # no eval/save cycle
         save_only_model=False,
     )
 
@@ -287,6 +375,7 @@ def main():
 
     # Push LoRA to hub
     if args.push_to_hub and args.hf_username:
+        hf_token = os.getenv("HUGGINGFACE_TOKEN")
         repo = f"{args.hf_username}/{os.path.basename(os.path.abspath(args.lora_dir))}"
         model.push_to_hub(repo, token=hf_token)
         tokenizer.push_to_hub(repo, token=hf_token)
@@ -298,6 +387,7 @@ def main():
         model.save_pretrained_merged(args.merged_dir, tokenizer, save_method="merged_16bit")
         print(f"[Save] Merged 16-bit model saved to: {args.merged_dir}")
         if args.push_to_hub and args.hf_username:
+            hf_token = os.getenv("HUGGINGFACE_TOKEN")
             repo = f"{args.hf_username}/{os.path.basename(os.path.abspath(args.merged_dir))}"
             model.push_to_hub_merged(repo, tokenizer, save_method="merged_16bit", token=hf_token)
             print(f"[Hub] Pushed merged 16-bit model to: {repo}")
