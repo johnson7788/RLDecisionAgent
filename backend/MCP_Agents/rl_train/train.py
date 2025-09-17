@@ -25,14 +25,13 @@ from art.utils import iterate_dataset
 from langgraph.prebuilt import create_react_agent
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.tools import Tool, tool
-from pydantic import BaseModel, Field, ValidationError
-
-from reward import search_reward, format_reward
+from pydantic import BaseModel, ValidationError
+from reward import format_reward
+import prompt
 
 # ==== MCP ====
 # pip install fastmcp
 from fastmcp import Client as MCPClient
-from mcp_client import tool_definition_to_dict  #自定义MCP工具
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from mcp_config_load import load_mcp_servers
 
@@ -54,8 +53,7 @@ print(f"使用MCP的配置文件: {MCP_CONFIG}")
 
 # ----------------- 数据结构 -----------------
 class FinalQAResult(BaseModel):
-    task: List[Dict[str, Any]]                 # 单元素任务数组：[{"type":"qa","data":{"question":..., "text": 答案}}]
-    sources: List[str] = Field(default_factory=list)  # [1],[2]... 对应的 URL 列表
+    task: List[Dict[str, Any]]  # 单元素任务数组：[{"type":"qa","data":{"question":..., "text": 答案}}]
 
 @dataclass
 class QueryScenario:
@@ -147,11 +145,11 @@ async def rollout(model: art.Model, scenario: QueryScenario) -> ProjectTrajector
     final: Optional[FinalQAResult] = None
 
     @tool
-    def return_final_answer_tool(task: List[Dict[str, Any]], sources: List[str]) -> dict:
-        """返回最终 JSON：保持原格式的 task 与 sources。"""
+    def return_final_answer_tool(task: List[Dict[str, Any]]) -> dict:
+        """返回最终 JSON：保持原格式的 task。"""
         nonlocal final
         try:
-            final = FinalQAResult(task=task, sources=sources or [])
+            final = FinalQAResult(task=task)
             return final.model_dump()
         except ValidationError as e:
             return {"error": f"ValidationError: {str(e)}"}
@@ -167,19 +165,7 @@ async def rollout(model: art.Model, scenario: QueryScenario) -> ProjectTrajector
     tool_names_for_prompt = [getattr(t, "name", str(t)) for t in filtered_mcp_tools] + ["return_final_answer_tool"]
     tools_json_note = f"已发现 MCP 工具：{tool_names_for_prompt}（按各自 JSON Schema 传参）"
 
-    system_prompt = dedent(f"""
-    你是一个数据查询与分析助手（Query Agent）。你的任务：
-    1) 读取用户提供的单元素 JSON 任务数组（task），其中包含一个 {{type:"qa", data:{{question, text}}}}；
-    2) 必要时调用**已发现的 MCP 工具**进行检索/计算/转换；请按照工具各自的 JSON Schema 正确传参；
-    3) 输出 2~6 句，包含可核验事实（数字/日期/机构/地名等），并在句尾添加来源引用 [n]（n 从 1 开始，对应 sources 中 URL 的顺序）；
-    4) 不得修改输入 JSON 的结构和字段，只能用最终答案覆盖 data.text；
-    5) 完成后**必须调用本地的 `return_final_answer_tool(task, sources)`** 返回最终 JSON：
-       - task：保持与输入一致，仅把 data.text 替换为你的答案（包含 [n] 引用）；
-       - sources：去重后的 URL 列表，顺序与 [n] 对应；
-    6) 不要在普通对话中粘贴 JSON，务必通过工具返回最终 JSON。
-
-    {tools_json_note}
-    """)
+    system_prompt = prompt.TRAIN_PROMPT.format(tools_json_note=tools_json_note)
 
     chat_model = init_chat_model(MODEL_NAME, temperature=0.8)
     agent = create_react_agent(chat_model, tools=lc_tools)
@@ -198,59 +184,22 @@ async def rollout(model: art.Model, scenario: QueryScenario) -> ProjectTrajector
     )
 
     # ====== 计算奖励 ======
-    # 收集工具阶段见过的 URL，用于一致性校验（对所有工具结果尝试抽取）
-    tool_urls_seen: List[str] = []
-    try:
-        for m in traj.messages_and_choices:
-            if m.get("role") != "tool":
-                continue
-            content = m.get("content")
-            if isinstance(content, str):
-                try:
-                    content = json.loads(content)
-                except Exception:
-                    content = _parse_json_obj_loose(content)
-
-            def _harvest(obj: Any):
-                if isinstance(obj, list):
-                    for it in obj:
-                        if isinstance(it, dict) and isinstance(it.get("url"), str):
-                            tool_urls_seen.append(it["url"])
-                elif isinstance(obj, dict):
-                    if isinstance(obj.get("url"), str):
-                        tool_urls_seen.append(obj["url"])
-                    for v in obj.values():
-                        _harvest(v)
-            _harvest(content)
-    except Exception:
-        pass
-
     if final:
         traj.final = final
 
-        # 仍然沿用原奖励：格式 + 搜索一致性
+        # 仅使用格式奖励
         fr = 0.0
         try:
             fr = format_reward(scenario.input_task, final.task)
         except Exception:
             fr = 0.0
 
-        sr = 0.0
-        try:
-            sr = search_reward(final.task, final.sources, tool_urls_seen=tool_urls_seen)
-        except Exception:
-            sr = 0.0
-
-        traj.reward = 0.5 * fr + 0.5 * sr
+        traj.reward = fr
         traj.metrics["format_reward"] = fr
-        traj.metrics["search_reward"] = sr
-        traj.metrics["sources_count"] = len(set(final.sources))
     else:
         # 未返回最终 JSON，给最低奖励
         traj.reward = 0.0
         traj.metrics["format_reward"] = 0.0
-        traj.metrics["search_reward"] = 0.0
-        traj.metrics["sources_count"] = 0
 
     return traj
 
@@ -266,14 +215,12 @@ def _log_batch_to_wandb(*, batch, finished_groups):
             except Exception:
                 pass
 
-    table = wandb.Table(columns=["scenario_id", "format_reward", "search_reward", "total_reward", "sources"])
+    table = wandb.Table(columns=["scenario_id", "format_reward", "total_reward"])
     for t in trajectories[:50]:
         sid = (getattr(t, "metadata", {}) or {}).get("scenario_id", "")
         fr = (getattr(t, "metrics", {}) or {}).get("format_reward", 0.0)
-        sr = (getattr(t, "metrics", {}) or {}).get("search_reward", 0.0)
         rw = getattr(t, "reward", 0.0)
-        srcs = ", ".join(getattr(getattr(t, "final", None), "sources", []) or [])
-        table.add_data(sid, fr, sr, rw, srcs)
+        table.add_data(sid, fr, rw)
 
     wandb.log({
         "train/step": batch.step,
@@ -291,7 +238,7 @@ def build_scenarios_from_questions(questions: List[str]) -> List[QueryScenario]:
     for i, q in enumerate(questions, start=1):
         task = [{"type": "qa", "data": {"question": q, "text": ""}}]
         sid = f"q_{i}"
-        prompt = "回答 data.question（仅填写 data.text，加入 [n] 引用并返回 sources）。"
+        prompt = "回答 data.question（仅填写 data.text）。"
         scenarios.append(QueryScenario(id=sid, prompt=prompt, input_task=task))
     return scenarios
 
