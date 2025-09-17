@@ -262,6 +262,7 @@ async def rollout(model: art.Model, scenario: QueryScenario) -> ProjectTrajector
 
 # ---------------- wandb: 日志封装 ----------------
 def _log_batch_to_wandb(*, batch, finished_groups, use_ruler: bool):
+    print("_log_batch_to_wandb: 记录批次信息到wandb")
     trajectories = []
     for g in finished_groups:
         if hasattr(g, "trajectories"):
@@ -367,10 +368,10 @@ async def main():
 
         # 组装 TrajectoryGroup：每个样本 rollout 多条轨迹
         groups = []
-        for s in batch.items:
+        for one_item in batch.items:
             groups.append(
                 art.TrajectoryGroup(
-                    wrap_rollout(model, rollout)(model, s)
+                    wrap_rollout(model, rollout)(model, one_item)
                     for _ in range(training_config["rollouts_per_group"])
                 )
             )
