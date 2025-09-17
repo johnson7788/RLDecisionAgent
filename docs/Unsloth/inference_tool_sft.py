@@ -1,49 +1,72 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Evaluate a fine-tuned function-calling model.
+Evaluate a fine-tuned function-calling model (Qwen3 friendly, LoRA-aware).
 
-Two modes:
-1) Unsloth runtime (default): loads a (merged or LoRA-applied) model with FastLanguageModel
-2) vLLM runtime (optional): generates raw text with vLLM engine
+Two engines:
+1) Unsloth runtime (default): loads a full model or a LoRA adapter on top of a base model
+2) vLLM runtime (optional): requires a merged/full model (not a raw LoRA adapter dir)
 
-This script demonstrates:
-- providing a tools/functions schema in the system prompt
-- asking the model to emit a JSON list of function calls
-- parsing the JSON, executing the functions, feeding results back, and
-  asking the model for a final natural-language answer.
+Features:
+- Provide a plain JSON Schema tool list to the model
+- Ask the model to emit a JSON array of function calls
+- Parse JSON robustly, execute tools, feed results back, and ask for the final answer
 
-Environment variables (optional):
-- WEATHER_API_KEY (OpenWeatherMap)
-- NASA_API_KEY    (api.nasa.gov for APOD via nasapy)
-- STOCK_API_KEY   (AlphaVantage)
-# 使用
-python inference_tool_sft.py --model ./merged_model_16bit \
+Example:
+python inference_tool_sft.py \
+  --model ./lora_model \
+  --base_model unsloth/Qwen3-4B-Instruct-2507 \
   --engine unsloth \
-  --query "IBM 总部今天的天气如何？顺便把 23 摄氏度转为华氏度。"
+  --query "IBM 总部今天的天气如何？顺便把 23 摄氏度转为华氏度。" \
+  --chat_template qwen-3 \
+  --load_in_4bit
 
-python eval_model.py --model your-hf/merged_model_16bit --engine vllm
-
-References:
-- Medium article: https://gautam75.medium.com/fine-tuning-llama-3-1-8b-for-function-calling-using-lora-159b9ee66060
+If using vLLM, pass a merged model repo/path:
+python inference_tool_sft.py --model your-hf/merged_model_16bit --engine vllm \
+  --query "北京现在天气如何？把 23 摄氏度转为华氏度"
 """
+
+from __future__ import annotations
 import os
 import re
 import json
 import argparse
-from typing import Any, Dict, List, Tuple
 import hashlib
 import random
-import requests
+from typing import Any, Dict, List, Tuple
 from datetime import datetime
 
-# Optional dependencies for each engine
+# Optional deps
 try:
-    from unsloth import FastLanguageModel
-    from transformers import TextStreamer
+    import torch
+except Exception:
+    torch = None
+
+try:
+    # Unsloth accelerated loader
+    from unsloth import FastModel as _FastModel
     _HAS_UNSLOTH = True
 except Exception:
     _HAS_UNSLOTH = False
+
+try:
+    from transformers import AutoTokenizer, TextStreamer
+    _HAS_TRANSFORMERS = True
+except Exception:
+    _HAS_TRANSFORMERS = False
+
+try:
+    from peft import PeftModel
+    _HAS_PEFT = True
+except Exception:
+    _HAS_PEFT = False
+
+try:
+    # Optional: apply a consistent chat template if needed
+    from unsloth.chat_templates import get_chat_template as _get_chat_template
+    _HAS_UNSLOTH_TEMPLATES = True
+except Exception:
+    _HAS_UNSLOTH_TEMPLATES = False
 
 try:
     from vllm import LLM
@@ -59,13 +82,11 @@ except Exception:
     _HAS_NASAPY = False
 
 
-# ----------------------- Demo functions (tools) -----------------------
-WEATHER_API_KEY = os.getenv("WEATHER_API_KEY")
-NASA_API_KEY = os.getenv("NASA_API_KEY")
-STOCK_API_KEY = os.getenv("STOCK_API_KEY")
+# =========================
+# Utility & Mocked Tools
+# =========================
 
 def _stable_int(seed: str) -> int:
-    """Deterministic hash -> int for reproducible mocks."""
     return int(hashlib.sha256(seed.encode("utf-8")).hexdigest(), 16)
 
 def _rng(seed: str) -> random.Random:
@@ -73,34 +94,38 @@ def _rng(seed: str) -> random.Random:
     r.seed(_stable_int(seed))
     return r
 
+
 def get_current_date() -> str:
-    """Return current date in YYYY-MM-DD."""
     return datetime.now().strftime("%Y-%m-%d")
 
 
 def get_current_weather(location: str) -> Dict[str, Any]:
-    """Get current weather; mocked when USE_MOCK_TOOLS=True."""
+    """Mocked weather. Replace with real API call if desired.
+    Returns: {description, temperature(°C), humidity(%)}
+    """
     r = _rng(f"weather::{location}")
-    descs = ["clear sky", "few clouds", "scattered clouds", "broken clouds",
-             "shower rain", "light rain", "moderate rain", "thunderstorm",
-             "mist", "snow"]
+    descs = [
+        "clear sky", "few clouds", "scattered clouds", "broken clouds",
+        "shower rain", "light rain", "moderate rain", "thunderstorm",
+        "mist", "snow",
+    ]
     return {
         "description": r.choice(descs),
-        "temperature": round(r.uniform(-10.0, 35.0), 1),  # °C
-        "humidity": r.randint(20, 95),                   # %
+        "temperature": round(r.uniform(-10.0, 35.0), 1),
+        "humidity": r.randint(20, 95),
     }
 
 
 def celsius_to_fahrenheit(celsius: float) -> float:
-    """Convert Celsius to Fahrenheit."""
     return (celsius * 9.0 / 5.0) + 32.0
 
 
 def get_nasa_picture_of_the_day(date: str) -> Dict[str, Any]:
-    """Fetch NASA APOD; mocked when USE_MOCK_TOOLS=True."""
     r = _rng(f"apod::{date}")
-    themes = ["Nebula", "Galaxy", "Star Field", "Lunar Surface", "Aurora", "Comet",
-              "Exoplanet", "Solar Flare", "Milky Way", "ISS Earth View"]
+    themes = [
+        "Nebula", "Galaxy", "Star Field", "Lunar Surface", "Aurora",
+        "Comet", "Exoplanet", "Solar Flare", "Milky Way", "ISS Earth View",
+    ]
     title = f"{themes[r.randrange(len(themes))]} — {date}"
     return {
         "title": title,
@@ -108,16 +133,17 @@ def get_nasa_picture_of_the_day(date: str) -> Dict[str, Any]:
         "url": f"https://example.com/apod/{date.replace('-', '')}.jpg",
     }
 
+
 def get_stock_price(ticker: str, date: str) -> Tuple[str, str]:
-    """Return (low, high) for ticker on date; mocked when USE_MOCK_TOOLS=True."""
     r = _rng(f"stock::{ticker.upper()}::{date}")
     base = 20 + (sum(ord(c) for c in ticker.upper()) % 80)  # 20~99
-    drift = (int(date.replace("-", "")) % 13) - 6            # -6~+6
+    drift = (int(date.replace("-", "")) % 13) - 6         # -6~+6
     price = max(3.0, base + drift + r.uniform(-1.5, 1.5))
     spread = max(0.5, r.uniform(0.5, 5.0))
     low = round(price - spread/2, 2)
     high = round(price + spread/2, 2)
     return (f"{low:.2f}", f"{high:.2f}")
+
 
 AVAILABLE_FUNCTIONS = {
     "get_current_date": get_current_date,
@@ -129,7 +155,6 @@ AVAILABLE_FUNCTIONS = {
 
 
 def functions_schema() -> List[Dict[str, Any]]:
-    """Return JSON schema for tools the model can call."""
     return [
         {
             "name": "get_current_date",
@@ -144,7 +169,7 @@ def functions_schema() -> List[Dict[str, Any]]:
                 "properties": {
                     "location": {
                         "type": "string",
-                        "description": "The city and optional country code, e.g., 'San Francisco, US'",
+                        "description": "City and optional country code, e.g. 'San Francisco, US'",
                     }
                 },
                 "required": ["location"],
@@ -183,149 +208,385 @@ def functions_schema() -> List[Dict[str, Any]]:
     ]
 
 
-# ----------------------- Inference helpers -----------------------
-PROMPT_TEMPLATE = (
-    "<|begin_of_text|><|start_header_id|>system<|end_header_id|>"
-    "You are a helpful assistant with access to the following function calls. "
-    "Your task is to produce a sequence of function calls necessary to generate "
-    "a response to the user utterance. Use the following function calls as required.\n"
-    "{available_tools}<|eot_id|><|start_header_id|>user<|end_header_id|>\n"
-    "{query}<|eot_id|><|start_header_id|>assistant<|end_header_id|>"
-)
+def functions_schema_json() -> str:
+    return json.dumps(functions_schema(), ensure_ascii=False, indent=2)
 
 
-def extract_assistant_content(text: str) -> str:
-    """Extract assistant block between header and <|eot_id|> and strip."""
-    pattern = r"<\|start_header_id\|>assistant<\|end_header_id\|>(.*?)<\|eot_id\|>"
-    m = re.search(pattern, text, flags=re.DOTALL)
-    return m.group(1).strip() if m else text
+# =========================
+# Robust JSON parsing
+# =========================
 
-
-def parse_function_calls(text_block: str):
-    """Parse JSON list of function calls from the assistant block.
-    Be permissive: pick first [ or { and try json.loads.
+def parse_function_calls(text: str):
+    """Extract a JSON list/object from text.
+    - Accepts raw JSON, or fenced code blocks (```json ... ``` / ``` ... ```)
+    - Prefers first JSON array; falls back to first JSON object
+    Returns a Python object or None.
     """
-    idx = min([i for i in [text_block.find("["), text_block.find("{")] if i != -1] or [-1])
-    if idx == -1:
+    if not isinstance(text, str):
         return None
-    candidate = text_block[idx:]
-    # Truncate on first closing token heuristically
-    # but best effort: try loads directly; if fails, progressively trim.
-    for end in range(len(candidate), max(idx + 2, len(candidate) - 1), -1):
-        try:
-            return json.loads(candidate[:end])
-        except Exception:
-            continue
+
+    t = text.strip()
+    # Remove surrounding code fences if present
+    if t.startswith("```") and t.endswith("```"):
+        inner = t.strip("`")
+        # remove optional language tag at the start
+        inner = re.sub(r"^(json|jsonc|javascript|js|txt)\s+", "", inner, flags=re.IGNORECASE)
+        t = inner
+
+    # Try direct JSON first
     try:
-        return json.loads(candidate)
+        return json.loads(t)
     except Exception:
-        return None
+        pass
+
+    # Find first JSON array
+    m = re.search(r"\[(?:.|\s)*\]", t)
+    if m:
+        try:
+            return json.loads(m.group(0))
+        except Exception:
+            pass
+
+    # Find first JSON object
+    m = re.search(r"\{(?:.|\s)*\}", t)
+    if m:
+        try:
+            return json.loads(m.group(0))
+        except Exception:
+            pass
+
+    return None
 
 
-def run_unsloth(model_name_or_path: str, query: str, max_new_tokens: int = 1024):
+# =========================
+# Loading (Unsloth + LoRA)
+# =========================
+
+def _file_exists(d: str, name: str) -> bool:
+    return os.path.isfile(os.path.join(d, name))
+
+
+def _is_lora_dir(path: str) -> bool:
+    return _file_exists(path, "adapter_config.json") or _file_exists(path, "adapter_model.safetensors")
+
+
+def _has_full_model(path: str) -> bool:
+    if not _file_exists(path, "config.json"):
+        return False
+    for fname in [
+        "model.safetensors", "model.safetensors.index.json",
+        "pytorch_model.bin", "pytorch_model.bin.index.json",
+    ]:
+        if _file_exists(path, fname):
+            return True
+    return False
+
+
+def _load_tokenizer(model_dir: str, base_model: str | None, chat_template: str | None):
+    if not _HAS_TRANSFORMERS:
+        raise RuntimeError("transformers not installed.")
+    tok_dir = model_dir if (_file_exists(model_dir, "tokenizer.json") or _file_exists(model_dir, "tokenizer_config.json")) else (base_model or model_dir)
+    tokenizer = AutoTokenizer.from_pretrained(tok_dir, use_fast=True)
+    # Optionally force a chat template (e.g., qwen_1_5)
+    if chat_template and _HAS_UNSLOTH_TEMPLATES:
+        tokenizer = _get_chat_template(tokenizer, chat_template=chat_template)
+    return tokenizer
+
+
+def _ensure_pad_token(tokenizer):
+    if getattr(tokenizer, "pad_token_id", None) is None:
+        tokenizer.pad_token = tokenizer.eos_token
+
+
+def _load_model_unsloth(model_path: str, base_model: str | None, max_seq_length: int, load_in_4bit: bool, load_in_8bit: bool):
     if not _HAS_UNSLOTH:
-        raise RuntimeError("Unsloth is not installed. Please install unsloth to use this mode.")
+        raise RuntimeError("Unsloth is not installed. Please install unsloth to use --engine unsloth.")
 
-    # Load model for inference
-    model, tokenizer = FastLanguageModel.from_pretrained(
-        model_name=model_name_or_path, max_seq_length=2048, dtype=None, load_in_4bit=False
+    if _is_lora_dir(model_path):
+        if not _HAS_PEFT:
+            raise RuntimeError("peft is required to load a LoRA adapter directory.")
+        if not base_model:
+            raise ValueError("--model points to a LoRA adapter directory; please provide --base_model.")
+        base, _ = _FastModel.from_pretrained(
+            model_name=base_model,
+            max_seq_length=max_seq_length,
+            load_in_4bit=load_in_4bit,
+            load_in_8bit=load_in_8bit,
+            full_finetuning=False,
+            token=None,
+        )
+        model = PeftModel.from_pretrained(base, model_path)
+    elif _has_full_model(model_path):
+        model, _ = _FastModel.from_pretrained(
+            model_name=model_path,
+            max_seq_length=max_seq_length,
+            load_in_4bit=load_in_4bit,
+            load_in_8bit=load_in_8bit,
+            full_finetuning=False,
+            token=None,
+        )
+    else:
+        raise ValueError(f"Cannot recognize {model_path} as a full model or a LoRA adapter directory.")
+
+    try:
+        model.eval()
+    except Exception:
+        pass
+
+    # Move to CUDA if available
+    if torch is not None and torch.cuda.is_available():
+        try:
+            model.to("cuda")
+        except Exception:
+            pass
+    return model
+
+
+# =========================
+# Inference passes
+# =========================
+
+def _apply_template(tokenizer, messages: List[Dict[str, str]], add_generation_prompt: bool = True, tokenize: bool = True):
+    return tokenizer.apply_chat_template(
+        messages,
+        tokenize=tokenize,
+        add_generation_prompt=add_generation_prompt,
+        return_tensors="pt" if tokenize else None,
     )
-    FastLanguageModel.for_inference(model)
 
-    # Build prompt
-    tools = {"functions_str": [json.dumps(x) for x in functions_schema()]}
-    input_ids = tokenizer.apply_chat_template(
-        [{"role": "system", "content": f"You have these tools:\n{tools}"},
-         {"role": "user", "content": query}],
-        tokenize=True,
-        add_generation_prompt=True,
-        return_tensors="pt",
-    ).to(model.device)
 
-    # First pass: ask for function calls
-    out = model.generate(input_ids=input_ids, max_new_tokens=max_new_tokens, use_cache=True)
-    text = tokenizer.batch_decode(out)[0]
-    assistant_block = extract_assistant_content(text)
-    parsed = parse_function_calls(assistant_block)
-    print("=== Raw function-call block ===")
-    print(assistant_block)
-    print("=== Parsed function calls ===")
-    print(parsed)
-
-    # If nothing to call, just print model text
-    if not parsed:
-        print("No function calls detected. Model output:")
-        print(assistant_block)
-        return
-
-    # Execute calls, append tool outputs, ask for final answer
-    chat = [
-        {"role": "system", "content": "You are a helpful assistant."},
+def first_pass_generate_unsloth(model, tokenizer, query: str, max_new_tokens: int) -> str:
+    tools_json = functions_schema_json()
+    sys_prompt = (
+        "你可以调用下列工具（以 JSON Schema 描述）。\n"
+        "请先输出一段仅包含 JSON 的内容，格式为一个列表，每个元素是：\n"
+        '{"name": "<函数名>", "arguments": {<参数>}}\n'
+        "不要输出解释文字或额外内容。\n"
+        "工具列表如下：\n" + tools_json
+    )
+    messages = [
+        {"role": "system", "content": sys_prompt},
         {"role": "user", "content": query},
     ]
 
-    for item in (parsed if isinstance(parsed, list) else [parsed]):
-        name = item.get("name")
-        args = item.get("arguments", {}) or {}
-        fn = AVAILABLE_FUNCTIONS.get(name)
-        if not fn:
-            tool_response = {"error": f"Unknown tool: {name}"}
-        else:
-            try:
-                tool_response = fn(**args) if isinstance(args, dict) else {"error": "arguments must be an object"}
-            except TypeError as te:
-                tool_response = {"error": f"Bad arguments for {name}: {te}"}
-            except Exception as e:
-                tool_response = {"error": str(e)}
-        print(f"[Tool:{name}] -> {tool_response}")
-        chat.append({
-            "role": "tool",
-            "content": f"Tool '{name}' with args {args} returned: {tool_response}"
-        })
+    prompt_text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+    inputs = tokenizer(prompt_text, return_tensors="pt")
+    if hasattr(model, "device"):
+        try:
+            inputs = {k: v.to(model.device) for k, v in inputs.items()}
+        except Exception:
+            pass
 
-    # Update system prompt to instruct answer synthesis
-    chat[0]["content"] = (
-        "You are a helpful assistant. Answer the user query based on the provided tool outputs. "
-        "Be precise and include relevant numbers/units."
+    gen_kwargs = dict(max_new_tokens=max_new_tokens, use_cache=True, pad_token_id=tokenizer.eos_token_id)
+    out = model.generate(**inputs, **gen_kwargs)
+    decoded = tokenizer.decode(out[0], skip_special_tokens=False)
+    return decoded[len(prompt_text):]
+
+
+def second_pass_generate_unsloth(model, tokenizer, query: str, tool_results: List[Dict[str, Any]], max_new_tokens: int):
+    synthesis_system = (
+        "你是一个严谨的助理。请仅基于提供的工具结果，给出中文答案，包含关键数值与单位。"
+    )
+    synthesis_user = (
+        f"用户提问：{query}\n\n"
+        f"工具调用与返回：\n{json.dumps(tool_results, ensure_ascii=False, indent=2)}\n\n"
+        "请给出最终回答。"
+    )
+    messages = [
+        {"role": "system", "content": synthesis_system},
+        {"role": "user", "content": synthesis_user},
+    ]
+
+    prompt_text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+    inputs = tokenizer(prompt_text, return_tensors="pt")
+    if hasattr(model, "device"):
+        try:
+            inputs = {k: v.to(model.device) for k, v in inputs.items()}
+        except Exception:
+            pass
+
+    streamer = TextStreamer(tokenizer, skip_prompt=True)
+    gen_kwargs = dict(max_new_tokens=max_new_tokens, use_cache=True, pad_token_id=tokenizer.eos_token_id)
+    _ = model.generate(**inputs, streamer=streamer, **gen_kwargs)
+
+
+# vLLM versions
+
+def _ensure_tokenizer_for_prompt_only(chat_template: str | None, model_or_repo: str):
+    if not _HAS_TRANSFORMERS:
+        raise RuntimeError("transformers not installed.")
+    # We only need tokenizer for producing a textual chat-formatted prompt
+    tok = AutoTokenizer.from_pretrained(model_or_repo, use_fast=True)
+    if chat_template and _HAS_UNSLOTH_TEMPLATES:
+        tok = _get_chat_template(tok, chat_template=chat_template)
+    return tok
+
+
+def _vllm_generate_text(llm: LLM, text_prompt: str, max_tokens: int) -> str:
+    sp = SamplingParams(max_tokens=max_tokens)
+    outputs = llm.generate([text_prompt], sp)
+    return outputs[0].outputs[0].text
+
+
+def first_pass_generate_vllm(model_repo: str, query: str, max_tokens: int, chat_template: str | None) -> str:
+    if not _HAS_VLLM:
+        raise RuntimeError("vLLM is not installed.")
+    tok = _ensure_tokenizer_for_prompt_only(chat_template, model_repo)
+
+    tools_json = functions_schema_json()
+    sys_prompt = (
+        "你可以调用下列工具（以 JSON Schema 描述）。\n"
+        "请先输出一段仅包含 JSON 的内容，格式为一个列表，每个元素是：\n"
+        '{"name": "<函数名>", "arguments": {<参数>}}\n'
+        "不要输出解释文字或额外内容。\n"
+        "工具列表如下：\n" + tools_json
+    )
+    messages = [
+        {"role": "system", "content": sys_prompt},
+        {"role": "user", "content": query},
+    ]
+    text_prompt = tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+
+    llm = LLM(model=model_repo, max_model_len=2048, tokenizer_mode="auto", tensor_parallel_size=1)
+    return _vllm_generate_text(llm, text_prompt, max_tokens)
+
+
+def second_pass_generate_vllm(model_repo: str, query: str, tool_results: List[Dict[str, Any]], max_tokens: int, chat_template: str | None) -> str:
+    if not _HAS_VLLM:
+        raise RuntimeError("vLLM is not installed.")
+    tok = _ensure_tokenizer_for_prompt_only(chat_template, model_repo)
+
+    synthesis_system = (
+        "你是一个严谨的助理。请仅基于提供的工具结果，给出中文答案，包含关键数值与单位。"
+    )
+    synthesis_user = (
+        f"用户提问：{query}\n\n"
+        f"工具调用与返回：\n{json.dumps(tool_results, ensure_ascii=False, indent=2)}\n\n"
+        "请给出最终回答。"
+    )
+    messages = [
+        {"role": "system", "content": synthesis_system},
+        {"role": "user", "content": synthesis_user},
+    ]
+    text_prompt = tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+
+    llm = LLM(model=model_repo, max_model_len=2048, tokenizer_mode="auto", tensor_parallel_size=1)
+    return _vllm_generate_text(llm, text_prompt, max_tokens)
+
+
+# =========================
+# Orchestration
+# =========================
+
+def run_unsloth(args):
+    if not _HAS_TRANSFORMERS:
+        raise RuntimeError("transformers is required.")
+
+    tokenizer = _load_tokenizer(args.model, args.base_model, args.chat_template)
+    _ensure_pad_token(tokenizer)
+    model = _load_model_unsloth(
+        model_path=args.model,
+        base_model=args.base_model,
+        max_seq_length=2048,
+        load_in_4bit=args.load_in_4bit,
+        load_in_8bit=args.load_in_8bit,
     )
 
-    # Re-run generation with tool outputs in context
-    streamer = TextStreamer(tokenizer, skip_prompt=True)
-    input_ids2 = tokenizer.apply_chat_template(
-        chat, tokenize=True, add_generation_prompt=True, return_tensors="pt"
-    ).to(model.device)
-    _ = model.generate(input_ids=input_ids2, streamer=streamer, max_new_tokens=512, use_cache=True,
-                       pad_token_id=tokenizer.eos_token_id)
+    # Pass 1: ask for function calls
+    first = first_pass_generate_unsloth(model, tokenizer, args.query, args.max_new_tokens)
+    print("=== Raw function-call block ===\n", first)
+    calls = parse_function_calls(first)
+    print("=== Parsed function calls ===\n", calls)
+
+    if not calls:
+        print("未检测到函数调用 JSON，直接输出：\n" + first)
+        return
+
+    # Execute tools
+    items = calls if isinstance(calls, list) else [calls]
+    tool_results = []
+    for item in items:
+        name = (item or {}).get("name")
+        args_ = (item or {}).get("arguments") or {}
+        fn = AVAILABLE_FUNCTIONS.get(name)
+        if not fn:
+            res = {"error": f"Unknown tool: {name}"}
+        else:
+            try:
+                res = fn(**args_) if isinstance(args_, dict) else {"error": "arguments must be an object"}
+            except TypeError as te:
+                res = {"error": f"Bad arguments for {name}: {te}"}
+            except Exception as e:
+                res = {"error": str(e)}
+        print(f"[Tool:{name}] -> {res}")
+        tool_results.append({"name": name, "arguments": args_, "result": res})
+
+    # Pass 2: synthesis
+    second_pass_generate_unsloth(model, tokenizer, args.query, tool_results, max_new_tokens=min(512, args.max_new_tokens))
 
 
-def run_vllm(model_name_or_repo: str, query: str, max_tokens: int = 768):
-    if not _HAS_VLLM:
-        raise RuntimeError("vLLM is not installed. Please install vllm to use this mode.")
+def run_vllm(args):
+    if _is_lora_dir(args.model):
+        raise ValueError("vLLM 不支持直接加载 LoRA 适配器目录；请先 merge 得到完整权重后再用 --engine vllm")
 
-    tools = {"functions_str": [json.dumps(x) for x in functions_schema()]}
-    prompt = PROMPT_TEMPLATE.format(available_tools=tools, query=query)
+    # Pass 1
+    text1 = first_pass_generate_vllm(args.model, args.query, max_tokens=min(768, args.max_new_tokens), chat_template=args.chat_template)
+    print("=== vLLM raw output (function calls) ===\n", repr(text1))
+    calls = parse_function_calls(text1)
+    print("=== Parsed function calls ===\n", calls)
 
-    llm = LLM(model=model_name_or_repo, max_model_len=2048, tokenizer_mode="auto",
-              tensor_parallel_size=1, enforce_eager=True, gpu_memory_utilization=0.95)
-    sp = SamplingParams(max_tokens=max_tokens)
-    outputs = llm.generate([prompt], sp)
-    text = outputs[0].outputs[0].text
-    print("=== vLLM raw output ===")
-    print(repr(text))
+    if not calls:
+        print("未检测到函数调用 JSON，直接输出：\n" + text1)
+        return
 
+    # Execute tools
+    items = calls if isinstance(calls, list) else [calls]
+    tool_results = []
+    for item in items:
+        name = (item or {}).get("name")
+        args_ = (item or {}).get("arguments") or {}
+        fn = AVAILABLE_FUNCTIONS.get(name)
+        if not fn:
+            res = {"error": f"Unknown tool: {name}"}
+        else:
+            try:
+                res = fn(**args_) if isinstance(args_, dict) else {"error": "arguments must be an object"}
+            except TypeError as te:
+                res = {"error": f"Bad arguments for {name}: {te}"}
+            except Exception as e:
+                res = {"error": str(e)}
+        print(f"[Tool:{name}] -> {res}")
+        tool_results.append({"name": name, "arguments": args_, "result": res})
+
+    # Pass 2
+    text2 = second_pass_generate_vllm(args.model, args.query, tool_results, max_tokens=min(512, args.max_new_tokens), chat_template=args.chat_template)
+    print("=== vLLM final answer ===\n", text2)
+
+
+# =========================
+# CLI
+# =========================
 
 def main():
-    ap = argparse.ArgumentParser(description="Evaluate a function-calling fine-tuned model.")
-    ap.add_argument("--model", required=True, help="Path or HF repo (LoRA-merged recommended for vLLM).")
+    ap = argparse.ArgumentParser(description="Evaluate a function-calling fine-tuned model (Qwen3/Unsloth/LoRA ready).")
+    ap.add_argument("--model", required=True, help="Path to full model or LoRA adapter dir, or HF repo.")
+    ap.add_argument("--base_model", default=None, help="Base model when --model is a LoRA adapter dir (e.g., unsloth/Qwen3-4B-Instruct-2507)")
     ap.add_argument("--engine", choices=["unsloth", "vllm"], default="unsloth")
     ap.add_argument("--query", default="What is the current weather in San Francisco, US? Also convert 23°C to Fahrenheit.")
     ap.add_argument("--max_new_tokens", type=int, default=1024)
+    ap.add_argument("--chat_template", default=None, help="Force a chat template name (e.g., qwen_1_5). If omitted, use tokenizer's default.")
+    ap.add_argument("--load_in_4bit", action="store_true", default=False)
+    ap.add_argument("--load_in_8bit", action="store_true", default=False)
     args = ap.parse_args()
 
+    # Boolean adjust: if both are set, prioritize 4bit
+    if args.load_in_4bit and args.load_in_8bit:
+        args.load_in_8bit = False
+
     if args.engine == "unsloth":
-        run_unsloth(args.model, args.query, args.max_new_tokens)
+        run_unsloth(args)
     else:
-        run_vllm(args.model, args.query, min(args.max_new_tokens, 768))
+        run_vllm(args)
 
 
 if __name__ == "__main__":
