@@ -7,8 +7,8 @@ python inference_tool_sft.py \
 >   --load_in_4bit \
 >   --mcp_config a2a_agent/mcp_config.json
 🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning.
-INFO 09-17 14:39:40 [importing.py:53] Triton module has been replaced with a placeholder.
-INFO 09-17 14:39:40 [__init__.py:239] Automatically detected platform cuda.
+INFO 09-17 14:41:23 [importing.py:53] Triton module has been replaced with a placeholder.
+INFO 09-17 14:41:23 [__init__.py:239] Automatically detected platform cuda.
 🦥 Unsloth Zoo will now patch everything to make training faster!
 🔧 通过 MCP 发现 6 个工具。
 ==((====))==  Unsloth 2025.8.6: Fast Qwen3 patching. Transformers: 4.55.2. vLLM: 0.8.5.post1.
@@ -17,3 +17,9 @@ O^O/ \_/ \    Torch: 2.6.0+cu124. CUDA: 8.9. CUDA Toolkit: 12.4. Triton: 3.2.0
 \        /    Bfloat16 = TRUE. FA [Xformers = 0.0.29.post2. FA2 = True]
  "-____-"     Free license: http://github.com/unslothai/unsloth
 Unsloth: Fast downloading is enabled - ignore downloading bars which are red colored!
+=== Raw function-call block ===
+ [{"name":"get_current_date","arguments":{}}]<|im_end|>
+=== Parsed function calls ===
+ [{'name': 'get_current_date', 'arguments': {}}]
+[Tool:get_current_date] -> CallToolResult(content=[TextContent(type='text', text='2025-09-17', annotations=None, meta=None)], structured_content={'result': '2025-09-17'}, data='2025-09-17', is_error=False)
+今天的日期是2025年9月17日。<|im_end|>
