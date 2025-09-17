@@ -32,7 +32,7 @@ from reward import search_reward, format_reward
 # ==== MCP ====
 # pip install fastmcp
 from fastmcp import Client as MCPClient
-from mcpserver.mcp_client import tool_definition_to_dict  #自定义MCP工具
+from mcp_client import tool_definition_to_dict  #自定义MCP工具
 
 dotenv.load_dotenv()
 
