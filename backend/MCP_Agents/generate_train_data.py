@@ -101,13 +101,12 @@ async def get_agent_response(client: A2AClient, question: str) -> List[Dict[str,
 async def main() -> None:
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
-
-    # Load MCP tools from config
+    # 获取MCP工具的URL
     try:
         with open(MCP_CONFIG_PATH, 'r', encoding='utf-8') as f:
             mcp_config = json.load(f)
     except FileNotFoundError:
-        logger.error(f"MCP config file not found at {MCP_CONFIG_PATH}")
+        logger.error(f"MCP配置文件不存在，请检查 {MCP_CONFIG_PATH}")
         return
 
     mcp_servers = mcp_config.get("mcpServers", {})
@@ -120,7 +119,7 @@ async def main() -> None:
                 server_tools = await get_mcp_tools(url)
                 all_tools.extend(server_tools)
     
-    logger.info(f"Loaded {len(all_tools)} tools from MCP servers.")
+    logger.info(f"发现 {len(all_tools)} 个工具通过读取MCP的Server端")
 
 
     base_url = 'http://localhost:10066'
@@ -130,7 +129,7 @@ async def main() -> None:
         final_agent_card_to_use: AgentCard | None = None
 
         try:
-            logger.info(f'Attempting to get Agent Card: {base_url}{PUBLIC_AGENT_CARD_PATH}')
+            logger.info(f'尝试获取Agent的配置信息: {base_url}{PUBLIC_AGENT_CARD_PATH}')
             _public_card = await resolver.get_agent_card()
             final_agent_card_to_use = _public_card
 
@@ -149,7 +148,7 @@ async def main() -> None:
             raise RuntimeError('Cannot get agent card, cannot continue.') from e
 
         client = A2AClient(httpx_client=httpx_client, agent_card=final_agent_card_to_use)
-        logger.info('A2AClient initialized.')
+        logger.info('A2AClient 初始化完成.')
 
         with open(QUESTION_FILE, 'r', encoding='utf-8') as f:
             questions = [line.strip() for line in f if line.strip()]
@@ -163,8 +162,8 @@ async def main() -> None:
                 conversations = await get_agent_response(client, question)
                 
                 training_entry = {
-                    "tools": json.dumps(all_tools, ensure_ascii=False),
-                    "conversations": conversations
+                    "conversations": conversations,
+                    "tools": all_tools
                 }
                 
                 f.write(json.dumps(training_entry, ensure_ascii=False) + '\n')

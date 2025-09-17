@@ -11,19 +11,30 @@ import json
 from typing import Any, Dict, List
 from fastmcp import Client
 
+def clean_none(obj):
+    if isinstance(obj, dict):
+        return {k: clean_none(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [clean_none(v) for v in obj]
+    elif obj is None:
+        return ""  # 保留 Python None，交给 json.dumps 转 ""
+    return obj
+
 def tool_definition_to_dict(tool) -> Dict[str, Any]:
-    """Converts a  to a dictionary."""
+    """单个工具转成需要的格式."""
     meta = getattr(tool, "meta", None) or {}
     tags = (meta.get("_fastmcp", {}) or {}).get("tags", [])
-    
+    parameters = getattr(tool, "inputSchema", None)
+    if "title" in parameters:
+        # 不需要title字段
+        parameters.pop("title")
+    parameters = clean_none(parameters)
     tool_dict = {
         "name": tool.name,
-        "title": getattr(tool, "title", None),
         "description": getattr(tool, "description", None),
-        "inputSchema": getattr(tool, "inputSchema", None),
-        "tags": tags
+        "parameters": parameters,
     }
-    return {k: v for k, v in tool_dict.items() if v}
+    return {k: v for k, v in tool_dict.items() if v is not None}
 
 async def get_mcp_tools(server_url: str) -> List[Dict[str, Any]]:
     """List all MCP tools from an SSE server and return them as a list of dictionaries."""
