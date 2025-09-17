@@ -46,6 +46,9 @@ python inference_tool_sft.py \
   --load_in_4bit
 ```
 
+7）强化学习继续训练模型
+[README.md](rl_train%2FREADME.md)
+
 # 单条SFT的训练数据，带工具
 {
     "conversations": [
