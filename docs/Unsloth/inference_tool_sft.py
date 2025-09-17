@@ -17,7 +17,7 @@ python inference_tool_sft.py \
   --model ./lora_model \
   --base_model unsloth/Qwen3-4B-Instruct-2507 \
   --engine unsloth \
-  --query "IBM 总部今天的天气如何？顺便把 23 摄氏度转为华氏度。" \
+  --query "上海今天的天气如何？" \
   --chat_template qwen-3 \
   --load_in_4bit
 
@@ -494,7 +494,6 @@ def main():
         run_unsloth(args)
     else:
         run_vllm(args)
-
 
 if __name__ == "__main__":
     main()
