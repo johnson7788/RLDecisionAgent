@@ -1,22 +1,20 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Evaluate a fine-tuned function-calling model (Qwen3 friendly, LoRA-aware),
-with tools dynamically discovered **and executed** via MCP Servers.
+评估一个经过微调的函数调用模型（兼容 Qwen3，支持 LoRA），
+工具由 MCP 服务器动态发现并执行。
 
-Two engines:
-1) Unsloth runtime (default): loads a full model or a LoRA adapter on top of a base model
-2) vLLM runtime (optional): requires a merged/full model (not a raw LoRA adapter dir)
+支持两种推理引擎：
+1) Unsloth 运行时（默认）：可加载完整模型，或在基础模型上加载 LoRA 适配器
+2) vLLM 运行时（可选）：需要合并后的完整模型（不能直接使用原始 LoRA 目录）
 
-What changed vs the original:
-- ❗Tools are now loaded from MCP servers defined in
-  a JSON config (default: a2a_agent/mcp_config.json), and function calls are
-  executed by calling the corresponding MCP server tool.
-- 🧭 If multiple servers expose the same tool name, the first discovered one is used
-  (a warning is printed).
-- 🛡️ Errors when calling tools are captured and returned to the model in Pass 2.
+与原始版本相比的变化：
+- ❗工具通过 JSON 配置（默认: a2a_agent/mcp_config.json）中定义的 MCP 服务器加载，
+  并通过调用对应 MCP 服务器工具来执行。
+- 🧭 如果多个服务器暴露了相同的工具名，将使用第一个发现的（会打印警告）。
+- 🛡️ 调用工具时的错误会被捕获，并在第二轮推理中反馈给模型。
 
-Example:
+使用示例：
 python inference_tool_sft.py \
   --model ./lora_model \
   --base_model unsloth/Qwen3-4B-Instruct-2507 \
@@ -26,7 +24,7 @@ python inference_tool_sft.py \
   --load_in_4bit \
   --mcp_config a2a_agent/mcp_config.json
 
-If using vLLM (with a merged model repo/path):
+使用 vLLM（合并模型）示例：
 python inference_tool_sft.py --model your-hf/merged_model_16bit --engine vllm \
   --query "北京现在天气如何？把 23 摄氏度转为华氏度" \
   --mcp_config a2a_agent/mcp_config.json
@@ -529,17 +527,19 @@ def run_vllm(args):
 # =========================
 
 def main():
-    ap = argparse.ArgumentParser(description="Evaluate a function-calling fine-tuned model (Qwen3/Unsloth/LoRA ready) with MCP tools.")
-    ap.add_argument("--model", required=True, help="Path to full model or LoRA adapter dir, or HF repo.")
-    ap.add_argument("--base_model", default=None, help="Base model when --model is a LoRA adapter dir (e.g., unsloth/Qwen3-4B-Instruct-2507)")
-    ap.add_argument("--engine", choices=["unsloth", "vllm"], default="unsloth")
-    ap.add_argument("--query", default="What is the current weather in San Francisco, US? Also convert 23°C to Fahrenheit.")
-    ap.add_argument("--max_new_tokens", type=int, default=1024)
-    ap.add_argument("--chat_template", default=None, help="Force a chat template name (e.g., qwen_1_5). If omitted, use tokenizer's default.")
-    ap.add_argument("--load_in_4bit", action="store_true", default=False)
-    ap.add_argument("--load_in_8bit", action="store_true", default=False)
-    # NEW: MCP config path
-    ap.add_argument("--mcp_config", default="a2a_agent/mcp_config.json", help="Path to MCP servers config JSON.")
+    ap = argparse.ArgumentParser(description="使用 MCP 工具评估一个支持函数调用的微调模型（Qwen3/Unsloth/LoRA）。")
+    ap.add_argument("--model", required=True, help="模型路径（完整模型目录、LoRA 适配器目录，或 HuggingFace 仓库名）。")
+    ap.add_argument("--base_model", default=None,
+                    help="当 --model 是 LoRA 目录时需指定基础模型（如 unsloth/Qwen3-4B-Instruct-2507）")
+    ap.add_argument("--engine", choices=["unsloth", "vllm"], default="unsloth",
+                    help="推理引擎，默认为 unsloth，可选 vllm")
+    ap.add_argument("--query", default="旧金山的天气如何？", help="输入查询文本")
+    ap.add_argument("--max_new_tokens", type=int, default=1024, help="最大生成 token 数")
+    ap.add_argument("--chat_template", default=None, help="强制指定 chat 模板（如 qwen_1_5）。若不指定则使用默认。")
+    ap.add_argument("--load_in_4bit", action="store_true", default=False, help="是否以 4bit 加载模型")
+    ap.add_argument("--load_in_8bit", action="store_true", default=False,
+                    help="是否以 8bit 加载模型（若同时指定 4bit 和 8bit，将优先使用 4bit）")
+    ap.add_argument("--mcp_config", default="a2a_agent/mcp_config.json", help="MCP 服务器配置文件路径（JSON 格式）")
     args = ap.parse_args()
 
     # Boolean adjust: if both are set, prioritize 4bit
