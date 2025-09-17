@@ -7,6 +7,17 @@
 └── generate_train_data.py  # 根据生成的问题调用MCP生成SFT数据
 └── train.jsonl  # generate_train_data.py生成的训练数据
 └── example_one_data.json  # 一条示例数据
+└── rl_train  # 强化学习训练
+    ├── README.md
+    ├── env_template
+    ├── mcp_client.py
+    ├── mcp_config.json   #MCP的配置文件
+    ├── mcp_config_load.py  # 读取MCP配置
+    ├── model_test.py
+    ├── prompt.py
+    ├── requirements.txt
+    ├── reward.py
+    └── train.py
 ```
 
 # 安装依赖
@@ -23,7 +34,10 @@ python energy_services.py
 ```
 2）测试MCP工具是正常的, mcpserver/mcp_client.py
 ```python mcp_client.py```
-3) 生成问题数据，复制你的MCP工具到ChatGPT，让它生成问题数据列表，保存到questions.txt
+3) 生成问题20条数据，会自动读取MCP工具，让它生成问题数据列表，保存到questions.txt
+```
+python generate_questions.py -n 20 -o questions.txt
+```
 4) 生成SFT的微调数据：先运行MCP Server, 然后运行a2a_agent/main.py, 然后运行generate_train_data.py生成SFT训练数据
 ```
 cd a2a_agent
