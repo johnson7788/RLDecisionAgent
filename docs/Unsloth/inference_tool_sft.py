@@ -35,52 +35,13 @@ import hashlib
 import random
 from typing import Any, Dict, List, Tuple
 from datetime import datetime
-
-# Optional deps
-try:
-    import torch
-except Exception:
-    torch = None
-
-try:
-    # Unsloth accelerated loader
-    from unsloth import FastModel as _FastModel
-    _HAS_UNSLOTH = True
-except Exception:
-    _HAS_UNSLOTH = False
-
-try:
-    from transformers import AutoTokenizer, TextStreamer
-    _HAS_TRANSFORMERS = True
-except Exception:
-    _HAS_TRANSFORMERS = False
-
-try:
-    from peft import PeftModel
-    _HAS_PEFT = True
-except Exception:
-    _HAS_PEFT = False
-
-try:
-    # Optional: apply a consistent chat template if needed
-    from unsloth.chat_templates import get_chat_template as _get_chat_template
-    _HAS_UNSLOTH_TEMPLATES = True
-except Exception:
-    _HAS_UNSLOTH_TEMPLATES = False
-
-try:
-    from vllm import LLM
-    from vllm.sampling_params import SamplingParams
-    _HAS_VLLM = True
-except Exception:
-    _HAS_VLLM = False
-
-try:
-    import nasapy
-    _HAS_NASAPY = True
-except Exception:
-    _HAS_NASAPY = False
-
+import torch
+from unsloth import FastModel
+from transformers import AutoTokenizer, TextStreamer
+from peft import PeftModel
+from unsloth.chat_templates import get_chat_template as _get_chat_template
+from vllm import LLM
+from vllm.sampling_params import SamplingParams
 
 # =========================
 # Utility & Mocked Tools
@@ -116,24 +77,6 @@ def get_current_weather(location: str) -> Dict[str, Any]:
     }
 
 
-def celsius_to_fahrenheit(celsius: float) -> float:
-    return (celsius * 9.0 / 5.0) + 32.0
-
-
-def get_nasa_picture_of_the_day(date: str) -> Dict[str, Any]:
-    r = _rng(f"apod::{date}")
-    themes = [
-        "Nebula", "Galaxy", "Star Field", "Lunar Surface", "Aurora",
-        "Comet", "Exoplanet", "Solar Flare", "Milky Way", "ISS Earth View",
-    ]
-    title = f"{themes[r.randrange(len(themes))]} — {date}"
-    return {
-        "title": title,
-        "explanation": "This is a simulated APOD entry for testing purposes (no external API).",
-        "url": f"https://example.com/apod/{date.replace('-', '')}.jpg",
-    }
-
-
 def get_stock_price(ticker: str, date: str) -> Tuple[str, str]:
     r = _rng(f"stock::{ticker.upper()}::{date}")
     base = 20 + (sum(ord(c) for c in ticker.upper()) % 80)  # 20~99
@@ -148,8 +91,6 @@ def get_stock_price(ticker: str, date: str) -> Tuple[str, str]:
 AVAILABLE_FUNCTIONS = {
     "get_current_date": get_current_date,
     "get_current_weather": get_current_weather,
-    "celsius_to_fahrenheit": celsius_to_fahrenheit,
-    "get_nasa_picture_of_the_day": get_nasa_picture_of_the_day,
     "get_stock_price": get_stock_price,
 }
 
@@ -173,24 +114,6 @@ def functions_schema() -> List[Dict[str, Any]]:
                     }
                 },
                 "required": ["location"],
-            },
-        },
-        {
-            "name": "celsius_to_fahrenheit",
-            "description": "Convert a temperature from Celsius to Fahrenheit.",
-            "parameters": {
-                "type": "object",
-                "properties": {"celsius": {"type": "number"}},
-                "required": ["celsius"],
-            },
-        },
-        {
-            "name": "get_nasa_picture_of_the_day",
-            "description": "Fetch NASA APOD information for a given date.",
-            "parameters": {
-                "type": "object",
-                "properties": {"date": {"type": "string", "description": "YYYY-MM-DD"}},
-                "required": ["date"],
             },
         },
         {
@@ -283,12 +206,10 @@ def _has_full_model(path: str) -> bool:
 
 
 def _load_tokenizer(model_dir: str, base_model: str | None, chat_template: str | None):
-    if not _HAS_TRANSFORMERS:
-        raise RuntimeError("transformers not installed.")
     tok_dir = model_dir if (_file_exists(model_dir, "tokenizer.json") or _file_exists(model_dir, "tokenizer_config.json")) else (base_model or model_dir)
     tokenizer = AutoTokenizer.from_pretrained(tok_dir, use_fast=True)
     # Optionally force a chat template (e.g., qwen_1_5)
-    if chat_template and _HAS_UNSLOTH_TEMPLATES:
+    if chat_template:
         tokenizer = _get_chat_template(tokenizer, chat_template=chat_template)
     return tokenizer
 
@@ -299,15 +220,10 @@ def _ensure_pad_token(tokenizer):
 
 
 def _load_model_unsloth(model_path: str, base_model: str | None, max_seq_length: int, load_in_4bit: bool, load_in_8bit: bool):
-    if not _HAS_UNSLOTH:
-        raise RuntimeError("Unsloth is not installed. Please install unsloth to use --engine unsloth.")
-
     if _is_lora_dir(model_path):
-        if not _HAS_PEFT:
-            raise RuntimeError("peft is required to load a LoRA adapter directory.")
         if not base_model:
             raise ValueError("--model points to a LoRA adapter directory; please provide --base_model.")
-        base, _ = _FastModel.from_pretrained(
+        base, _ = FastModel.from_pretrained(
             model_name=base_model,
             max_seq_length=max_seq_length,
             load_in_4bit=load_in_4bit,
@@ -317,7 +233,7 @@ def _load_model_unsloth(model_path: str, base_model: str | None, max_seq_length:
         )
         model = PeftModel.from_pretrained(base, model_path)
     elif _has_full_model(model_path):
-        model, _ = _FastModel.from_pretrained(
+        model, _ = FastModel.from_pretrained(
             model_name=model_path,
             max_seq_length=max_seq_length,
             load_in_4bit=load_in_4bit,
@@ -413,11 +329,9 @@ def second_pass_generate_unsloth(model, tokenizer, query: str, tool_results: Lis
 # vLLM versions
 
 def _ensure_tokenizer_for_prompt_only(chat_template: str | None, model_or_repo: str):
-    if not _HAS_TRANSFORMERS:
-        raise RuntimeError("transformers not installed.")
     # We only need tokenizer for producing a textual chat-formatted prompt
     tok = AutoTokenizer.from_pretrained(model_or_repo, use_fast=True)
-    if chat_template and _HAS_UNSLOTH_TEMPLATES:
+    if chat_template:
         tok = _get_chat_template(tok, chat_template=chat_template)
     return tok
 
@@ -429,8 +343,6 @@ def _vllm_generate_text(llm: LLM, text_prompt: str, max_tokens: int) -> str:
 
 
 def first_pass_generate_vllm(model_repo: str, query: str, max_tokens: int, chat_template: str | None) -> str:
-    if not _HAS_VLLM:
-        raise RuntimeError("vLLM is not installed.")
     tok = _ensure_tokenizer_for_prompt_only(chat_template, model_repo)
 
     tools_json = functions_schema_json()
@@ -452,8 +364,6 @@ def first_pass_generate_vllm(model_repo: str, query: str, max_tokens: int, chat_
 
 
 def second_pass_generate_vllm(model_repo: str, query: str, tool_results: List[Dict[str, Any]], max_tokens: int, chat_template: str | None) -> str:
-    if not _HAS_VLLM:
-        raise RuntimeError("vLLM is not installed.")
     tok = _ensure_tokenizer_for_prompt_only(chat_template, model_repo)
 
     synthesis_system = (
@@ -479,9 +389,6 @@ def second_pass_generate_vllm(model_repo: str, query: str, tool_results: List[Di
 # =========================
 
 def run_unsloth(args):
-    if not _HAS_TRANSFORMERS:
-        raise RuntimeError("transformers is required.")
-
     tokenizer = _load_tokenizer(args.model, args.base_model, args.chat_template)
     _ensure_pad_token(tokenizer)
     model = _load_model_unsloth(
