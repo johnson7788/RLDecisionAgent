@@ -1,0 +1,12 @@
+python inference_tool_sft.py \
+>   --model ./lora_model \
+>   --base_model unsloth/Qwen3-4B-Instruct-2507 \
+>   --engine unsloth \
+>   --query "上海今天的天气如何？" \
+>   --chat_template qwen-3 \
+>   --load_in_4bit \
+>   --mcp_config a2a_agent/mcp_config.json
+🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning.
+INFO 09-17 14:39:40 [importing.py:53] Triton module has been replaced with a placeholder.
+INFO 09-17 14:39:40 [__init__.py:239] Automatically detected platform cuda.
+🦥 Unsloth Zoo will now patch everything to make training faster!
