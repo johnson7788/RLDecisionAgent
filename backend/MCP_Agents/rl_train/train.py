@@ -384,6 +384,7 @@ async def main():
         _log_batch_to_wandb(batch=batch, finished_groups=finished, use_ruler=USE_RULER)
 
         if USE_RULER:
+            print(f"USE_RULER已经开启，使用RULER进行打分")
             assert RULTER_API_KEY, "RULER_API_KEY not set"
             assert RULTER_API_BASE, "RULTER_API_BASE not set"
             extra_litellm_params = {"api_base": RULTER_API_KEY, "api_key": RULTER_API_KEY}
@@ -415,6 +416,7 @@ async def main():
             )
             wandb.log({"train/used_judged_groups": 1}, step=batch.step)
         else:
+            print("USE_RULER未开启，使用原始数据进行训练")
             finished = [clip_group(g, MAX_SEQ_LEN) for g in finished]
             await model.train(
                 trajectory_groups=finished,
