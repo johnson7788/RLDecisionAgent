@@ -38,7 +38,7 @@ if not logger.handlers:
     logger.setLevel(logging.DEBUG)
 
 # 如需观察 litellm 的 HTTP 往返，可保留这一行（会非常啰嗦）
-litellm._turn_on_debug()
+# litellm._turn_on_debug()
 
 class TrajectoryScore(BaseModel):
     """Individual score for a single trajectory."""
