@@ -38,18 +38,20 @@ python energy_services.py
 ```
 python generate_questions.py -n 20 -o questions.txt
 ```
-4) 生成SFT的微调数据：先运行MCP Server, 然后运行a2a_agent/main.py, 然后运行generate_train_data.py生成SFT训练数据
+4) 测试下未训练过的模型： [original_model.py](original_model.py)
+
+5)生成SFT的微调数据：先运行MCP Server, 然后运行a2a_agent/main.py, 然后运行generate_train_data.py生成SFT训练数据
 ```
 cd a2a_agent
 python main.py
 # 生成训练数据
 python generate_train_data.py
 ```
-5) 使用生成的训练数据微调模型
+6使用生成的训练数据微调模型
 ```
 python train_tool_sft.py --data_path ./train.jsonl --epochs 3 --lr 2e-4 --batch_size 8 --grad_accum 2 --wandb_project toolsft01
 ```
-6) 测试微调后的模型
+7)测试微调后的模型
 ```
 python inference_tool_sft.py \
   --model ./lora_model \
@@ -60,7 +62,7 @@ python inference_tool_sft.py \
   --load_in_4bit
 ```
 
-7）强化学习继续训练模型
+8）强化学习继续训练模型
 [README.md](rl_train%2FREADME.md)
 
 # 单条SFT的训练数据，带工具
