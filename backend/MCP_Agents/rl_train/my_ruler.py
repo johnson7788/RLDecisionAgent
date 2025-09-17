@@ -364,6 +364,7 @@ async def ruler_score_group(
             raise
 
     for traj, score in zip(new_trajectories, scores):
+        print(f"traj {traj} 的得分是: {score}")
         traj.metrics["ruler_score"] = score.score
         traj.reward = score.score
         traj.log(f"RULER explanation: {score.explanation}")
