@@ -1,16 +1,20 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Evaluate a fine-tuned function-calling model (Qwen3 friendly, LoRA-aware).
+Evaluate a fine-tuned function-calling model (Qwen3 friendly, LoRA-aware),
+with tools dynamically discovered **and executed** via MCP Servers.
 
 Two engines:
 1) Unsloth runtime (default): loads a full model or a LoRA adapter on top of a base model
 2) vLLM runtime (optional): requires a merged/full model (not a raw LoRA adapter dir)
 
-Features:
-- Provide a plain JSON Schema tool list to the model
-- Ask the model to emit a JSON array of function calls
-- Parse JSON robustly, execute tools, feed results back, and ask for the final answer
+What changed vs the original:
+- ❗Tools are now loaded from MCP servers defined in
+  a JSON config (default: a2a_agent/mcp_config.json), and function calls are
+  executed by calling the corresponding MCP server tool.
+- 🧭 If multiple servers expose the same tool name, the first discovered one is used
+  (a warning is printed).
+- 🛡️ Errors when calling tools are captured and returned to the model in Pass 2.
 
 Example:
 python inference_tool_sft.py \
@@ -19,11 +23,13 @@ python inference_tool_sft.py \
   --engine unsloth \
   --query "上海今天的天气如何？" \
   --chat_template qwen-3 \
-  --load_in_4bit
+  --load_in_4bit \
+  --mcp_config a2a_agent/mcp_config.json
 
-If using vLLM, pass a merged model repo/path:
+If using vLLM (with a merged model repo/path):
 python inference_tool_sft.py --model your-hf/merged_model_16bit --engine vllm \
-  --query "北京现在天气如何？把 23 摄氏度转为华氏度"
+  --query "北京现在天气如何？把 23 摄氏度转为华氏度" \
+  --mcp_config a2a_agent/mcp_config.json
 """
 
 from __future__ import annotations
@@ -35,6 +41,7 @@ import hashlib
 import random
 from typing import Any, Dict, List, Tuple
 from datetime import datetime
+
 import torch
 from unsloth import FastModel
 from transformers import AutoTokenizer, TextStreamer
@@ -43,100 +50,24 @@ from unsloth.chat_templates import get_chat_template as _get_chat_template
 from vllm import LLM
 from vllm.sampling_params import SamplingParams
 
+# NEW: MCP imports
+import asyncio
+from fastmcp import Client  # pip install fastmcp
+from mcpserver.mcp_client import tool_definition_to_dict  # reuse existing util
+
 # =========================
-# Utility & Mocked Tools
+# Utility
 # =========================
 
-def _stable_int(seed: str) -> int:
-    return int(hashlib.sha256(seed.encode("utf-8")).hexdigest(), 16)
-
-def _rng(seed: str) -> random.Random:
-    r = random.Random()
-    r.seed(_stable_int(seed))
-    return r
-
-
-def get_current_date() -> str:
-    return datetime.now().strftime("%Y-%m-%d")
-
-
-def get_current_weather(location: str) -> Dict[str, Any]:
-    """Mocked weather. Replace with real API call if desired.
-    Returns: {description, temperature(°C), humidity(%)}
-    """
-    r = _rng(f"weather::{location}")
-    descs = [
-        "clear sky", "few clouds", "scattered clouds", "broken clouds",
-        "shower rain", "light rain", "moderate rain", "thunderstorm",
-        "mist", "snow",
-    ]
-    return {
-        "description": r.choice(descs),
-        "temperature": round(r.uniform(-10.0, 35.0), 1),
-        "humidity": r.randint(20, 95),
-    }
-
-
-def get_stock_price(ticker: str, date: str) -> Tuple[str, str]:
-    r = _rng(f"stock::{ticker.upper()}::{date}")
-    base = 20 + (sum(ord(c) for c in ticker.upper()) % 80)  # 20~99
-    drift = (int(date.replace("-", "")) % 13) - 6         # -6~+6
-    price = max(3.0, base + drift + r.uniform(-1.5, 1.5))
-    spread = max(0.5, r.uniform(0.5, 5.0))
-    low = round(price - spread/2, 2)
-    high = round(price + spread/2, 2)
-    return (f"{low:.2f}", f"{high:.2f}")
-
-
-AVAILABLE_FUNCTIONS = {
-    "get_current_date": get_current_date,
-    "get_current_weather": get_current_weather,
-    "get_stock_price": get_stock_price,
-}
-
-
-def functions_schema() -> List[Dict[str, Any]]:
-    return [
-        {
-            "name": "get_current_date",
-            "description": "Fetch the current date in the format YYYY-MM-DD.",
-            "parameters": {"type": "object", "properties": {}, "required": []},
-        },
-        {
-            "name": "get_current_weather",
-            "description": "Get the current weather for a given city.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "location": {
-                        "type": "string",
-                        "description": "City and optional country code, e.g. 'San Francisco, US'",
-                    }
-                },
-                "required": ["location"],
-            },
-        },
-        {
-            "name": "get_stock_price",
-            "description": "Retrieve (low, high) stock prices for a ticker on a given date.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "ticker": {"type": "string"},
-                    "date": {"type": "string", "description": "YYYY-MM-DD"},
-                },
-                "required": ["ticker", "date"],
-            },
-        },
-    ]
-
-
-def functions_schema_json() -> str:
-    return json.dumps(functions_schema(), ensure_ascii=False, indent=2)
+def parse_bool_env(name: str, default: bool = False) -> bool:
+    val = os.environ.get(name)
+    if val is None:
+        return default
+    return val.lower() in {"1", "true", "yes", "y", "on"}
 
 
 # =========================
-# Robust JSON parsing
+# Robust JSON parsing for function calls
 # =========================
 
 def parse_function_calls(text: str):
@@ -179,6 +110,119 @@ def parse_function_calls(text: str):
             pass
 
     return None
+
+
+# =========================
+# MCP: discovery + execution
+# =========================
+
+class MCPRegistry:
+    """Holds discovered MCP tools (JSON Schemas) and a name->server map."""
+
+    def __init__(self):
+        self.tools_schema: List[Dict[str, Any]] = []
+        self.name_to_server: Dict[str, str] = {}
+
+    def tools_schema_json(self) -> str:
+        return json.dumps(self.tools_schema, ensure_ascii=False, indent=2)
+
+    def find_server(self, tool_name: str) -> str | None:
+        return self.name_to_server.get(tool_name)
+
+
+async def discover_mcp_tools(config_path: str) -> MCPRegistry:
+    """Read MCP servers from config and list their tools.
+
+    Config schema expected (subset):
+    {
+      "mcpServers": {
+        "server_key": {"url": "http://localhost:10001", "disabled": false},
+        ...
+      }
+    }
+    """
+    registry = MCPRegistry()
+
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            mcp_config = json.load(f)
+    except FileNotFoundError:
+        raise FileNotFoundError(f"MCP配置文件不存在: {config_path}")
+
+    mcp_servers = (mcp_config or {}).get("mcpServers", {})
+    if not mcp_servers:
+        return registry
+
+    for server_name, server_info in mcp_servers.items():
+        if server_info.get("disabled"):
+            continue
+        url = server_info.get("url")
+        if not url:
+            continue
+
+        try:
+            client = Client(url)
+            async with client:
+                tools = await client.list_tools()
+        except Exception as e:
+            print(f"⚠️  无法从 '{server_name}' ({url}) 获取工具: {e}")
+            continue
+
+        for t in tools:
+            try:
+                d = tool_definition_to_dict(t)  # {name, description, parameters}
+            except Exception:
+                # Fallback minimal shape
+                d = {"name": getattr(t, "name", ""), "description": getattr(t, "description", None)}
+
+            name = d.get("name")
+            if not name:
+                continue
+
+            if name in registry.name_to_server:
+                # Prefer the first one, but warn once
+                # (you can change policy here if needed)
+                print(f"⚠️  工具名冲突: '{name}' 在多个服务器中发现，仍将使用先发现的服务器 {registry.name_to_server[name]}")
+            else:
+                registry.name_to_server[name] = url
+
+            # Ensure JSON-Schema-like shape
+            if "parameters" not in d or d["parameters"] is None:
+                d["parameters"] = {"type": "object", "properties": {}, "required": []}
+
+            registry.tools_schema.append(d)
+
+    return registry
+
+
+async def mcp_call_tool(server_url: str, tool_name: str, arguments: Dict[str, Any] | None) -> Any:
+    """Call a tool on a given MCP server and return a JSON-serializable result."""
+    arguments = arguments or {}
+    client = Client(server_url)
+    try:
+        async with client:
+            try:
+                result = await client.call_tool(tool_name, arguments)
+            except AttributeError:
+                # Older fastmcp versions may use `call` as the method name
+                result = await client.call(tool_name, arguments)
+    except Exception as e:
+        return {"error": f"调用工具失败: {e}"}
+
+    # Normalize to JSON-serializable
+    def _normalize(x: Any) -> Any:
+        try:
+            if hasattr(x, "model_dump"):
+                x = x.model_dump()
+        except Exception:
+            pass
+        try:
+            json.dumps(x, ensure_ascii=False)
+            return x
+        except TypeError:
+            return repr(x)
+
+    return _normalize(result)
 
 
 # =========================
@@ -259,7 +303,7 @@ def _load_model_unsloth(model_path: str, base_model: str | None, max_seq_length:
 
 
 # =========================
-# Inference passes
+# Inference passes (now parameterized by MCP tools)
 # =========================
 
 def _apply_template(tokenizer, messages: List[Dict[str, str]], add_generation_prompt: bool = True, tokenize: bool = True):
@@ -271,15 +315,24 @@ def _apply_template(tokenizer, messages: List[Dict[str, str]], add_generation_pr
     )
 
 
-def first_pass_generate_unsloth(model, tokenizer, query: str, max_new_tokens: int) -> str:
-    tools_json = functions_schema_json()
-    sys_prompt = (
+def _first_pass_system_prompt(tools_json: str) -> str:
+    if tools_json.strip() == "[]":
+        # No tools — still ask for JSON, but make it clear there are none
+        return (
+            "当前没有可用的工具。\n"
+            "如果需要，请直接回答；若你仍要调用工具，请输出空列表 []。"
+        )
+    return (
         "你可以调用下列工具（以 JSON Schema 描述）。\n"
         "请先输出一段仅包含 JSON 的内容，格式为一个列表，每个元素是：\n"
         '{"name": "<函数名>", "arguments": {<参数>}}\n'
         "不要输出解释文字或额外内容。\n"
         "工具列表如下：\n" + tools_json
     )
+
+
+def first_pass_generate_unsloth(model, tokenizer, query: str, max_new_tokens: int, tools_json: str) -> str:
+    sys_prompt = _first_pass_system_prompt(tools_json)
     messages = [
         {"role": "system", "content": sys_prompt},
         {"role": "user", "content": query},
@@ -342,17 +395,10 @@ def _vllm_generate_text(llm: LLM, text_prompt: str, max_tokens: int) -> str:
     return outputs[0].outputs[0].text
 
 
-def first_pass_generate_vllm(model_repo: str, query: str, max_tokens: int, chat_template: str | None) -> str:
+def first_pass_generate_vllm(model_repo: str, query: str, max_tokens: int, chat_template: str | None, tools_json: str) -> str:
     tok = _ensure_tokenizer_for_prompt_only(chat_template, model_repo)
 
-    tools_json = functions_schema_json()
-    sys_prompt = (
-        "你可以调用下列工具（以 JSON Schema 描述）。\n"
-        "请先输出一段仅包含 JSON 的内容，格式为一个列表，每个元素是：\n"
-        '{"name": "<函数名>", "arguments": {<参数>}}\n'
-        "不要输出解释文字或额外内容。\n"
-        "工具列表如下：\n" + tools_json
-    )
+    sys_prompt = _first_pass_system_prompt(tools_json)
     messages = [
         {"role": "system", "content": sys_prompt},
         {"role": "user", "content": query},
@@ -389,7 +435,11 @@ def second_pass_generate_vllm(model_repo: str, query: str, tool_results: List[Di
 # =========================
 
 def run_unsloth(args):
-    # 使用unsloth进行模型推理
+    # 1) Discover MCP tools
+    registry = asyncio.run(discover_mcp_tools(args.mcp_config))
+    print(f"🔧 通过 MCP 发现 {len(registry.tools_schema)} 个工具。")
+
+    # 2) Load model/tokenizer
     tokenizer = _load_tokenizer(args.model, args.base_model, args.chat_template)
     _ensure_pad_token(tokenizer)
     model = _load_model_unsloth(
@@ -400,8 +450,9 @@ def run_unsloth(args):
         load_in_8bit=args.load_in_8bit,
     )
 
-    # Pass 1: ask for function calls
-    first = first_pass_generate_unsloth(model, tokenizer, args.query, args.max_new_tokens)
+    # 3) Pass 1: ask for function calls
+    tools_json = registry.tools_schema_json() if registry.tools_schema else "[]"
+    first = first_pass_generate_unsloth(model, tokenizer, args.query, args.max_new_tokens, tools_json)
     print("=== Raw function-call block ===\n", first)
     calls = parse_function_calls(first)
     print("=== Parsed function calls ===\n", calls)
@@ -410,36 +461,39 @@ def run_unsloth(args):
         print("未检测到函数调用 JSON，直接输出：\n" + first)
         return
 
-    # Execute tools
+    # 4) Execute tools via MCP
     items = calls if isinstance(calls, list) else [calls]
     tool_results = []
     for item in items:
         name = (item or {}).get("name")
         args_ = (item or {}).get("arguments") or {}
-        fn = AVAILABLE_FUNCTIONS.get(name)
-        if not fn:
-            res = {"error": f"Unknown tool: {name}"}
+        if not name:
+            res = {"error": "Missing 'name' in function call"}
         else:
-            try:
-                res = fn(**args_) if isinstance(args_, dict) else {"error": "arguments must be an object"}
-            except TypeError as te:
-                res = {"error": f"Bad arguments for {name}: {te}"}
-            except Exception as e:
-                res = {"error": str(e)}
+            server_url = registry.find_server(name)
+            if not server_url:
+                res = {"error": f"Unknown tool: {name}"}
+            else:
+                res = asyncio.run(mcp_call_tool(server_url, name, args_))
         print(f"[Tool:{name}] -> {res}")
         tool_results.append({"name": name, "arguments": args_, "result": res})
 
-    # Pass 2: synthesis
+    # 5) Pass 2: synthesis
     second_pass_generate_unsloth(model, tokenizer, args.query, tool_results, max_new_tokens=min(512, args.max_new_tokens))
 
 
 def run_vllm(args):
-    # 使用VLLM进行模型推理
+    # 1) Discover MCP tools
+    registry = asyncio.run(discover_mcp_tools(args.mcp_config))
+    print(f"🔧 通过 MCP 发现 {len(registry.tools_schema)} 个工具。")
+
+    # 2) vLLM requires merged model
     if _is_lora_dir(args.model):
         raise ValueError("vLLM 不支持直接加载 LoRA 适配器目录；请先 merge 得到完整权重后再用 --engine vllm")
 
-    # Pass 1
-    text1 = first_pass_generate_vllm(args.model, args.query, max_tokens=min(768, args.max_new_tokens), chat_template=args.chat_template)
+    # 3) Pass 1
+    tools_json = registry.tools_schema_json() if registry.tools_schema else "[]"
+    text1 = first_pass_generate_vllm(args.model, args.query, max_tokens=min(768, args.max_new_tokens), chat_template=args.chat_template, tools_json=tools_json)
     print("=== vLLM raw output (function calls) ===\n", repr(text1))
     calls = parse_function_calls(text1)
     print("=== Parsed function calls ===\n", calls)
@@ -448,26 +502,24 @@ def run_vllm(args):
         print("未检测到函数调用 JSON，直接输出：\n" + text1)
         return
 
-    # Execute tools
+    # 4) Execute tools via MCP
     items = calls if isinstance(calls, list) else [calls]
     tool_results = []
     for item in items:
         name = (item or {}).get("name")
         args_ = (item or {}).get("arguments") or {}
-        fn = AVAILABLE_FUNCTIONS.get(name)
-        if not fn:
-            res = {"error": f"Unknown tool: {name}"}
+        if not name:
+            res = {"error": "Missing 'name' in function call"}
         else:
-            try:
-                res = fn(**args_) if isinstance(args_, dict) else {"error": "arguments must be an object"}
-            except TypeError as te:
-                res = {"error": f"Bad arguments for {name}: {te}"}
-            except Exception as e:
-                res = {"error": str(e)}
+            server_url = registry.find_server(name)
+            if not server_url:
+                res = {"error": f"Unknown tool: {name}"}
+            else:
+                res = asyncio.run(mcp_call_tool(server_url, name, args_))
         print(f"[Tool:{name}] -> {res}")
         tool_results.append({"name": name, "arguments": args_, "result": res})
 
-    # Pass 2
+    # 5) Pass 2
     text2 = second_pass_generate_vllm(args.model, args.query, tool_results, max_tokens=min(512, args.max_new_tokens), chat_template=args.chat_template)
     print("=== vLLM final answer ===\n", text2)
 
@@ -477,7 +529,7 @@ def run_vllm(args):
 # =========================
 
 def main():
-    ap = argparse.ArgumentParser(description="Evaluate a function-calling fine-tuned model (Qwen3/Unsloth/LoRA ready).")
+    ap = argparse.ArgumentParser(description="Evaluate a function-calling fine-tuned model (Qwen3/Unsloth/LoRA ready) with MCP tools.")
     ap.add_argument("--model", required=True, help="Path to full model or LoRA adapter dir, or HF repo.")
     ap.add_argument("--base_model", default=None, help="Base model when --model is a LoRA adapter dir (e.g., unsloth/Qwen3-4B-Instruct-2507)")
     ap.add_argument("--engine", choices=["unsloth", "vllm"], default="unsloth")
@@ -486,6 +538,8 @@ def main():
     ap.add_argument("--chat_template", default=None, help="Force a chat template name (e.g., qwen_1_5). If omitted, use tokenizer's default.")
     ap.add_argument("--load_in_4bit", action="store_true", default=False)
     ap.add_argument("--load_in_8bit", action="store_true", default=False)
+    # NEW: MCP config path
+    ap.add_argument("--mcp_config", default="a2a_agent/mcp_config.json", help="Path to MCP servers config JSON.")
     args = ap.parse_args()
 
     # Boolean adjust: if both are set, prioritize 4bit
@@ -496,6 +550,7 @@ def main():
         run_unsloth(args)
     else:
         run_vllm(args)
+
 
 if __name__ == "__main__":
     main()
