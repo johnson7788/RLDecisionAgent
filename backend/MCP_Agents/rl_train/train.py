@@ -49,8 +49,10 @@ MAX_SEQ_LEN = int(os.getenv("MAX_SEQ_LEN", 4096))
 RULER_MODEL = os.getenv("RULER_MODEL", "openai/o4-mini")
 RULTER_API_KEY = os.getenv("RULTER_API_KEY")
 RULTER_API_BASE = os.getenv("RULTER_API_BASE")
+WANDB_BASE_URL = os.getenv("WANDB_BASE_URL", "N/A")
 
-print(f"项目名称: {NAME} - {MODEL_NAME} - {PROJECT_NAME} - WANDB: {os.environ['WANDB_BASE_URL']} - 很关键的USE_RULER: {USE_RULER}")
+
+print(f"项目名称: {NAME} - {MODEL_NAME} - {PROJECT_NAME} - WANDB: {WANDB_BASE_URL} - 很关键的USE_RULER: {USE_RULER}")
 print(f"训练时传入的最大序列长度: {MAX_SEQ_LEN}")
 print(f"使用MCP的配置文件: {MCP_CONFIG}")
 
@@ -113,13 +115,13 @@ def clip_group(g, max_tokens=MAX_SEQ_LEN):
 
 # ----------------- 数据结构 -----------------
 class FinalQAResult(BaseModel):
-    task: List[Dict[str, Any]]  # 单元素任务数组：[{"type":"qa","data":{"question":..., "text": 答案}}]
+    task: List[Dict[str, Any]]
 
 @dataclass
 class QueryScenario:
     id: str
-    prompt: str
-    input_task: List[Dict[str, Any]]  # [{"type":"qa","data":{"question": "...", "text": ""}}]
+    question: str
+    input_task: List[Dict[str, Any]]
 
 class ProjectTrajectory(art.Trajectory):
     final: Optional[FinalQAResult] = None
@@ -227,11 +229,11 @@ async def rollout(model: art.Model, scenario: QueryScenario) -> ProjectTrajector
 
     system_prompt = prompt.ROLLOUT_SYSTEM_PROMPT.format(tools_json_note=tools_json_note)
 
-    chat_model = init_chat_model(MODEL_NAME, temperature=0.8)
+    chat_model = init_chat_model(model=model.name, temperature=0.8)
     agent = create_react_agent(chat_model, tools=lc_tools)
 
     # ====== 执行 Agent ======
-    user_msg = prompt.ROLLOUT_USER_PROMPT.format(question=scenario.prompt)
+    user_msg = prompt.ROLLOUT_USER_PROMPT.format(question=scenario.question)
 
     await agent.ainvoke(
         {"messages": [SystemMessage(content=system_prompt),
@@ -245,12 +247,11 @@ async def rollout(model: art.Model, scenario: QueryScenario) -> ProjectTrajector
         traj.final = final
 
         # 这里可以加一些自定义的奖励
-        fr = 0.0
+        fr = 1.0  # 这里，有final，就给reward
         # try:
         #     fr = format_reward(scenario.input_task, final.task)
         # except Exception:
         #     fr = 0.0
-
         traj.reward = fr
         traj.metrics["format_reward"] = fr
     else:
@@ -294,11 +295,10 @@ def build_scenarios_from_questions(questions: List[str]) -> List[QueryScenario]:
     [{"type": "qa", "data": {"question": <q>, "text": ""}}]
     """
     scenarios: List[QueryScenario] = []
-    for i, q in enumerate(questions, start=1):
+    for i, question in enumerate(questions, start=1):
         task = [{"type": "qa", "data": {"question": q, "text": ""}}]
         sid = f"q_{i}"
-        prompt = "回答 data.question（仅填写 data.text）。"
-        scenarios.append(QueryScenario(id=sid, prompt=prompt, input_task=task))
+        scenarios.append(QueryScenario(id=sid, question=question, input_task=task))
     return scenarios
 
 # ----------------- 主训练循环 -----------------
@@ -350,7 +350,7 @@ async def main():
     try:
         scen_table = wandb.Table(columns=["id", "topic"])
         for s in scenarios:
-            scen_table.add_data(s.id, s.topic)
+            scen_table.add_data(s.id, s.question)
         wandb.log({"data/training_scenarios": scen_table}, step=0)
     except Exception:
         pass
@@ -388,11 +388,11 @@ async def main():
             print(f"USE_RULER已经开启，使用RULER进行打分")
             assert RULTER_API_KEY, "RULER_API_KEY not set"
             assert RULTER_API_BASE, "RULTER_API_BASE not set"
-            extra_litellm_params = {"api_base": RULTER_API_KEY, "api_key": RULTER_API_KEY}
+            extra_litellm_params = {"api_base": RULTER_API_BASE, "api_key": RULTER_API_KEY}
             judged = []
             for g in finished:
                 t_list = list(g)
-                completed = [t for t in t_list if getattr(t, "final_outline", None)]
+                completed = [t for t in t_list if getattr(t, "final", None)]
                 try:
                     # 完成数如果太少，那么就使用原始的reward打分结果
                     if len(completed) >= 2:
