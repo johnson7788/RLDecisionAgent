@@ -1172,6 +1172,7 @@ OSError: [Errno 98] 地址已在使用
 # 训练卡住，如果在下面的步骤中卡住，那么需要使用export CUDA_VISIBLE_DEVICES=1指定显卡，并确保有显存, 不是这个问题，是src/art/unsloth/train.py的中的函数train的trainer.train()卡住，在多个显卡是要使用export CUDA_VISIBLE_DEVICES=1指定使用的显卡，否则就会卡住
 卡住的真实原因是本地的vllm的openai报错，模型推理速度太慢，重试3次还是timeout，很可能是ruler模型的问题，不用ruler就不会卡住，使用7B模型一样可以使用4090训练.
 明显Total steps和Num examples是有问题的。 不用ruler时不会卡住，用了ruler必然卡住，7B模型可能太大，0.5B没啥问题，知道问题所在了，网络检索的长度很长时，模型很大，速度就很慢，就卡住了。需要设置max_seq_len， 不使用网络检索工具时，也不会卡住，这说明了max_seq_len对决定了训练是否卡住。
+logprob_calculation_chunk_size的问题，改成大一些，改成1024或者2048等，否则GPU切的块太小，会卡住
 [ASYNCGEN] Creating generator for train
 ==((====))==  Unsloth - 2x faster free finetuning | Num GPUs used = 1
    \\   /|    Num examples = 10,000,000 | Num Epochs = 3 | Total steps = 10,000,002
