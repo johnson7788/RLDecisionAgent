@@ -6,9 +6,6 @@
 # @Contact : github: johnson7788
 # @Desc  : 自定义的ruler函数，兼容Deepseek，只需要在.env中添加以下内容：
 # 评估模型的配置
-# RULTER_MODEL=openai/deepseek-chat
-# RULTER_API_KEY=sk-xxx
-# RULTER_API_BASE=https://api.deepseek.com/v1
 
 """
 RULER (Relative Universal LLM-Elicited Rewards) - A general-purpose reward function for RL agents.
@@ -207,7 +204,7 @@ async def ruler(
         {"role": "system", "content": judge_prompt},
         {"role": "user", "content": user_text},
     ]
-    logger.debug("已构造消息列表（system + user）。")
+    logger.debug(f"已构造消息列表（system + user）: {messages}")
 
     # 构造 acompletion 的参数
     litellm_kwargs = dict(extra_litellm_params or {})

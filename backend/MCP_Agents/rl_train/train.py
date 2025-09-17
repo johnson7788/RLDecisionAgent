@@ -47,8 +47,8 @@ USE_RULER = os.getenv("USE_RULER", "true").lower() == "true"
 MAX_SEQ_LEN = int(os.getenv("MAX_SEQ_LEN", 4096))
 # RULER 评估模型（可选；需相应 API Key）
 RULER_MODEL = os.getenv("RULER_MODEL", "openai/o4-mini")
-RULTER_API_KEY = os.getenv("RULTER_API_KEY")
-RULTER_API_BASE = os.getenv("RULTER_API_BASE")
+RULER_API_KEY = os.getenv("RULER_API_KEY")
+RULER_API_BASE = os.getenv("RULER_API_BASE")
 WANDB_BASE_URL = os.getenv("WANDB_BASE_URL", "N/A")
 
 
@@ -296,7 +296,7 @@ def build_scenarios_from_questions(questions: List[str]) -> List[QueryScenario]:
     """
     scenarios: List[QueryScenario] = []
     for i, question in enumerate(questions, start=1):
-        task = [{"type": "qa", "data": {"question": q, "text": ""}}]
+        task = [{"type": "qa", "data": {"question": question, "text": ""}}]
         sid = f"q_{i}"
         scenarios.append(QueryScenario(id=sid, question=question, input_task=task))
     return scenarios
