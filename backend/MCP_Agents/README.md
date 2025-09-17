@@ -12,19 +12,39 @@
 # 安装依赖
 pip install -r a2a_agent/requirements.txt
 
+# 准备模型的key，用于A2A的标注数据，训练的reward模型等
+cp env_template .env
+
 # 步骤
 1）写自己的MCP工具Server，仿照mcpserver/energy_services.py
+```
+cd mcpserver
+python energy_services.py
+```
 2）测试MCP工具是正常的, mcpserver/mcp_client.py
+```python mcp_client.py```
 3) 生成问题数据，复制你的MCP工具到ChatGPT，让它生成问题数据列表，保存到questions.txt
 4) 生成SFT的微调数据：先运行MCP Server, 然后运行a2a_agent/main.py, 然后运行generate_train_data.py生成SFT训练数据
-5) 使用生成的训练数据微调模型, python train_tool_sft.py --data_path ./train.jsonl --epochs 3 --lr 2e-4 --batch_size 8 --grad_accum 2 --wandb_project toolsft
-6) 测试微调后的模型, python inference_tool_sft.py \
+```
+cd a2a_agent
+python main.py
+# 生成训练数据
+python generate_train_data.py
+```
+5) 使用生成的训练数据微调模型
+```
+python train_tool_sft.py --data_path ./train.jsonl --epochs 3 --lr 2e-4 --batch_size 8 --grad_accum 2 --wandb_project toolsft01
+```
+6) 测试微调后的模型
+```
+python inference_tool_sft.py \
   --model ./lora_model \
   --base_model unsloth/Qwen3-4B-Instruct-2507 \
   --engine unsloth \
   --query "上海今天的天气如何？" \
   --chat_template qwen-3 \
   --load_in_4bit
+```
 
 # 单条SFT的训练数据，带工具
 {
