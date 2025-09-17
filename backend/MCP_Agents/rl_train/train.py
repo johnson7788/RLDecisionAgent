@@ -244,12 +244,12 @@ async def rollout(model: art.Model, scenario: QueryScenario) -> ProjectTrajector
     if final:
         traj.final = final
 
-        # 仅使用格式奖励
+        # 这里可以加一些自定义的奖励
         fr = 0.0
-        try:
-            fr = format_reward(scenario.input_task, final.task)
-        except Exception:
-            fr = 0.0
+        # try:
+        #     fr = format_reward(scenario.input_task, final.task)
+        # except Exception:
+        #     fr = 0.0
 
         traj.reward = fr
         traj.metrics["format_reward"] = fr
@@ -348,7 +348,7 @@ async def main():
     # wandb 数据概览
     try:
         scen_table = wandb.Table(columns=["id", "topic"])
-        for s in training_scenarios:
+        for s in scenarios:
             scen_table.add_data(s.id, s.topic)
         wandb.log({"data/training_scenarios": scen_table}, step=0)
     except Exception:
