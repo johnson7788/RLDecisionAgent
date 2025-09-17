@@ -330,7 +330,12 @@ async def main():
             gpu=os.getenv("ART_GPU", "A100"),
         )
 
-    model = art.TrainableModel(name=NAME, project=PROJECT_NAME, base_model=MODEL_NAME)
+    model = art.TrainableModel(name=NAME, project=PROJECT_NAME, base_model=MODEL_NAME,
+                               _internal_config=art.dev.InternalModelConfig(
+                                   init_args=art.dev.InitArgs(gpu_memory_utilization=0.8, max_seq_length=MAX_SEQ_LEN),
+                                   trainer_args=art.dev.TrainerArgs(max_grad_norm=0.1),
+                               ),
+                    )
     await model.register(backend)
 
     # 从 questions.txt 加载问题并构造场景
@@ -409,16 +414,16 @@ async def main():
                 except Exception:
                     # RULER 失效/异常时，退回无裁判训练
                     judged.append(art.TrajectoryGroup(t_list))
-            judged = [clip_group(g, MAX_SEQ_LEN) for g in judged]
+            # judged = [clip_group(g, MAX_SEQ_LEN) for g in judged]
             await model.train(
                 trajectory_groups=judged,
                 config=art.TrainConfig(learning_rate=training_config["learning_rate"]),
-                _config={"logprob_calculation_chunk_size": 512},
+                _config={"logprob_calculation_chunk_size": 1024},
             )
             wandb.log({"train/used_judged_groups": 1}, step=batch.step)
         else:
             print("USE_RULER未开启，使用原始数据进行训练")
-            finished = [clip_group(g, MAX_SEQ_LEN) for g in finished]
+            # finished = [clip_group(g, MAX_SEQ_LEN) for g in finished]
             await model.train(
                 trajectory_groups=finished,
                 config=art.TrainConfig(learning_rate=training_config["learning_rate"]),
