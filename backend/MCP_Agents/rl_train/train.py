@@ -33,6 +33,8 @@ from reward import search_reward, format_reward
 # pip install fastmcp
 from fastmcp import Client as MCPClient
 from mcp_client import tool_definition_to_dict  #自定义MCP工具
+from langchain_mcp_adapters.client import MultiServerMCPClient
+from mcp_config_load import load_mcp_servers
 
 dotenv.load_dotenv()
 
@@ -67,100 +69,6 @@ class ProjectTrajectory(art.Trajectory):
 # =========================
 # MCP: 发现与调用
 # =========================
-
-class MCPRegistry:
-    """保存已发现的 MCP 工具（JSON Schema）以及 名称→服务器URL 映射。"""
-    def __init__(self):
-        self.tools_schema: List[Dict[str, Any]] = []
-        self.name_to_server: Dict[str, str] = {}
-
-    def tools_schema_json(self) -> str:
-        return json.dumps(self.tools_schema, ensure_ascii=False, indent=2)
-
-    def find_server(self, tool_name: str) -> Optional[str]:
-        return self.name_to_server.get(tool_name)
-
-async def discover_mcp_tools(config_path: str) -> MCPRegistry:
-    """从 JSON 配置读取 MCP 服务器，并汇总工具定义。"""
-    reg = MCPRegistry()
-    try:
-        with open(config_path, "r", encoding="utf-8") as f:
-            cfg = json.load(f)
-    except FileNotFoundError:
-        raise FileNotFoundError(f"MCP配置文件不存在: {config_path}")
-
-    mcp_servers = (cfg or {}).get("mcpServers", {})
-    if not mcp_servers:
-        return reg
-
-    for server_name, info in mcp_servers.items():
-        if info.get("disabled"):
-            continue
-        url = info.get("url")
-        if not url:
-            continue
-        try:
-            client = MCPClient(url)
-            async with client:
-                tools = await client.list_tools()
-        except Exception as e:
-            print(f"⚠️  无法从 '{server_name}' ({url}) 获取工具: {e}")
-            continue
-
-        for t in tools:
-            try:
-                d = tool_definition_to_dict(t)  # {name, description, parameters}
-            except Exception:
-                d = {"name": getattr(t, "name", ""), "description": getattr(t, "description", None)}
-            name = d.get("name")
-            if not name:
-                continue
-
-            # 跳过 MCP 端的 return_final_answer_tool，确保使用本地版本
-            if name == "return_final_answer_tool":
-                print("ℹ️  跳过 MCP 端 return_final_answer_tool（使用本地实现用于训练）。")
-                continue
-
-            if name in reg.name_to_server:
-                print(f"⚠️  工具名冲突: '{name}' 在多个服务器中发现，将使用先发现的服务器 {reg.name_to_server[name]}")
-            else:
-                reg.name_to_server[name] = url
-
-            if "parameters" not in d or d["parameters"] is None:
-                d["parameters"] = {"type": "object", "properties": {}, "required": []}
-            reg.tools_schema.append(d)
-
-    print(f"🔧 通过 MCP 发现 {len(reg.tools_schema)} 个工具（不含本地 return_final_answer_tool）。")
-    return reg
-
-async def mcp_call_tool(server_url: str, tool_name: str, arguments: Dict[str, Any] | None) -> Any:
-    """在指定 MCP 服务器上调用工具，并返回 JSON 可序列化结果。"""
-    arguments = arguments or {}
-    client = MCPClient(server_url)
-    try:
-        async with client:
-            try:
-                result = await client.call_tool(tool_name, arguments)
-            except AttributeError:
-                result = await client.call(tool_name, arguments)
-    except Exception as e:
-        return {"error": f"调用工具失败: {e}"}
-
-    # 归一化
-    def _normalize(x: Any) -> Any:
-        try:
-            if hasattr(x, "model_dump"):
-                x = x.model_dump()
-        except Exception:
-            pass
-        try:
-            json.dumps(x, ensure_ascii=False)
-            return x
-        except TypeError:
-            return repr(x)
-
-    return _normalize(result)
-
 def _parse_json_obj_loose(s: Any) -> Optional[Dict[str, Any]]:
     """宽松解析：输入可以是 dict / JSON 字符串 / ```json fenced。"""
     if isinstance(s, dict):
@@ -189,35 +97,6 @@ def _parse_json_obj_loose(s: Any) -> Optional[Dict[str, Any]]:
             except Exception:
                 return None
     return None
-
-def _build_tool_description(defn: Dict[str, Any]) -> str:
-    desc = (defn.get("description") or "").strip()
-    schema = defn.get("parameters") or {}
-    return dedent(f"""
-    [MCP] {desc}
-    参数 JSON Schema（供参考）：
-    {json.dumps(schema, ensure_ascii=False, indent=2)}
-    """).strip()
-
-def _make_langchain_tool_for_mcp(tool_name: str, server_url: str, defn: Dict[str, Any]) -> Tool:
-    """把单个 MCP 工具包装成 LangChain Tool（仅做转发，不含业务逻辑）。"""
-    class _Args(BaseModel):
-        input: str = Field(description="参数对象的 JSON 字符串，例如 '{\"q\":\"北京天气\"}'")
-
-    async def _acoroutine(input: str) -> str:
-        args = _parse_json_obj_loose(input) or {}
-        res = await mcp_call_tool(server_url, tool_name, args)
-        try:
-            return json.dumps(res, ensure_ascii=False)
-        except Exception:
-            return str(res)
-
-    return Tool(
-        name=tool_name,
-        description=_build_tool_description(defn),
-        args_schema=_Args,
-        coroutine=_acoroutine,
-    )
 
 # ----------------- 从文件加载问题 -----------------
 def _default_questions_path() -> str:
@@ -252,17 +131,17 @@ async def rollout(model: art.Model, scenario: QueryScenario) -> ProjectTrajector
         metadata={"scenario_id": scenario.id}
     )
 
-    # 发现 MCP 工具并注册为 LangChain 工具（不包含 return_final_answer_tool）
-    registry = await discover_mcp_tools(MCP_CONFIG)
-    lc_tools: List[Tool] = []
-    for defn in registry.tools_schema:
-        name = defn.get("name")
-        if not name:
-            continue
-        server_url = registry.find_server(name)
-        if not server_url:
-            continue
-        lc_tools.append(_make_langchain_tool_for_mcp(name, server_url, defn))
+    # === 使用 MultiServerMCPClient：与生产一致 ===
+    if not os.path.exists(MCP_CONFIG):
+        raise FileNotFoundError(f"MCP配置文件不存在: {MCP_CONFIG}")
+    mcp_servers = load_mcp_servers(MCP_CONFIG)
+    mcp_client = MultiServerMCPClient(mcp_servers)
+
+    # 拿到 LangChain Tool 对象（已带各自的 JSON Schema）
+    mcp_tools = await mcp_client.get_tools()
+
+    # 过滤掉服务端的 return_final_answer_tool（训练阶段使用本地版本）
+    filtered_mcp_tools = [t for t in mcp_tools if getattr(t, "name", "") != "return_final_answer_tool"]
 
     # 本地：return_final_answer_tool（用于训练阶段保存最终 JSON）
     final: Optional[FinalQAResult] = None
@@ -275,20 +154,23 @@ async def rollout(model: art.Model, scenario: QueryScenario) -> ProjectTrajector
             final = FinalQAResult(task=task, sources=sources or [])
             return final.model_dump()
         except ValidationError as e:
-            # 让 Agent 收到错误并自我修复
             return {"error": f"ValidationError: {str(e)}"}
 
+    lc_tools: List[Tool] = []
+    lc_tools.extend(filtered_mcp_tools)  # 直接使用原生工具对象
     lc_tools.append(return_final_answer_tool)
 
     if not lc_tools:
         raise RuntimeError("未从 MCP 发现任何可用工具，请先启动 MCP 服务器并检查配置。")
 
-    # ====== 提示词：查询 Agent 要求 ======
-    tools_json = registry.tools_schema_json() + "\n(另含本地：return_final_answer_tool(task, sources))"
+    # ====== 提示词（同步生产：不再宣称只有一个 input 参数）======
+    tool_names_for_prompt = [getattr(t, "name", str(t)) for t in filtered_mcp_tools] + ["return_final_answer_tool"]
+    tools_json_note = f"已发现 MCP 工具：{tool_names_for_prompt}（按各自 JSON Schema 传参）"
+
     system_prompt = dedent(f"""
     你是一个数据查询与分析助手（Query Agent）。你的任务：
     1) 读取用户提供的单元素 JSON 任务数组（task），其中包含一个 {{type:"qa", data:{{question, text}}}}；
-    2) 必要时调用**已发现的 MCP 工具**进行检索/计算/转换；这些工具在本训练中统一只有一个参数 input（字符串），你需要传入参数对象的 JSON 字符串；
+    2) 必要时调用**已发现的 MCP 工具**进行检索/计算/转换；请按照工具各自的 JSON Schema 正确传参；
     3) 输出 2~6 句，包含可核验事实（数字/日期/机构/地名等），并在句尾添加来源引用 [n]（n 从 1 开始，对应 sources 中 URL 的顺序）；
     4) 不得修改输入 JSON 的结构和字段，只能用最终答案覆盖 data.text；
     5) 完成后**必须调用本地的 `return_final_answer_tool(task, sources)`** 返回最终 JSON：
@@ -296,7 +178,7 @@ async def rollout(model: art.Model, scenario: QueryScenario) -> ProjectTrajector
        - sources：去重后的 URL 列表，顺序与 [n] 对应；
     6) 不要在普通对话中粘贴 JSON，务必通过工具返回最终 JSON。
 
-    下面是已发现的 MCP 工具（JSON Schema）：\n{tools_json}
+    {tools_json_note}
     """)
 
     chat_model = init_chat_model(MODEL_NAME, temperature=0.8)
