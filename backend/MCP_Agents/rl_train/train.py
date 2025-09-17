@@ -386,9 +386,9 @@ async def main():
 
         if USE_RULER:
             print(f"USE_RULER已经开启，使用RULER进行打分")
-            assert RULTER_API_KEY, "RULER_API_KEY not set"
-            assert RULTER_API_BASE, "RULTER_API_BASE not set"
-            extra_litellm_params = {"api_base": RULTER_API_BASE, "api_key": RULTER_API_KEY}
+            assert RULER_API_KEY, "RULER_API_KEY not set"
+            assert RULER_API_BASE, "RULER_API_BASE not set"
+            extra_litellm_params = {"api_base": RULER_API_BASE, "api_key": RULER_API_KEY}
             judged = []
             for g in finished:
                 t_list = list(g)
