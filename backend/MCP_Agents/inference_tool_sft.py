@@ -527,7 +527,7 @@ def run_vllm(args):
 # =========================
 
 def main():
-    ap = argparse.ArgumentParser(description="使用 MCP 工具评估一个支持函数调用的微调模型（Qwen3/Unsloth/LoRA）。")
+    ap = argparse.ArgumentParser(description="使用 MCP 工具评估一个支持函数调用的微调模型（Qwen3/Unsloth/LoRA）。首先启动MCP服务器")
     ap.add_argument("--model", required=True, help="模型路径（完整模型目录、LoRA 适配器目录，或 HuggingFace 仓库名）。")
     ap.add_argument("--base_model", default=None,
                     help="当 --model 是 LoRA 目录时需指定基础模型（如 unsloth/Qwen3-4B-Instruct-2507）")
