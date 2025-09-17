@@ -26,15 +26,11 @@ from langgraph.prebuilt import create_react_agent
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.tools import Tool, tool
 from pydantic import BaseModel, ValidationError
-from reward import format_reward
 import prompt
-
-# ==== MCP ====
-# pip install fastmcp
-from fastmcp import Client as MCPClient
 from langchain_mcp_adapters.client import MultiServerMCPClient
 from mcp_config_load import load_mcp_servers
-
+from transformers import AutoTokenizer
+from my_ruler import ruler_score_group
 dotenv.load_dotenv()
 
 # ---------------- 运行配置 ----------------
@@ -47,9 +43,73 @@ WANDB_PROJECT = os.getenv("WANDB_PROJECT", PROJECT_NAME)
 WANDB_ENTITY = os.getenv("WANDB_ENTITY")  # 可空
 WANDB_RUN_NAME = os.getenv("WANDB_RUN_NAME", f"{NAME}-{time.strftime('%Y%m%d-%H%M%S')}")
 MCP_CONFIG = os.getenv("MCP_CONFIG", "mcp_config.json")
+USE_RULER = os.getenv("USE_RULER", "true").lower() == "true"
+MAX_SEQ_LEN = int(os.getenv("MAX_SEQ_LEN", 4096))
+# RULER 评估模型（可选；需相应 API Key）
+RULER_MODEL = os.getenv("RULER_MODEL", "openai/o4-mini")
+RULTER_API_KEY = os.getenv("RULTER_API_KEY")
+RULTER_API_BASE = os.getenv("RULTER_API_BASE")
 
-print(f"{NAME} - {MODEL_NAME} - {PROJECT_NAME} - {os.getenv('WANDB_BASE_URL', '')}")
+print(f"{NAME} - {MODEL_NAME} - {PROJECT_NAME} - {os.environ['WANDB_BASE_URL']} - 很关键的USE_RULER: {USE_RULER}")
+print(f"训练时传入的最大序列长度: {MAX_SEQ_LEN}")
 print(f"使用MCP的配置文件: {MCP_CONFIG}")
+
+
+tok = AutoTokenizer.from_pretrained(MODEL_NAME, trust_remote_code=True)
+
+# --- 用于裁剪Context，当长度比较长的时候
+def _msg_text(m):
+    """将各种消息对象（dict / LangChain Message / OpenAI Choice / 其它）统一成 'role: content' 文本。"""
+    # 1) dict 消息：用 dict.get
+    if isinstance(m, dict):
+        role = m.get("role", "") or m.get("type", "")
+        content = m.get("content", "") or ""
+        return f"{role or 'msg'}: {content}"
+
+    # 2) OpenAI ChatCompletion Choice（或类似对象）：有 message 且 message.content
+    #    采用鸭子类型判断，避免显式依赖 openai 的类型
+    if hasattr(m, "message") and hasattr(getattr(m, "message"), "content"):
+        role = "assistant"
+        content = getattr(getattr(m, "message"), "content", "") or ""
+        return f"{role}: {content}"
+
+    # 3) 其它（如 LangChain 的 HumanMessage/SystemMessage 等）
+    role = getattr(m, "type", None) or getattr(m, "role", "") or ""
+    content = getattr(m, "content", "") or ""
+    return f"{role or 'msg'}: {content}"
+
+def _tokens_len(text: str) -> int:
+    return len(tok(text, add_special_tokens=False, return_attention_mask=False)["input_ids"])
+
+def clip_traj_inplace(traj, max_tokens=MAX_SEQ_LEN):
+    # 对rollout的轨迹进行裁剪，保留一定长度即可，裁剪单条轨迹
+    if not getattr(traj, "messages_and_choices", None):
+        return
+    msgs = list(traj.messages_and_choices)
+    print(f"裁剪前有信息：{len(msgs)} 条")
+    # 永远保留第一个 system（如有）
+    keep_head = []
+    if msgs and ("system" in _msg_text(msgs[0]).lower()):
+        keep_head.append(msgs.pop(0))
+
+    # 从“最近”往回累加，超出则停止
+    kept_tail = []
+    for m in reversed(msgs):
+        candidate = keep_head + list(reversed(kept_tail + [m]))
+        text = "\n".join(_msg_text(x) for x in candidate)
+        if _tokens_len(text) <= max_tokens:
+            kept_tail.append(m)
+        else:
+            break
+
+    traj.messages_and_choices = keep_head + list(reversed(kept_tail))
+
+
+# 在 finished / judged 生成之后、train 之前
+def clip_group(g, max_tokens=MAX_SEQ_LEN):
+    return art.TrajectoryGroup(
+        (clip_traj_inplace(t, max_tokens) or t) for t in list(g)
+    )
 
 # ----------------- 数据结构 -----------------
 class FinalQAResult(BaseModel):
@@ -165,16 +225,13 @@ async def rollout(model: art.Model, scenario: QueryScenario) -> ProjectTrajector
     tool_names_for_prompt = [getattr(t, "name", str(t)) for t in filtered_mcp_tools] + ["return_final_answer_tool"]
     tools_json_note = f"已发现 MCP 工具：{tool_names_for_prompt}（按各自 JSON Schema 传参）"
 
-    system_prompt = prompt.TRAIN_PROMPT.format(tools_json_note=tools_json_note)
+    system_prompt = prompt.ROLLOUT_SYSTEM_PROMPT.format(tools_json_note=tools_json_note)
 
     chat_model = init_chat_model(MODEL_NAME, temperature=0.8)
     agent = create_react_agent(chat_model, tools=lc_tools)
 
     # ====== 执行 Agent ======
-    user_msg = dedent(f"""
-    请严格按系统要求处理以下 JSON 查询任务（只替换 data.text）：
-    {json.dumps(scenario.input_task, ensure_ascii=False)}
-    """)
+    user_msg = prompt.ROLLOUT_USER_PROMPT.format(question=scenario.prompt)
 
     await agent.ainvoke(
         {"messages": [SystemMessage(content=system_prompt),
@@ -203,8 +260,8 @@ async def rollout(model: art.Model, scenario: QueryScenario) -> ProjectTrajector
 
     return traj
 
-# ----------------- wandb 记录 -----------------
-def _log_batch_to_wandb(*, batch, finished_groups):
+# ---------------- wandb: 日志封装 ----------------
+def _log_batch_to_wandb(*, batch, finished_groups, use_ruler: bool):
     trajectories = []
     for g in finished_groups:
         if hasattr(g, "trajectories"):
@@ -225,6 +282,7 @@ def _log_batch_to_wandb(*, batch, finished_groups):
     wandb.log({
         "train/step": batch.step,
         "train/epoch": batch.epoch,
+        "ruler/enabled": int(bool(use_ruler)),
         "samples/trajectories": table
     }, step=batch.step)
 
@@ -254,6 +312,7 @@ async def main():
             "art_name": NAME,
             "base_model": MODEL_NAME,
             "backend": "local" if USE_LOCAL_BACKEND else "skypilot",
+            "ruler_model": RULER_MODEL,
         },
         settings=wandb.Settings(start_method="thread"),
     )
@@ -282,9 +341,18 @@ async def main():
         "num_epochs": int(os.environ.get("NUM_EPOCHS", "2")),
         "rollouts_per_group": 3,
         "learning_rate": 1e-5,
-        "max_steps": 6,
+        "max_steps": int(os.environ.get("MAX_STEPS", 10)),
     }
     wandb.config.update(training_config)
+
+    # wandb 数据概览
+    try:
+        scen_table = wandb.Table(columns=["id", "topic"])
+        for s in training_scenarios:
+            scen_table.add_data(s.id, s.topic)
+        wandb.log({"data/training_scenarios": scen_table}, step=0)
+    except Exception:
+        pass
 
     # 数据迭代器
     it = iterate_dataset(
@@ -313,13 +381,46 @@ async def main():
             max_exceptions=training_config["rollouts_per_group"] * len(batch.items),
         )
 
-        _log_batch_to_wandb(batch=batch, finished_groups=finished)
+        _log_batch_to_wandb(batch=batch, finished_groups=finished, use_ruler=USE_RULER)
 
-        # 用我们在 rollout 里写入的 reward 做 GRPO
-        await model.train(
-            finished,
-            config=art.TrainConfig(learning_rate=training_config["learning_rate"]),
-        )
+        if USE_RULER:
+            assert RULTER_API_KEY, "RULER_API_KEY not set"
+            assert RULTER_API_BASE, "RULTER_API_BASE not set"
+            extra_litellm_params = {"api_base": RULTER_API_KEY, "api_key": RULTER_API_KEY}
+            judged = []
+            for g in finished:
+                t_list = list(g)
+                completed = [t for t in t_list if getattr(t, "final_outline", None)]
+                try:
+                    # 完成数如果太少，那么就使用原始的reward打分结果
+                    if len(completed) >= 2:
+                        jg = await ruler_score_group(
+                            art.TrajectoryGroup(completed),
+                            RULER_MODEL,
+                            extra_litellm_params=extra_litellm_params,
+                            debug=True
+                        )
+                        judged.append(jg)
+                    else:
+                        # 完成数太少：直接用原始（含你在 rollout 里设的 reward）
+                        judged.append(art.TrajectoryGroup(t_list))
+                except Exception:
+                    # RULER 失效/异常时，退回无裁判训练
+                    judged.append(art.TrajectoryGroup(t_list))
+            judged = [clip_group(g, MAX_SEQ_LEN) for g in judged]
+            await model.train(
+                trajectory_groups=judged,
+                config=art.TrainConfig(learning_rate=training_config["learning_rate"]),
+                _config={"logprob_calculation_chunk_size": 8},
+            )
+            wandb.log({"train/used_judged_groups": 1}, step=batch.step)
+        else:
+            finished = [clip_group(g, MAX_SEQ_LEN) for g in finished]
+            await model.train(
+                trajectory_groups=finished,
+                config=art.TrainConfig(learning_rate=training_config["learning_rate"]),
+            )
+            wandb.log({"train/used_judged_groups": 0}, step=batch.step)
 
         if batch.step >= training_config["max_steps"]:
             break

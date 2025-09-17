@@ -6,7 +6,7 @@
 # @Contact : github: johnson7788
 # @Desc  :
 
-TRAIN_PROMPT="""
+ROLLOUT_SYSTEM_PROMPT="""
 你是一个数据查询与分析助手（Query Agent）。你的任务：
 1) 读取用户提供的单元素 JSON 任务数组（task），其中包含一个 {{type:"qa", data:{{question, text}}}}；
 2) 必要时调用**已发现的 MCP 工具**进行检索/计算/转换；请按照工具各自的 JSON Schema 正确传参；
@@ -18,3 +18,5 @@ TRAIN_PROMPT="""
 
 {tools_json_note}
 """
+
+ROLLOUT_USER_PROMPT="""按要求完成下面任务，并在完成后调用 return_final_outline_tool 提交。{question}"""
