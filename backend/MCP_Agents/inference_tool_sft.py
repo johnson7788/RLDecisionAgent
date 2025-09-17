@@ -19,7 +19,7 @@ python inference_tool_sft.py \
   --model ./lora_model \
   --base_model unsloth/Qwen3-4B-Instruct-2507 \
   --engine unsloth \
-  --query "上海今天的天气如何？" \
+  --query "今天的日期是？" \
   --chat_template qwen-3 \
   --load_in_4bit \
   --mcp_config a2a_agent/mcp_config.json
