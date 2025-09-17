@@ -4,6 +4,9 @@
 1. 环境部署： [docs](..%2Fdocs)[prepare.md](../prepare.md)
 2.开始训练,修改.env文件： [train.py](train.py)
     - 训练时和测试时使用的prompt.py
+```
+python train.py
+```
 3.测试模型训练效果: [model_test.py](model_test.py)
 
 ## 文件
