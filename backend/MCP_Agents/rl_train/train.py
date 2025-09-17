@@ -413,7 +413,7 @@ async def main():
             await model.train(
                 trajectory_groups=judged,
                 config=art.TrainConfig(learning_rate=training_config["learning_rate"]),
-                _config={"logprob_calculation_chunk_size": 256},
+                _config={"logprob_calculation_chunk_size": 512},
             )
             wandb.log({"train/used_judged_groups": 1}, step=batch.step)
         else:
