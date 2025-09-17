@@ -7,7 +7,7 @@
 #          工具：检索/计算等来自 MCP 服务器；return_final_answer_tool 使用本地工具以便训练阶段读取 final_answer。
 
 import logging
-logging.basicConfig(level=logging.info)
+logging.basicConfig(level=logging.INFO)
 import os
 import json
 import uuid
