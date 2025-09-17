@@ -12,3 +12,4 @@ langchain-mcp-adapters
 rapidfuzz
 elasticsearch==7.12.1
 mysql-connector-python
+fastmcp

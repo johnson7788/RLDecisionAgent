@@ -153,8 +153,6 @@ async def main() -> None:
         with open(QUESTION_FILE, 'r', encoding='utf-8') as f:
             questions = [line.strip() for line in f if line.strip()]
         
-        questions = questions[:2]
-        
         with open(OUTLINE_DATA, 'w', encoding='utf-8') as f:
             for question in questions:
                 logger.info(f"Processing question: {question}")
