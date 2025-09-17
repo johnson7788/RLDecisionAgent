@@ -7,7 +7,7 @@
 #          工具：检索/计算等来自 MCP 服务器；return_final_answer_tool 使用本地工具以便训练阶段读取 final_answer。
 
 import logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.info)
 import os
 import json
 import uuid
@@ -50,7 +50,7 @@ RULER_MODEL = os.getenv("RULER_MODEL", "openai/o4-mini")
 RULTER_API_KEY = os.getenv("RULTER_API_KEY")
 RULTER_API_BASE = os.getenv("RULTER_API_BASE")
 
-print(f"{NAME} - {MODEL_NAME} - {PROJECT_NAME} - {os.environ['WANDB_BASE_URL']} - 很关键的USE_RULER: {USE_RULER}")
+print(f"项目名称: {NAME} - {MODEL_NAME} - {PROJECT_NAME} - WANDB: {os.environ['WANDB_BASE_URL']} - 很关键的USE_RULER: {USE_RULER}")
 print(f"训练时传入的最大序列长度: {MAX_SEQ_LEN}")
 print(f"使用MCP的配置文件: {MCP_CONFIG}")
 
