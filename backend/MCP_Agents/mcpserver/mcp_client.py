@@ -20,6 +20,18 @@ def clean_none(obj):
         return ""  # 保留 Python None，交给 json.dumps 转 ""
     return obj
 
+def remove_title_fields(obj: Any) -> Any:
+    """递归删除 dict 或 list 中的 title 字段"""
+    if isinstance(obj, dict):
+        # 先删除自身的 title
+        obj = {k: v for k, v in obj.items() if k != "title"}
+        # 递归处理子元素
+        return {k: remove_title_fields(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [remove_title_fields(item) for item in obj]
+    else:
+        return obj
+
 def tool_definition_to_dict(tool) -> Dict[str, Any]:
     """单个工具转成需要的格式."""
     meta = getattr(tool, "meta", None) or {}
@@ -28,7 +40,9 @@ def tool_definition_to_dict(tool) -> Dict[str, Any]:
     if "title" in parameters:
         # 不需要title字段
         parameters.pop("title")
-    parameters = clean_none(parameters)
+    if parameters:
+        parameters = remove_title_fields(parameters)  # 递归清理
+        parameters = clean_none(parameters)
     tool_dict = {
         "name": tool.name,
         "description": getattr(tool, "description", None),
