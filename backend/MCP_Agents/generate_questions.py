@@ -12,8 +12,9 @@ Quickstart
 1) Install
    pip install openai-agents pydantic
 
-3) Run
-   python generate_questions.py -n 20 -o questions.txt --lang zh
+2) Run
+   读取MCP的server端，根据可以使用的工具，调用大模型，生成一些问题，这些问题可以使用这些工具解决
+   python generate_questions.py -n 20 -f mcpserver/energy_services.py -o questions.txt --lang zh
 """
 from __future__ import annotations
 
@@ -66,7 +67,6 @@ def build_agent(language: str) -> Agent:
         instructions=instructions.strip(),
         # Use structured outputs for reliability
         output_type=TopicsOutput,
-        # You may set `model` or `model_settings` here if you want
         model="gpt-4.1",  # example: faster model if available
     )
 
