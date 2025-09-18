@@ -134,6 +134,11 @@ def get_current_date() -> str:
     return datetime.now().strftime("%Y-%m-%d")
 
 @mcp.tool()
+def get_current_time() -> str:
+    """返回当前时间，格式为HH:MM:SS。"""
+    return datetime.now().strftime("%H:%M:%S")
+
+@mcp.tool()
 def set_seed(seed: int) -> int:
     """
     设置全局 SEED，并重建最近30天的模拟数据。

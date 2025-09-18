@@ -4,102 +4,92 @@
 # @File  : model_test.py
 # @Author: johnson
 # @Contact : github: johnson7788
-# @Desc  : 基于 LangGraph + ART 的“按 topic 搜索并生成 Markdown 大纲”测试脚本
+# @Desc  : 基于 LangGraph + ART 的 QueryAgent 测试脚本（工具从 MCP 服务器发现并调用）
 
 import os
 import uuid
 import asyncio
-from typing import List, Optional
+from typing import Optional, List
+
 import dotenv
 import art
 import prompt
 from art.langgraph import init_chat_model, wrap_rollout
 from langgraph.prebuilt import create_react_agent
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_core.tools import tool
-from pydantic import BaseModel
-from zai import ZhipuAiClient
+
+# === MCP: 与训练/推理保持一致 ===
+from langchain_mcp_adapters.client import MultiServerMCPClient
+from mcp_config_load import load_mcp_servers
 
 dotenv.load_dotenv()
 
 # ---------- 与训练保持一致 ----------
-NAME = os.getenv("ART_NAME", "web-search-outline")
+NAME = os.getenv("ART_NAME", "query-agent")
 MODEL_NAME = os.getenv("ART_MODEL", "Qwen/Qwen2.5-0.5B-Instruct")
-PROJECT_NAME = os.getenv("ART_PROJECT", "web-search-outline-training")
+PROJECT_NAME = os.getenv("ART_PROJECT", "content-training")
 USE_LOCAL_BACKEND = os.getenv("ART_BACKEND", "local").lower() == "local"
-WebSearchClient = ZhipuAiClient(api_key=os.environ["ZHIPU_API_KEY"])
+MCP_CONFIG = os.getenv("MCP_CONFIG", "mcp_config.json")
 
-# ---------- 业务工具 ----------
-class WebSearchResult(BaseModel):
-    url: str
-    title: str
-    snippet: str
-
-def search_web(keyword: str) -> List[WebSearchResult]:
+async def run_agent_test(model: art.Model, question: str):
     """
-    真实的网络搜索函数
+    基于训练好的同名模型，使用 MCP 工具对问题进行 ReAct 推理并返回答案。
     """
-    response = WebSearchClient.web_search.web_search(
-        search_engine="search_std",
-        search_query=keyword,
-        count=4,
-        search_recency_filter="noLimit",
-        content_size="high"
-    )
-    return [
-        WebSearchResult(
-            url=item["url"],
-            title=item["title"],
-            snippet=item["content"]
-        ) for item in response["search_result"]
-    ]
+    # === 发现 MCP 工具 ===
+    if not os.path.exists(MCP_CONFIG):
+        raise FileNotFoundError(f"MCP 配置文件不存在: {MCP_CONFIG}")
+    mcp_servers = load_mcp_servers(MCP_CONFIG)
+    mcp_client = MultiServerMCPClient(mcp_servers)
+    lc_tools = await mcp_client.get_tools()
 
+    if not lc_tools:
+        raise RuntimeError("未从 MCP 发现任何可用工具，请先启动 MCP 服务器并检查配置。")
 
-async def run_agent_test(model: art.Model, topic: str):
-    """
-    基于训练好的同名模型，按 topic 进行搜索并生成大纲
-    """
-    final_outline: Optional[str] = None
-
-    @tool
-    def web_search_tool(query: str) -> List[dict]:
-        """根据查询词进行网络搜索，返回结果列表。"""
-        results = search_web(query)
-        return [r.model_dump() for r in results]
-
-    @tool
-    def return_final_outline_tool(outline: str, source_urls: List[str]) -> dict:
-        """提交最终大纲以及引用来源 URL 列表。"""
-        nonlocal final_outline
-        final_outline = outline
-        # 返回值仅用于可观测性
-        return {"outline": outline, "source_urls": source_urls}
-
-    tools = [web_search_tool, return_final_outline_tool]
+    # 提示词：注入已发现的工具名（与训练一致）
+    tool_names_for_prompt: List[str] = [getattr(t, "name", str(t)) for t in lc_tools]
+    tools_json_note = f"已发现 MCP 工具：{tool_names_for_prompt}（按各自 JSON Schema 传参）"
+    system_prompt = prompt.ROLLOUT_SYSTEM_PROMPT.format(tools_json_note=tools_json_note)
+    user_msg = prompt.ROLLOUT_USER_PROMPT.format(question=question)
 
     # 用 ART 的 init_chat_model 获取可用的聊天模型（后端会加载最近训练好的 LoRA）
     chat_model = init_chat_model(model, temperature=0.3)
-    agent = create_react_agent(chat_model, tools)
+    agent = create_react_agent(chat_model, tools=lc_tools)
 
     res = await agent.ainvoke(
         {
             "messages": [
-                SystemMessage(content=prompt.ROLLOUT_SYSTEM_PROMPT),
-                HumanMessage(content=prompt.ROLLOUT_USER_PROMPT.format(topic=topic))
+                SystemMessage(content=system_prompt),
+                HumanMessage(content=user_msg),
             ]
         },
         config={
             "configurable": {"thread_id": str(uuid.uuid4())},
-            "recursion_limit": 12
+            "recursion_limit": 16,
         },
     )
+
     print("====== 推理返回（含工具轨迹） ======")
     print(res)
-    print("====== 最终大纲(如已提交) ======")
-    if final_outline:
-        print(final_outline)
-    print("[TEST] agent finished. See backend logs / tracing for details.")
+    print("====== 最终答案（assistant 消息） ======")
+    try:
+        # langgraph 返回字典时常见结构：{"messages": [...]} 或含 "output_text"
+        msgs = res.get("messages", []) if isinstance(res, dict) else []
+        final_text: Optional[str] = None
+        if msgs:
+            # 最后一条 assistant
+            for m in reversed(msgs):
+                if getattr(m, "type", "") == "ai" or getattr(m, "role", "") == "assistant":
+                    final_text = getattr(m, "content", None)
+                    if final_text:
+                        break
+        if not final_text and isinstance(res, dict):
+            final_text = res.get("output_text") or res.get("final_answer")
+        if final_text:
+            print(final_text)
+    except Exception:
+        pass
 
+    print("[TEST] agent finished. See backend logs / tracing for details.")
 
 async def main():
     # 连接与注册后端
@@ -116,10 +106,16 @@ async def main():
     model = art.TrainableModel(name=NAME, project=PROJECT_NAME, base_model=MODEL_NAME)
     await model.register(backend)
 
-    topic = os.getenv("OUTLINE_TOPIC") or "AIGC 在医疗影像的应用趋势"
+    # 与 QueryAgent 语义一致：从 env 读取问题
+    question = (
+        os.getenv("QUESTION")
+        or os.getenv("TEST_QUESTION")
+        or "现在的日期与时间分别是多少？"
+    )
+
     # 用 wrap_rollout 包装，确保 ART 上下文正确设置
     wrapped_test_func = wrap_rollout(model, run_agent_test)
-    await wrapped_test_func(model, topic)
+    await wrapped_test_func(model, question)
 
 if __name__ == "__main__":
     asyncio.run(main())
