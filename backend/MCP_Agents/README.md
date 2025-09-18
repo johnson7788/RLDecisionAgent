@@ -65,6 +65,28 @@ python inference_tool_sft.py \
 8）强化学习继续训练模型
 [README.md](rl_train%2FREADME.md)
 
+9) 合并强化学习训练后的lora模型
+```
+python mmerge_lora.py 
+```
+
+10)用于线上推理部署
+```
+# 进入合并后的模型目录的上一级，然后使用vllm运行该模型
+python -m vllm.entrypoints.openai.api_server --host 0.0.0.0 --model qwen3-4b-merged
+# 测试模型
+curl http://localhost:8000/v1/chat/completions \
+  -H "Authorization: Bearer token-abc123" -H "Content-Type: application/json" \
+  -d '{
+    "model":"qwen3-4b-merged",
+    "messages":[{"role":"user","content":"你好！"}]
+  }'
+
+curl http://localhost:8000/v1/completions     -H "Content-Type: application/json"     -d '{"model": "qwen3-4b-merged","prompt": "你好", "max_tokens": 100,"temperature": 0}'
+输出:
+{"id":"chatcmpl-b8b7c3c2d82c4241bebe1c7bec94c9b2","object":"chat.completion","created":1756992891,"model":"qwen3-4b-merged","choices":[{"index":0,"message":{"role":"assistant","reasoning_content":null,"content":"你好！很高兴为你服务。有什么我可以帮助你的吗？","tool_calls":[]},"logprobs":null,"finish_reason":"stop","stop_reason":null}],"usage":{"prompt_tokens":31,"total_tokens":44,"completion_tokens":13,"prompt_tokens_details":null},"prompt_logprobs":null}
+```
+
 # 单条SFT的训练数据，带工具
 {
     "conversations": [
