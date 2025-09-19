@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-train_qwen_grpo.py (中文注释版)
+train_qwen_grpo.py
 --------------------------------
 用于 Qwen/Unsloth 模型的 GRPO 强化学习训练脚本。
 
@@ -11,6 +11,7 @@ train_qwen_grpo.py (中文注释版)
 - 奖励函数可选择内置（exact/substring/regex/nonempty）或通过 --reward_module 指定。
 - 训练入口为 main()，可通过 argparse 配置参数。
 
+示例：
 python train_qwen_grpo.py \
   --dataset your_dataset_on_hub_or_local \
   --model_name unsloth/Qwen2.5-VL-7B-Instruct \
@@ -34,10 +35,10 @@ import torch
 from datasets import load_dataset, DatasetDict, Dataset
 from transformers import AutoTokenizer, set_seed
 from peft import LoraConfig
-from trl import GRPOTrainer, GRPOConfig  # Make sure trl version supports GRPO
+from trl import GRPOTrainer, GRPOConfig  # 确保 trl 版本支持 GRPO
 from unsloth import FastLanguageModel, FastVisionModel
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
+logging.basicConfig(level=logging.DEBUG, format="%(asctime)s | %(levelname)s | %(name)s | %(message)s")
 log = logging.getLogger("训练脚本")
 
 # -----------------------------
@@ -45,23 +46,53 @@ log = logging.getLogger("训练脚本")
 # -----------------------------
 
 def str2bool(v: str) -> bool:
+    """将字符串转换为布尔值。
+
+    支持的真值：yes/true/t/y/1（大小写不敏感）
+    支持的假值：no/false/f/n/0（大小写不敏感）
+    参数:
+        v: 待转换的字符串或布尔值
+    返回:
+        bool: 转换后的布尔结果
+    异常:
+        ValueError: 当传入的字符串无法识别为布尔值时抛出
+    """
+    log.debug("str2bool 输入值 v=%r (type=%s)", v, type(v).__name__)
     if isinstance(v, bool):
+        log.debug("str2bool 直接返回布尔值: %s", v)
         return v
-    v = v.lower()
-    if v in ("yes", "true", "t", "y", "1"):
+    v_lower = v.lower()
+    if v_lower in ("yes", "true", "t", "y", "1"):
+        log.debug("str2bool 解析为 True")
         return True
-    elif v in ("no", "false", "f", "n", "0"):
+    elif v_lower in ("no", "false", "f", "n", "0"):
+        log.debug("str2bool 解析为 False")
         return False
     else:
+        log.error("str2bool 遇到非法布尔字符串: %r", v)
         raise ValueError(f"Invalid boolean value: {v}")
 
 def load_reward_module(path: str):
+    """从给定路径加载自定义奖励函数模块。
+
+    要求模块中必须包含函数：
+        compute_reward(prompt, response, reference) -> float
+    参数:
+        path: 模块文件路径（.py）
+    返回:
+        callable: compute_reward 函数指针
+    异常:
+        ValueError: 当模块未提供 compute_reward 时抛出
+    """
+    log.info("加载自定义奖励模块: %s", path)
     spec = importlib.util.spec_from_file_location("reward_module", path)
     mod = importlib.util.module_from_spec(spec)
     assert spec.loader is not None
     spec.loader.exec_module(mod)
     if not hasattr(mod, "compute_reward"):
+        log.error("自定义奖励模块缺少 compute_reward 函数: %s", path)
         raise ValueError("Custom reward module must expose a function `compute_reward(prompt, response, reference) -> float`.")
+    log.info("自定义奖励模块加载完成。")
     return mod.compute_reward
 
 # -----------------------------
@@ -69,34 +100,42 @@ def load_reward_module(path: str):
 # -----------------------------
 
 def reward_exact(prompt: str, response: str, reference: Optional[str]) -> float:
-    """1.0 if normalized response==reference else 0.0."""
+    """精确匹配奖励：标准化后，若 response 与 reference 完全相同给 1.0，否则 0.0。"""
+    log.debug("reward_exact prompt(省略), response=%r, reference=%r", response, reference)
     if reference is None:
         return 0.0
     norm = lambda s: re.sub(r"\s+", " ", (s or "")).strip().casefold()
-    return 1.0 if norm(response) == norm(reference) else 0.0
+    score = 1.0 if norm(response) == norm(reference) else 0.0
+    log.debug("reward_exact 得分: %s", score)
+    return score
 
 def reward_substring(prompt: str, response: str, reference: Optional[str]) -> float:
-    """1.0 if reference substring appears in response, else 0."""
+    """子串匹配奖励：若 reference 标准化后作为子串出现在 response 中则给 1.0，否则 0.0。"""
+    log.debug("reward_substring response=%r, reference=%r", response, reference)
     if reference is None:
         return 0.0
-    return 1.0 if (reference or "").strip().casefold() in (response or "").casefold() else 0.0
+    score = 1.0 if (reference or "").strip().casefold() in (response or "").casefold() else 0.0
+    log.debug("reward_substring 得分: %s", score)
+    return score
 
 def reward_regex(prompt: str, response: str, reference: Optional[str]) -> float:
-    """
-    Treat `reference` as a regular expression and grant 1.0 if it matches the response, else 0.0.
-    Use with care; escape your patterns if you mean literal matches.
-    """
+    """正则匹配奖励：将 reference 作为正则表达式，若可在 response 中匹配则给 1.0，否则 0.0。"""
+    log.debug("reward_regex response=%r, reference=%r", response, reference)
     if reference is None:
         return 0.0
     try:
-        return 1.0 if re.search(reference, response or "", flags=re.IGNORECASE) else 0.0
-    except re.error:
-        log.warning("参考答案中包含无效的正则表达式，回退到精确匹配。")
+        score = 1.0 if re.search(reference, response or "", flags=re.IGNORECASE) else 0.0
+        log.debug("reward_regex 得分: %s", score)
+        return score
+    except re.error as e:
+        log.warning("参考答案包含无效正则: %r，错误: %s；回退到精确匹配。", reference, e)
         return reward_exact(prompt, response, reference)
 
 def reward_nonempty(prompt: str, response: str, reference: Optional[str]) -> float:
-    """Give 1.0 if response is non-empty; useful as a sanity check baseline."""
-    return 1.0 if (response or "").strip() else 0.0
+    """非空奖励：若 response 非空（去除空白后）则给 1.0，否则 0.0。"""
+    score = 1.0 if (response or "").strip() else 0.0
+    log.debug("reward_nonempty response 非空=%s，得分=%s", bool((response or "").strip()), score)
+    return score
 
 REWARD_MAP = {
     "exact": reward_exact,
@@ -110,14 +149,19 @@ REWARD_MAP = {
 # -----------------------------
 
 def _as_chat_prompt(tokenizer, user_text: str) -> str:
-    """Wrap a single user message using the tokenizer's chat template."""
+    """使用 tokenizer 的 Chat 模板将用户消息包装为对话提示，并附加生成提示。"""
+    log.debug("_as_chat_prompt user_text=%r", user_text[:100] + ("..." if len(user_text) > 100 else ""))
     messages = [
         {"role": "user", "content": user_text},
-        {"role": "assistant", "content": ""},  # add generation prompt
+        {"role": "assistant", "content": ""},  # 追加生成提示
     ]
-    return tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+    prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+    log.debug("_as_chat_prompt 生成的 prompt 长度=%d", len(prompt))
+    return prompt
 
 def _make_prompt(tokenizer, example: Dict[str, Any], use_chat_template: bool, user_field: str) -> str:
+    """根据是否启用 Chat 模板，从样本中提取 user 字段并构造 prompt。"""
+    log.debug("_make_prompt use_chat_template=%s, user_field=%s", use_chat_template, user_field)
     if use_chat_template:
         return _as_chat_prompt(tokenizer, example[user_field])
     else:
@@ -135,19 +179,30 @@ def load_and_prepare_dataset(
     max_train_samples: Optional[int] = None,
     max_eval_samples: Optional[int] = None,
 ) -> Tuple[Dataset, Optional[Dataset]]:
-    """
-    Load a dataset from HF hub or local files. Expects fields:
-      - user_field (default: "prompt") : str
-      - answer_field (default: "answer"): str (reference answer) -- optional but needed for most rewards
-      - image_field (default: "image")  : path or PIL.Image (optional)
-    Returns (train_dataset, eval_dataset)
-    """
-    if os.path.exists(dataset_name_or_path) and os.path.isdir(dataset_name_or_path):
-        data_files = None
-    else:
-        data_files = None
+    """加载并预处理数据集（HF Hub 或本地），并统一成训练需要的列。
 
-    ds = load_dataset(dataset_name_or_path, data_files=data_files)
+    期望输入列：
+      - user_field (默认 "prompt"): 用户输入文本
+      - answer_field (默认 "answer"): 参考答案（大多奖励需要）
+      - image_field  (默认 "image"): 图像路径或 PIL.Image（可选）
+    参数:
+      dataset_name_or_path: 数据集名称或本地路径
+      tokenizer: 分词器/模板器
+      split_train: 训练集切分名
+      split_eval: 验证集切分名（可选）
+      user_field/answer_field/image_field: 列名映射
+      use_chat_template: 是否使用 Chat 模板包装
+      max_train_samples/max_eval_samples: 限制样本数（便于快速调试）
+    返回:
+      (train_dataset, eval_dataset 或 None)
+    """
+    log.info("开始加载数据集: %s (train_split=%s, eval_split=%s)", dataset_name_or_path, split_train, split_eval)
+    try:
+        ds = load_dataset(dataset_name_or_path, data_files=None)
+    except Exception as e:
+        log.exception("数据集加载失败: %s", e)
+        raise
+
     if isinstance(ds, DatasetDict):
         train_ds = ds[split_train]
         eval_ds = ds[split_eval] if (split_eval and split_eval in ds) else None
@@ -164,13 +219,22 @@ def load_and_prepare_dataset(
             out["image"] = example[image_field]
         return out
 
-    train_ds = train_ds.map(fmt, remove_columns=[c for c in train_ds.column_names if c not in {user_field, answer_field, image_field}])
+    keep_cols_train = {user_field, answer_field, image_field}
+    train_ds = train_ds.map(fmt, remove_columns=[c for c in train_ds.column_names if c not in keep_cols_train])
     if max_train_samples:
+        original_len = len(train_ds)
         train_ds = train_ds.select(range(min(max_train_samples, len(train_ds))))
+        log.info("训练集裁剪: %d -> %d", original_len, len(train_ds))
+
     if eval_ds is not None:
-        eval_ds = eval_ds.map(fmt, remove_columns=[c for c in eval_ds.column_names if c not in {user_field, answer_field, image_field}])
+        keep_cols_eval = {user_field, answer_field, image_field}
+        eval_ds = eval_ds.map(fmt, remove_columns=[c for c in eval_ds.column_names if c not in keep_cols_eval])
         if max_eval_samples:
+            original_len = len(eval_ds)
             eval_ds = eval_ds.select(range(min(max_eval_samples, len(eval_ds))))
+            log.info("验证集裁剪: %d -> %d", original_len, len(eval_ds))
+
+    log.info("数据集加载完成：train=%d, eval=%s", len(train_ds), len(eval_ds) if eval_ds is not None else "None")
     return train_ds, eval_ds
 
 # -----------------------------
@@ -178,18 +242,37 @@ def load_and_prepare_dataset(
 # -----------------------------
 
 def build_compute_rewards_fn(reward_type: str, reward_module_path: Optional[str] = None):
+    """构建用于 GRPOTrainer 的奖励计算封装函数。
+
+    优先使用自定义模块（若提供路径），否则使用内置奖励类型。
+    参数:
+        reward_type: 内置奖励类型名称（exact/substring/regex/nonempty）
+        reward_module_path: 自定义奖励模块路径（可选）
+    返回:
+        callable: (samples, responses) -> List[float] 的函数
+    """
+    log.info("构建奖励函数: reward_type=%s, reward_module_path=%s", reward_type, reward_module_path)
     if reward_module_path:
         compute_reward = load_reward_module(reward_module_path)
     else:
         if reward_type not in REWARD_MAP:
+            log.error("未知的 reward_type: %s，可选项: %s", reward_type, list(REWARD_MAP))
             raise ValueError(f"Unknown reward_type: {reward_type}. Choose from {list(REWARD_MAP)} or provide --reward_module.")
         compute_reward = REWARD_MAP[reward_type]
 
     def _fn(samples: List[Dict[str, Any]], responses: List[str]) -> List[float]:
+        """对一批样本与模型输出计算奖励列表。"""
         rewards: List[float] = []
         for ex, resp in zip(samples, responses):
-            rewards.append(float(compute_reward(ex.get("prompt", ""), resp, ex.get("reference"))))
+            r = float(compute_reward(ex.get("prompt", ""), resp, ex.get("reference")))
+            rewards.append(r)
+        log.debug("批次奖励统计: n=%d, 均值=%.4f, 最小=%.4f, 最大=%.4f",
+                  len(rewards), (sum(rewards) / max(len(rewards), 1)) if rewards else 0.0,
+                  min(rewards) if rewards else 0.0,
+                  max(rewards) if rewards else 0.0)
         return rewards
+
+    log.info("奖励函数构建完成。")
     return _fn
 
 # -----------------------------
@@ -210,6 +293,20 @@ def load_unsloth_model(
     finetune_mlp_modules: bool,
     gpu_memory_utilization: float = 0.8,
 ):
+    """加载 Unsloth 快速模型，并根据配置注入 LoRA/PEFT。
+
+    参数详见函数签名。
+    返回:
+        (model, tokenizer)
+    """
+    log.info(
+        "加载模型: name=%s, vision=%s, 4bit=%s, max_seq_length=%d, LoRA(r=%d, alpha=%d, dropout=%.2f), "
+        "tune(viz=%s, lang=%s, attn=%s, mlp=%s), gpu_mem_util=%.2f",
+        model_name, vision, load_in_4bit, max_seq_length, lora_r, lora_alpha, lora_dropout,
+        finetune_vision_layers, finetune_language_layers, finetune_attention_modules, finetune_mlp_modules,
+        gpu_memory_utilization
+    )
+
     if vision:
         model, tokenizer = FastVisionModel.from_pretrained(
             model_name=model_name,
@@ -228,7 +325,7 @@ def load_unsloth_model(
             lora_alpha=lora_alpha,
             lora_dropout=lora_dropout,
             bias="none",
-            target_modules=None, # Let Unsloth pick
+            target_modules=None, # 交由 Unsloth 自动挑选
             use_rslora=False,
             loftq_config=None,
         )
@@ -250,17 +347,28 @@ def load_unsloth_model(
             use_rslora=False,
             loftq_config=None,
         )
+    log.info("模型与分词器加载完成。")
     return model, tokenizer
 
 # -----------------------------
 # 训练逻辑
 # -----------------------------
 
-def train(
-    args,
-):
+def train(args):
+    """主训练流程：加载模型与数据、构建奖励、启动 GRPO 训练并保存结果。"""
+    log.info("设置随机种子: %d", args.seed)
     set_seed(args.seed)
     vision = bool(args.vision)
+
+    # 打印关键训练参数摘要
+    log.info(
+        "训练参数摘要: model=%s, dataset=%s, vision=%s, output_dir=%s, lr=%g, batch_per_device=%d, "
+        "max_prompt_len=%d, max_completion_len=%d, episodes=%d, bf16=%s, fp16=%s, "
+        "reward_type=%s, reward_module=%s",
+        args.model_name, args.dataset, vision, args.output_dir, args.learning_rate, args.per_device_train_batch_size,
+        args.max_prompt_length, args.max_completion_length, args.num_episodes, args.bf16, args.fp16,
+        args.reward_type, args.reward_module
+    )
 
     # Load model + tokenizer
     model, tokenizer = load_unsloth_model(
@@ -291,11 +399,12 @@ def train(
         max_train_samples=args.max_train_samples,
         max_eval_samples=args.max_eval_samples,
     )
+    log.info("数据集就绪：训练样本=%d, 验证样本=%s", len(train_ds), len(eval_ds) if eval_ds is not None else "None")
 
     # Rewards
     compute_rewards = build_compute_rewards_fn(args.reward_type, args.reward_module)
 
-    # GRPO config (DR-GRPO options exposed as args where useful)
+    # GRPO config (DR-GRPO 选项)
     grpo_config = GRPOConfig(
         output_dir=args.output_dir,
         learning_rate=args.learning_rate,
@@ -315,14 +424,19 @@ def train(
         gradient_checkpointing=True,
         max_grad_norm=args.max_grad_norm,
         report_to=None if not args.report_to else args.report_to,
-        loss_type=args.loss_type,  # e.g., "dr_grpo"
+        loss_type=args.loss_type,  # 例如 "dr_grpo"
         importance_sampling_level=args.importance_sampling_level,  # "sequence" | "token"
         mask_truncated_completions=args.mask_truncated_completions,
+    )
+    log.info(
+        "GRPO 配置: logging_steps=%d, save_steps=%d, grad_accu=%d, max_grad_norm=%.3f, scheduler=%s, optim=%s",
+        args.logging_steps, args.save_steps, args.gradient_accumulation_steps, args.max_grad_norm,
+        args.lr_scheduler_type, args.optim
     )
 
     trainer = GRPOTrainer(
         model=model,
-        reward_funcs=[compute_rewards],  # you can add more for multi-reward
+        reward_funcs=[compute_rewards],  # 可扩展多奖励
         tokenizer=tokenizer,
         args=grpo_config,
         train_dataset=train_ds,
@@ -331,19 +445,23 @@ def train(
 
     log.info("开始训练...")
     trainer.train()
-    log.info("训练完成，正在保存模型...")
+    log.info("训练完成，正在保存模型到: %s", args.output_dir)
     trainer.save_model(args.output_dir)
     tokenizer.save_pretrained(args.output_dir)
+    log.info("模型与分词器保存完成。")
 
     if args.push_to_hub:
-        log.info("正在推送模型到 HuggingFace Hub...")
-        trainer.push_to_hub(args.hub_repo_id or os.path.basename(args.output_dir))
+        repo_id = args.hub_repo_id or os.path.basename(args.output_dir)
+        log.info("推送模型到 HuggingFace Hub: repo_id=%s", repo_id)
+        trainer.push_to_hub(repo_id)
+        log.info("推送完成。")
 
 # -----------------------------
 # 命令行接口
 # -----------------------------
 
 def build_arg_parser():
+    """构建命令行参数解析器，提供数据、模型、训练、奖励与杂项配置项。"""
     p = argparse.ArgumentParser(description="用于 Qwen/Unsloth 模型的 GRPO 强化学习训练。支持文本与多模态。")
 
     # 数据相关
@@ -409,8 +527,10 @@ def build_arg_parser():
     return p
 
 def main():
+    """命令行入口：解析参数、创建输出目录并启动训练。"""
     parser = build_arg_parser()
     args = parser.parse_args()
+    log.info("命令行参数解析完成。输出目录: %s", args.output_dir)
     os.makedirs(args.output_dir, exist_ok=True)
     train(args)
 
