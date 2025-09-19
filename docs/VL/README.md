@@ -121,6 +121,7 @@ https://huggingface.co/unsloth/models?search=qwen2.5vl
 
 # GRPO训练 VL
 https://docs.unsloth.ai/new/vision-reinforcement-learning-vlm-rl
+https://colab.research.google.com/github/unslothai/notebooks/blob/main/nb/Qwen2_5_7B_VL_GRPO.ipynb
 
 
 # GRPO（Group Relative Policy Optimization）和 GSPO（Group Sequence Policy Optimization）
