@@ -12,7 +12,7 @@ train_qwen_vl_grpo.py — 仅视觉 GRPO 训练脚本
 - 使用 TRL 的 GRPOTrainer (>=0.22.x 语义) 和 Unsloth FastVisionModel。
 
 使用示例:
-python train_qwen_vl_grpo.py \
+python train_qwen_grpo.py \
   --dataset AI4Math/MathVista \
   --train_split testmini \
   --model_name unsloth/Qwen2.5-VL-3B-Instruct \
