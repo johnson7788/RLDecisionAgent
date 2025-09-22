@@ -185,8 +185,8 @@ def train(args):
         model_name=args.model_name,
         max_seq_length=args.max_seq_length,
         load_in_4bit=args.load_in_4bit,
-        fast_inference=True,
-        gpu_memory_utilization=args.gpu_memory_utilization,
+        # fast_inference=True,
+        # gpu_memory_utilization=args.gpu_memory_utilization,
     )
 
     # 注入 LoRA
