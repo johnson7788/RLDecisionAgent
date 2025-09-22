@@ -33,7 +33,7 @@ from transformers import set_seed
 from trl import GRPOConfig, GRPOTrainer
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(name)s | %(message)s")
-log = logging.getLogger("vl_grpo")
+logger = logging.getLogger("vl_grpo")
 
 # ====== 特殊标记：用于奖励函数和提示词格式化 ======
 REASONING_START = "<REASONING>"
@@ -119,7 +119,7 @@ def load_and_prepare_dataset(
     max_eval_samples: Optional[int] = None,
 ) -> Tuple[Dataset, Optional[Dataset]]:
     """加载数据集，过滤非数字答案，处理图像，构造提示，并返回训练/验证集。"""
-    log.info("加载数据集: %s", dataset_name_or_path)
+    logger.info("加载数据集: %s", dataset_name_or_path)
     ds = load_dataset(dataset_name_or_path)
 
     if isinstance(ds, DatasetDict):
@@ -170,7 +170,7 @@ def load_and_prepare_dataset(
         if max_eval_samples:
             eval_ds = eval_ds.select(range(min(max_eval_samples, len(eval_ds))))
 
-    log.info("数据准备完成: 训练集=%d, 验证集=%s", len(train_ds), len(eval_ds) if eval_ds is not None else "None")
+    logger.info("数据准备完成: 训练集=%d, 验证集=%s", len(train_ds), len(eval_ds) if eval_ds is not None else "None")
     return train_ds, eval_ds
 
 # ====== 训练主逻辑 ======
@@ -180,7 +180,7 @@ def train(args):
     set_seed(args.seed)
 
     # 加载模型
-    log.info("加载模型: %s", args.model_name)
+    logger.info("加载模型: %s", args.model_name)
     model, tokenizer = FastVisionModel.from_pretrained(
         model_name=args.model_name,
         max_seq_length=args.max_seq_length,
@@ -245,7 +245,7 @@ def train(args):
         bf16=args.bf16,
         fp16=args.fp16,
     )
-    log.info(
+    logger.info(
         "GRPO 配置: logging_steps=%d, save_steps=%d, grad_accu=%d, max_grad_norm=%.3f, scheduler=%s, optim=%s",
         args.logging_steps, args.save_steps, args.gradient_accumulation_steps, args.max_grad_norm,
         args.lr_scheduler_type, args.optim
@@ -261,21 +261,21 @@ def train(args):
         eval_dataset=eval_ds,
     )
 
-    log.info("开始训练…")
+    logger.info("开始训练…")
     trainer.train()
 
     os.makedirs(args.output_dir, exist_ok=True)
-    log.info("保存模型到: %s", args.output_dir)
+    logger.info("保存模型到: %s", args.output_dir)
     trainer.save_model(args.output_dir)
     tokenizer.save_pretrained(args.output_dir)
 
     if args.save_lora_dir:
-        log.info("保存 LoRA 适配器到: %s", args.save_lora_dir)
+        logger.info("保存 LoRA 适配器到: %s", args.save_lora_dir)
         model.save_lora(args.save_lora_dir)
 
     if args.push_to_hub:
         repo_id = args.hub_repo_id or os.path.basename(args.output_dir)
-        log.info("推送模型到 HuggingFace Hub: %s", repo_id)
+        logger.info("推送模型到 HuggingFace Hub: %s", repo_id)
         trainer.push_to_hub(repo_id)
 
 # ====== 命令行参数 ======
@@ -323,8 +323,8 @@ def build_arg_parser():
     p.add_argument("--num_generations", type=int, default=4, help="每个样本生成次数")
     p.add_argument("--max_prompt_length", type=int, default=1024, help="最大提示长度")
     p.add_argument("--max_completion_length", type=int, default=1024, help="最大生成长度")
-    p.add_argument("--num_train_epochs", type=float, default=0.5, help="训练轮数")
-    p.add_argument("--max_steps", type=int, default=0, help="最大训练步数（>0 时覆盖 epochs 设置）")
+    p.add_argument("--num_train_epochs", type=float, default=2, help="训练轮数")
+    p.add_argument("--max_steps", type=int, default=100, help="最大训练步数（>0 时覆盖 epochs 设置）")
     p.add_argument("--max_grad_norm", type=float, default=0.1, help="梯度裁剪阈值")
     p.add_argument("--bf16", type=lambda s: s.lower() in ("1","true","yes"), default=True, help="是否启用 bfloat16")
     p.add_argument("--fp16", type=lambda s: s.lower() in ("1","true","yes"), default=False, help="是否启用 float16")
@@ -345,7 +345,7 @@ def main():
     """命令行入口：解析参数、创建输出目录并启动训练。"""
     parser = build_arg_parser()
     args = parser.parse_args()
-    log.info("命令行参数解析完成。输出目录: %s", args.output_dir)
+    logger.info("命令行参数解析完成。输出目录: %s", args.output_dir)
     os.makedirs(args.output_dir, exist_ok=True)
     train(args)
 
