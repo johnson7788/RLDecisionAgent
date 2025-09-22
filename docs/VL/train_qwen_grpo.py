@@ -32,7 +32,7 @@ from unsloth import FastVisionModel
 from transformers import set_seed
 from trl import GRPOConfig, GRPOTrainer
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(name)s | %(message)s")
+logging.basicConfig(level=logging.WARNING, format="%(asctime)s | %(levelname)s | %(name)s | %(message)s")
 logger = logging.getLogger("vl_grpo")
 
 # ====== 特殊标记：用于奖励函数和提示词格式化 ======
@@ -140,7 +140,7 @@ def load_and_prepare_dataset(
 
     train_ds = train_ds.filter(_is_numeric)
 
-    # 调整图像
+    # 调整图像，去掉图像字段，要不打印很多信息
     train_ds = train_ds.map(lambda ex: _resize_rgb(ex, image_field))
 
     # 构造提示
@@ -183,8 +183,9 @@ def train(args):
         model_name=args.model_name,
         max_seq_length=args.max_seq_length,
         load_in_4bit=args.load_in_4bit,
-        # fast_inference=True,
-        # gpu_memory_utilization=args.gpu_memory_utilization,
+        fast_inference=True,
+        gpu_memory_utilization=args.gpu_memory_utilization,
+        trust_remote_code=True,
     )
 
     # 注入 LoRA
@@ -324,7 +325,7 @@ def build_arg_parser():
     p.add_argument("--num_train_epochs", type=float, default=2, help="训练轮数")
     p.add_argument("--max_steps", type=int, default=100, help="最大训练步数（>0 时覆盖 epochs 设置）")
     p.add_argument("--max_grad_norm", type=float, default=0.1, help="梯度裁剪阈值")
-    p.add_argument("--bf16", type=lambda s: s.lower() in ("1","true","yes"), default=True, help="是否启用 bfloat16")
+    p.add_argument("--bf16", type=lambda s: s.lower() in ("1","true","yes"), default=False, help="是否启用 bfloat16")
     p.add_argument("--fp16", type=lambda s: s.lower() in ("1","true","yes"), default=False, help="是否启用 float16")
     p.add_argument("--report_to", type=str, default=None, help="日志上报目标（如 wandb、tensorboard）")
     p.add_argument("--importance_sampling_level", type=str, default="sequence", choices=["sequence","token"], help="重要性采样级别")
