@@ -4,7 +4,7 @@
 train_qwen_vl_grpo.py — 仅视觉 GRPO 训练脚本
 
 主要特点:
-- 仅视觉：移除纯 LLM 路径，多模态流。
+- 仅视觉：多模态流。
 - 与 Unsloth GRPO/GSPO notebook 中的 VLM 语义保持一致。
 - 针对 MathVista (AI4Math/MathVista, split=testmini) 提供安全默认值。
 - 两阶段奖励：格式 + 正确性，使用 <REASONING>/<SOLUTION> 标签。
@@ -176,9 +176,7 @@ def load_and_prepare_dataset(
 # ====== 训练主逻辑 ======
 
 def train(args):
-
     set_seed(args.seed)
-
     # 加载模型
     logger.info("加载模型: %s", args.model_name)
     model, tokenizer = FastVisionModel.from_pretrained(
