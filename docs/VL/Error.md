@@ -165,3 +165,179 @@ Traceback (most recent call last):
     model_kwargs = generation_config.update(**kwargs)
                    ^^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'SamplingParams' object has no attribute 'update'
+
+
+#
+pip uninstall -y flash-attn flash_attn
+# 可选：明确禁用 xformers 对 flash-attn 的探测（双保险）
+export XFORMERS_DISABLE_FLASH_ATTN=1
+
+Unsloth: Fast downloading is enabled - ignore downloading bars which are red colored!
+INFO 09-23 09:19:37 [vllm_utils.py:688] Unsloth: Patching vLLM v1 graph capture
+INFO 09-23 09:19:37 [vllm_utils.py:716] Unsloth: Patching vLLM v0 graph capture
+Unsloth: Vision model detected, setting approx_max_num_seqs to 1
+Unsloth: vLLM loading ./unsloth/Qwen2.5-VL-3B-Instruct with actual GPU utilization = 78.61%
+Unsloth: Your GPU has CUDA compute capability 8.9 with VRAM = 23.55 GB.
+Unsloth: Using conservativeness = 1.0. Chunked prefill tokens = 2048. Num Sequences = 1.
+Unsloth: vLLM's KV Cache can use up to 16.09 GB. Also swap space = 6 GB.
+WARNING 09-23 09:19:37 [compilation.py:456] full_cuda_graph is deprecated, use cudagraph_mode=FULL instead.
+Unsloth: Not an error, but `device` is not supported in vLLM. Skipping.
+INFO 09-23 09:19:37 [utils.py:328] non-default args: {'load_format': 'bitsandbytes', 'dtype': torch.bfloat16, 'seed': 0, 'max_
+model_len': 16384, 'enable_prefix_caching': True, 'swap_space': 6, 'gpu_memory_utilization': 0.7861018152974387, 'max_num_batc
+hed_tokens': 16384, 'max_num_seqs': 1, 'max_logprobs': 0, 'disable_log_stats': True, 'quantization': 'bitsandbytes', 'limit_mm
+_per_prompt': {'image': 1, 'video': 0}, 'enable_lora': True, 'max_lora_rank': 64, 'enable_chunked_prefill': True, 'compilation
+_config': {"level":3,"debug_dump_path":"","cache_dir":"","backend":"inductor","custom_ops":[],"splitting_ops":null,"use_induct
+or":true,"compile_sizes":null,"inductor_compile_config":{"epilogue_fusion":true,"max_autotune":false,"shape_padding":true,"tra
+ce.enabled":false,"triton.cudagraphs":true,"debug":false,"dce":true,"memory_planning":true,"coordinate_descent_tuning":false,"
+trace.graph_diagram":false,"compile_threads":32,"group_fusion":true,"disable_progress":false,"verbose_progress":true,"triton.m
+ulti_kernel":0,"triton.use_block_ptr":true,"triton.enable_persistent_tma_matmul":true,"triton.autotune_at_compile_time":false,
+"triton.cooperative_reductions":false,"cuda.compile_opt_level":"-O2","cuda.enable_cuda_lto":true,"combo_kernels":false,"benchm
+ark_combo_kernel":true,"combo_kernel_foreach_dynamic_shapes":true,"enable_auto_functionalized_v2":false},"inductor_passes":{},
+"cudagraph_mode":2,"use_cudagraph":true,"cudagraph_num_of_warmups":1,"cudagraph_capture_sizes":null,"cudagraph_copy_inputs":fa
+lse,"full_cuda_graph":true,"pass_config":{},"max_capture_size":null,"local_cache_dir":null}, 'model': './unsloth/Qwen2.5-VL-3B
+-Instruct'}
+INFO 09-23 09:19:46 [__init__.py:742] Resolved architecture: Qwen2_5_VLForConditionalGeneration
+INFO 09-23 09:19:46 [__init__.py:1815] Using max model len 16384
+INFO 09-23 09:19:47 [scheduler.py:222] Chunked prefill is enabled with max_num_batched_tokens=16384.
+WARNING 09-23 09:19:47 [lora.py:92] `lora_extra_vocab_size` is deprecated and will be removed in v0.12.0. Additional vocabular
+y support for LoRA adapters is being phased out.
+WARNING 09-23 09:19:47 [_ipex_ops.py:16] Import error msg: No module named 'intel_extension_for_pytorch'
+_diagram":false,"compile_threads":32,"group_fusion":true,"disable_progress":false,"verbose_progress":true,"triton.multi_kernel
+":0,"triton.use_block_ptr":true,"triton.enable_persistent_tma_matmul":true,"triton.autotune_at_compile_time":false,"triton.coo
+perative_reductions":false,"cuda.compile_opt_level":"-O2","cuda.enable_cuda_lto":true,"combo_kernels":false,"benchmark_combo_k
+ernel":true,"combo_kernel_foreach_dynamic_shapes":true,"enable_auto_functionalized_v2":false},"inductor_passes":{},"cudagraph_
+mode":2,"use_cudagraph":true,"cudagraph_num_of_warmups":1,"cudagraph_capture_sizes":[4,2,1],"cudagraph_copy_inputs":false,"ful
+l_cuda_graph":true,"pass_config":{},"max_capture_size":4,"local_cache_dir":null}
+[W923 09:19:48.138952968 ProcessGroupNCCL.cpp:981] Warning: TORCH_NCCL_AVOID_RECORD_STREAMS is the default now, this environme
+nt variable is thus deprecated. (function operator())
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+[Gloo] Rank 0 is connected to 0 peer ranks. Expected number of connected peer ranks is : 0
+INFO 09-23 09:19:48 [parallel_state.py:1165] rank 0 in world size 1 is assigned as DP rank 0, PP rank 0, TP rank 0, EP rank 0
+INFO 09-23 09:19:48 [topk_topp_sampler.py:58] Using FlashInfer for top-p & top-k sampling.
+You have video processor config saved in `preprocessor.json` file which is deprecated. Video processor configs should be saved
+ in their own `video_preprocessor.json` file. You can rename the file or load and save the processor back which renames it aut
+omatically. Loading from `preprocessor.json` will be removed in v5.0.
+INFO 09-23 09:19:51 [gpu_model_runner.py:2338] Starting to load model ./unsloth/Qwen2.5-VL-3B-Instruct...
+INFO 09-23 09:19:52 [gpu_model_runner.py:2370] Loading model from scratch...
+WARNING 09-23 09:19:52 [cuda.py:217] Current `vllm-flash-attn` has a bug inside vision module, so we use xformers backend inst
+ead. You can run `pip install flash-attn` to use flash-attention backend.
+INFO 09-23 09:19:52 [cuda.py:362] Using Flash Attention backend on V1 engine.
+INFO 09-23 09:19:52 [bitsandbytes_loader.py:758] Loading weights with BitsAndBytes quantization. May take a while ...
+Loading safetensors checkpoint shards:   0% Completed | 0/2 [00:00<?, ?it/s]
+Loading safetensors checkpoint shards:  50% Completed | 1/2 [00:00<00:00,  1.23it/s]
+Loading safetensors checkpoint shards: 100% Completed | 2/2 [00:02<00:00,  1.11s/it]
+Loading safetensors checkpoint shards: 100% Completed | 2/2 [00:02<00:00,  1.06s/it]
+INFO 09-23 09:19:54 [punica_selector.py:19] Using PunicaWrapperGPU.
+INFO 09-23 09:19:55 [gpu_model_runner.py:2392] Model loading took 2.5987 GiB and 2.639683 seconds
+INFO 09-23 09:19:55 [gpu_model_runner.py:3000] Encoder cache will be initialized with a budget of 16384 tokens, and profiled w
+ith 1 image items of the maximum feature size.
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/unsloth_zoo/vllm_utils.py", line 1665, in load_vllm
+[rank0]:     llm = LLM(**engine_args)
+[rank0]:           ^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/entrypoints/llm.py", line 282, in __init__
+[rank0]:     self.llm_engine = LLMEngine.from_engine_args(
+[rank0]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/engine/llm_engine.py", line 493, in from_engine_args
+[rank0]:     return engine_cls.from_vllm_config(
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/llm_engine.py", line 134, in from_vllm_config
+[rank0]:     return cls(vllm_config=vllm_config,
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/llm_engine.py", line 111, in __init__
+[rank0]:     self.engine_core = EngineCoreClient.make_client(
+[rank0]:                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core_client.py", line 82, in make_client
+[rank0]:     return InprocClient(vllm_config, executor_class, log_stats)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core_client.py", line 245, in __init__
+[rank0]:     self.engine_core = EngineCore(*args, **kwargs)
+[rank0]:                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 91, in __init__
+[rank0]:     self._initialize_kv_caches(vllm_config)
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/engine/core.py", line 183, in _initialize_kv_caches
+[rank0]:     self.model_executor.determine_available_memory())
+[rank0]:     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/executor/abstract.py", line 84, in determine_available_memory
+[rank0]:     return self.collective_rpc("determine_available_memory")
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/executor/uniproc_executor.py", line 58, in collective_rpc
+[rank0]:     answer = run_method(self.driver_worker, method, args, kwargs)
+[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/utils/__init__.py", line 3060, in run_method
+[rank0]:     return func(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/utils/_contextlib.py", line 120, in decorate_context
+[rank0]:     return func(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu_worker.py", line 263, in determine_available_memor
+y
+[rank0]:     self.model_runner.profile_run()
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/v1/worker/gpu_model_runner.py", line 3017, in profile_run
+[rank0]:     self.model.get_multimodal_embeddings(
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/qwen2_5_vl.py", line 1135, in get_multimod
+al_embeddings
+[rank0]:     vision_embeddings = self._process_image_input(multimodal_input)
+[rank0]:                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/qwen2_5_vl.py", line 1059, in _process_ima
+ge_input
+[rank0]:     image_embeds = self.visual(pixel_values,
+[rank0]:                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/qwen2_5_vl.py", line 811, in forward
+[rank0]:     hidden_states = blk(
+[rank0]:                     ^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/qwen2_5_vl.py", line 455, in forward
+[rank0]:     x_attn = self.attn(self.norm1(x),
+[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1773, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py", line 1784, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/vllm/model_executor/models/qwen2_5_vl.py", line 398, in forward
+[rank0]:     from xformers import ops as xops
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/xformers/ops/__init__.py", line 9, in <module>
+[rank0]:     from .fmha import (
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/xformers/ops/fmha/__init__.py", line 10, in <module>
+[rank0]:     from . import attn_bias, ck, ck_splitk, cutlass, flash, flash3, triton_splitk
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/xformers/ops/fmha/flash.py", line 67, in <module>
+[rank0]:     import flash_attn
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/flash_attn/__init__.py", line 3, in <module>
+[rank0]:     from flash_attn.flash_attn_interface import (
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/flash_attn/flash_attn_interface.py", line 15, in <module>
+[rank0]:     import flash_attn_2_cuda as flash_attn_gpu
+[rank0]: ImportError: /usr/local/lib/python3.12/dist-packages/flash_attn_2_cuda.cpython-312-x86_64-linux-gnu.so: undefined symbol: _ZN3c104cuda9SetDeviceEa
+
+[rank0]: During handling of the above exception, another exception occurred:
+
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/workspace/verl/docs/VL/qwen2_5_7b_vl_grpo.py", line 79, in <module>
+[rank0]:     model, tokenizer = FastVisionModel.from_pretrained(
+[rank0]:                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/unsloth/models/loader.py", line 881, in from_pretrained
+[rank0]:     model, tokenizer = FastBaseModel.from_pretrained(
+[rank0]:                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/unsloth/models/vision.py", line 535, in from_pretrained
+[rank0]:     llm = load_vllm(**load_vllm_kwargs)
+[rank0]:           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.12/dist-packages/unsloth_zoo/vllm_utils.py", line 1690, in load_vllm
+[rank0]:     raise RuntimeError(error)
+[rank0]: RuntimeError: /usr/local/lib/python3.12/dist-packages/flash_attn_2_cuda.cpython-312-x86_64-linux-gnu.so: undefined symbol: _ZN3c104cuda9SetDeviceEa
+[rank0]:[W923 09:20:01.854118391 ProcessGroupNCCL.cpp:1538] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
