@@ -11,7 +11,7 @@ train_qwen_vl_grpo.py — 仅视觉 GRPO 训练脚本
 - 正确的多模态对话模板，带图像占位符和 tokenizer 处理。
 - 使用 TRL 的 GRPOTrainer (>=0.22.x 语义) 和 Unsloth FastVisionModel。
 
-使用示例:
+使用示例:不要使用./unsloth/Qwen2.5-VL-3B-Instruct-unsloth-bnb-4bit,因为使用fast_inference=True了
 python train_qwen_grpo.py \
   --dataset AI4Math/MathVista \
   --train_split testmini \
@@ -32,7 +32,7 @@ from unsloth import FastVisionModel
 from transformers import set_seed
 from trl import GRPOConfig, GRPOTrainer
 
-logging.basicConfig(level=logging.WARNING, format="%(asctime)s | %(levelname)s | %(name)s | %(message)s")
+logging.basicConfig(level=logging.DEBUG, format="%(asctime)s | %(levelname)s | %(name)s | %(message)s")
 logger = logging.getLogger("vl_grpo")
 
 # ====== 特殊标记：用于奖励函数和提示词格式化 ======
@@ -183,9 +183,9 @@ def train(args):
         model_name=args.model_name,
         max_seq_length=args.max_seq_length,
         load_in_4bit=args.load_in_4bit,
-        fast_inference=True,
+        fast_inference=False,
         gpu_memory_utilization=args.gpu_memory_utilization,
-        trust_remote_code=True,
+        trust_remote_code=False,
     )
 
     # 注入 LoRA
