@@ -70,7 +70,6 @@ The goal of this notebook is to make a vision language model solve maths problem
 
 <img src="https://raw.githubusercontent.com/lupantech/MathVista/main/assets/our_new_3_datasets.png" alt="Alt text" height="256">
 """
-import os
 
 from unsloth import FastVisionModel
 import torch
@@ -78,10 +77,10 @@ max_seq_length = 16384 # Must be this long for VLMs
 lora_rank = 16 # Larger rank = smarter, but slower
 
 model, tokenizer = FastVisionModel.from_pretrained(
-    model_name = "./unsloth/Qwen2.5-VL-3B-Instruct",
+    model_name = "unsloth/Qwen2.5-VL-3B-Instruct",
     max_seq_length = max_seq_length,
-    load_in_4bit = True, # False for LoRA 16bit
-    fast_inference = False, # Enable vLLM fast inference
+    load_in_4bit = False, # False for LoRA 16bit
+    fast_inference = True, # Enable vLLM fast inference
     gpu_memory_utilization = 0.8, # Reduce if out of memory
 )
 
@@ -259,44 +258,21 @@ Now let's try the model on the hundredth sample of the train dataset without tra
 
 """
 
-# from vllm import SamplingParams
-# sampling_params = SamplingParams(
-#     temperature = 1.0,
-#     top_k = 50,
-#     max_tokens = 1024,
-# )
-
-from transformers import GenerationConfig
-
-gen_cfg = GenerationConfig(
-    do_sample=True,        # 你之前 temperature/top_k 生效需要 do_sample=True
-    temperature=1.0,
-    top_k=50,
-    max_new_tokens=1024,   # vLLM 的 max_tokens -> HF 的 max_new_tokens
-    pad_token_id=tokenizer.pad_token_id,
-    eos_token_id=tokenizer.eos_token_id,
+from vllm import SamplingParams
+sampling_params = SamplingParams(
+    temperature = 1.0,
+    top_k = 50,
+    max_tokens = 1024,
 )
 
-# 2) 保证有 pad_token（有些 Qwen 配置里没有，HF generate 需要）
-if tokenizer.pad_token_id is None:
-    tokenizer.pad_token = tokenizer.eos_token
-
-# 3) 用 tokenizer 打包「文本+图像」-> 张量
-batch = tokenizer(
-    train_dataset[100]["prompt"],
-    images=train_dataset[100]["image"],   # 直接传 PIL.Image；Qwen2.5-VL 处理器会转 pixel_values
-    return_tensors="pt"
+outputs = model.fast_generate(
+    {
+        "prompt": train_dataset[100]["prompt"],
+        "multi_modal_data": {"image": train_dataset[100]["image"]}
+    },
+    sampling_params,
 )
-
-# 4) 移到模型设备
-batch = {k: v.to(model.device) for k, v in batch.items()}
-
-# 5) 走 HF 的 generate（而不是 fast_generate）
-with torch.no_grad():
-    gen_ids = model.generate(**batch, generation_config=gen_cfg)
-
-# 6) 解码
-print(tokenizer.decode(gen_ids[0], skip_special_tokens=False))
+print(outputs[0].outputs[0].text)
 
 """<a name="Train"></a>
 ### Train the model

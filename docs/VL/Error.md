@@ -346,3 +346,146 @@ ge_input
 [rank0]:     raise RuntimeError(error)
 [rank0]: RuntimeError: /usr/local/lib/python3.12/dist-packages/flash_attn_2_cuda.cpython-312-x86_64-linux-gnu.so: undefined symbol: _ZN3c104cuda9SetDeviceEa
 [rank0]:[W923 09:20:01.854118391 ProcessGroupNCCL.cpp:1538] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+
+
+# 代码报错, 改成load_in_4bit=False
+Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00, 16.69it/s]
+
+Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:00<?, ?it/s]
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/unsloth_zoo/vllm_utils.py", line 1665, in load_vllm
+[rank0]:     llm = LLM(**engine_args)
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/entrypoints/llm.py", line 271, in __init__
+[rank0]:     self.llm_engine = LLMEngine.from_engine_args(
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/engine/llm_engine.py", line 501, in from_engine_args
+[rank0]:     return engine_cls.from_vllm_config(
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/v1/engine/llm_engine.py", line 124, in from_vllm_config
+[rank0]:     return cls(vllm_config=vllm_config,
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/v1/engine/llm_engine.py", line 101, in __init__
+[rank0]:     self.engine_core = EngineCoreClient.make_client(
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/v1/engine/core_client.py", line 77, in make_client
+[rank0]:     return InprocClient(vllm_config, executor_class, log_stats)
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/v1/engine/core_client.py", line 230, in __init__
+[rank0]:     self.engine_core = EngineCore(*args, **kwargs)
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/v1/engine/core.py", line 75, in __init__
+[rank0]:     self.model_executor = executor_class(vllm_config)
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/executor/executor_base.py", line 53, in __init__
+[rank0]:     self._init_executor()
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/executor/uniproc_executor.py", line 48, in _init_executor
+[rank0]:     self.collective_rpc("load_model")
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/executor/uniproc_executor.py", line 57, in collective_rpc
+[rank0]:     answer = run_method(self.driver_worker, method, args, kwargs)
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/utils/__init__.py", line 2736, in run_method
+[rank0]:     return func(*args, **kwargs)
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/v1/worker/gpu_worker.py", line 185, in load_model
+[rank0]:     self.model_runner.load_model()
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/v1/worker/gpu_model_runner.py", line 1776, in load_model
+[rank0]:     self.model = model_loader.load_model(
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/model_executor/model_loader/base_loader.py", line 41, in load_model
+[rank0]:     self.load_weights(model, model_config)
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/model_executor/model_loader/bitsandbytes_loader.py", line 507, in load_weights
+[rank0]:     loaded_weights = model.load_weights(qweight_iterator)
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/model_executor/models/qwen2_5_vl.py", line 1165, in load_weights
+[rank0]:     return loader.load_weights(weights, mapper=self.hf_to_vllm_mapper)
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/model_executor/models/utils.py", line 291, in load_weights
+[rank0]:     autoloaded_weights = set(self._load_module("", self.module, weights))
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/model_executor/models/utils.py", line 249, in _load_module
+[rank0]:     yield from self._load_module(prefix,
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/model_executor/models/utils.py", line 222, in _load_module
+[rank0]:     loaded_params = module_load_weights(weights)
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/model_executor/models/qwen2.py", line 498, in load_weights
+[rank0]:     return loader.load_weights(weights)
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/model_executor/models/utils.py", line 291, in load_weights
+[rank0]:     autoloaded_weights = set(self._load_module("", self.module, weights))
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/model_executor/models/utils.py", line 249, in _load_module
+[rank0]:     yield from self._load_module(prefix,
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/model_executor/models/utils.py", line 222, in _load_module
+[rank0]:     loaded_params = module_load_weights(weights)
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/model_executor/models/qwen2.py", line 420, in load_weights
+[rank0]:     weight_loader(param, loaded_weight)
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/model_executor/layers/linear.py", line 1282, in weight_loader
+[rank0]:     assert param_data.shape == loaded_weight.shape
+[rank0]: AssertionError
+
+[rank0]: During handling of the above exception, another exception occurred:
+
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/workspace/verl/RLDecisionAgent/docs/VL/train_qwen_grpo.py", line 353, in <module>
+[rank0]:     main()
+[rank0]:   File "/workspace/verl/RLDecisionAgent/docs/VL/train_qwen_grpo.py", line 349, in main
+[rank0]:     train(args)
+[rank0]:   File "/workspace/verl/RLDecisionAgent/docs/VL/train_qwen_grpo.py", line 182, in train
+[rank0]:     model, tokenizer = FastVisionModel.from_pretrained(
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/unsloth/models/loader.py", line 881, in from_pretrained
+[rank0]:     model, tokenizer = FastBaseModel.from_pretrained(
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/unsloth/models/vision.py", line 535, in from_pretrained
+[rank0]:     llm = load_vllm(**load_vllm_kwargs)
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/unsloth_zoo/vllm_utils.py", line 1690, in load_vllm
+[rank0]:     raise RuntimeError(error)
+[rank0]: RuntimeError
+Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:02<?, ?it/s]
+
+[rank0]:[W924 21:07:37.702183097 ProcessGroupNCCL.cpp:1476] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
+
+
+
+# 报错
+INFO 09-24 21:16:31 [gpu_model_runner.py:1770] Starting to load model unsloth/Qwen2.5-VL-3B-Instruct...
+INFO 09-24 21:16:32 [gpu_model_runner.py:1775] Loading model from scratch...
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/unsloth_zoo/vllm_utils.py", line 1665, in load_vllm
+[rank0]:     llm = LLM(**engine_args)
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/entrypoints/llm.py", line 271, in __init__
+[rank0]:     self.llm_engine = LLMEngine.from_engine_args(
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/engine/llm_engine.py", line 501, in from_engine_args
+[rank0]:     return engine_cls.from_vllm_config(
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/v1/engine/llm_engine.py", line 124, in from_vllm_config
+[rank0]:     return cls(vllm_config=vllm_config,
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/v1/engine/llm_engine.py", line 101, in __init__
+[rank0]:     self.engine_core = EngineCoreClient.make_client(
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/v1/engine/core_client.py", line 77, in make_client
+[rank0]:     return InprocClient(vllm_config, executor_class, log_stats)
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/v1/engine/core_client.py", line 230, in __init__
+[rank0]:     self.engine_core = EngineCore(*args, **kwargs)
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/v1/engine/core.py", line 75, in __init__
+[rank0]:     self.model_executor = executor_class(vllm_config)
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/executor/executor_base.py", line 53, in __init__
+[rank0]:     self._init_executor()
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/executor/uniproc_executor.py", line 48, in _init_executor
+[rank0]:     self.collective_rpc("load_model")
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/executor/uniproc_executor.py", line 57, in collective_rpc
+[rank0]:     answer = run_method(self.driver_worker, method, args, kwargs)
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/utils/__init__.py", line 2736, in run_method
+[rank0]:     return func(*args, **kwargs)
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/v1/worker/gpu_worker.py", line 185, in load_model
+[rank0]:     self.model_runner.load_model()
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/v1/worker/gpu_model_runner.py", line 1776, in load_model
+[rank0]:     self.model = model_loader.load_model(
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/model_executor/model_loader/base_loader.py", line 38, in load_model
+[rank0]:     model = initialize_model(vllm_config=vllm_config,
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/model_executor/model_loader/utils.py", line 64, in initialize_model
+[rank0]:     return model_class(vllm_config=vllm_config, prefix=prefix)
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/model_executor/models/qwen2_5_vl.py", line 855, in __init__
+[rank0]:     self.visual = Qwen2_5_VisionTransformer(
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/model_executor/models/qwen2_5_vl.py", line 542, in __init__
+[rank0]:     self.blocks = nn.ModuleList([
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/model_executor/models/qwen2_5_vl.py", line 543, in <listcomp>
+[rank0]:     Qwen2_5_VisionBlock(
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/model_executor/models/qwen2_5_vl.py", line 376, in __init__
+[rank0]:     self.attn = Qwen2_5_VisionAttention(embed_dim=dim,
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/vllm/model_executor/models/qwen2_5_vl.py", line 255, in __init__
+[rank0]:     raise RuntimeError(
+[rank0]: RuntimeError: Qwen2.5-VL does not support _Backend.FLASHINFER backend now.
+
+[rank0]: During handling of the above exception, another exception occurred:
+
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/workspace/verl/RLDecisionAgent/docs/VL/qwen2_5_7b_vl_grpo.py", line 79, in <module>
+[rank0]:     model, tokenizer = FastVisionModel.from_pretrained(
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/unsloth/models/loader.py", line 881, in from_pretrained
+[rank0]:     model, tokenizer = FastBaseModel.from_pretrained(
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/unsloth/models/vision.py", line 535, in from_pretrained
+[rank0]:     llm = load_vllm(**load_vllm_kwargs)
+[rank0]:   File "/usr/local/lib/python3.10/dist-packages/unsloth_zoo/vllm_utils.py", line 1690, in load_vllm
+[rank0]:     raise RuntimeError(error)
+[rank0]: RuntimeError: Qwen2.5-VL does not support _Backend.FLASHINFER backend now.
