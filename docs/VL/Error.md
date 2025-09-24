@@ -348,7 +348,7 @@ ge_input
 [rank0]:[W923 09:20:01.854118391 ProcessGroupNCCL.cpp:1538] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
 
 
-# 代码报错, 改成load_in_4bit=False
+# 代码报错, 改成load_in_4bit=False，也可能vllm版本问题
 Loading safetensors checkpoint shards: 100% Completed | 1/1 [00:00<00:00, 16.69it/s]
 
 Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:00<?, ?it/s]
@@ -429,7 +429,7 @@ Loading safetensors checkpoint shards:   0% Completed | 0/1 [00:02<?, ?it/s]
 
 
 
-# 报错
+# 报错，可能vllm版本问题, 升级vllm=0.10.2也不行
 INFO 09-24 21:16:31 [gpu_model_runner.py:1770] Starting to load model unsloth/Qwen2.5-VL-3B-Instruct...
 INFO 09-24 21:16:32 [gpu_model_runner.py:1775] Loading model from scratch...
 [rank0]: Traceback (most recent call last):
@@ -489,3 +489,22 @@ INFO 09-24 21:16:32 [gpu_model_runner.py:1775] Loading model from scratch...
 [rank0]:   File "/usr/local/lib/python3.10/dist-packages/unsloth_zoo/vllm_utils.py", line 1690, in load_vllm
 [rank0]:     raise RuntimeError(error)
 [rank0]: RuntimeError: Qwen2.5-VL does not support _Backend.FLASHINFER backend now.
+
+
+# 不同的attention后端 export VLLM_ATTENTION_BACKEND=CUTLASS_MLA
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/workspace/verl/RLDecisionAgent/docs/VL/train_qwen_grpo.py", line 353, in <module>
+    main()
+  File "/workspace/verl/RLDecisionAgent/docs/VL/train_qwen_grpo.py", line 349, in main
+    train(args)
+  File "/workspace/verl/RLDecisionAgent/docs/VL/train_qwen_grpo.py", line 182, in train
+    model, tokenizer = FastVisionModel.from_pretrained(
+  File "/usr/local/lib/python3.10/dist-packages/unsloth/models/loader.py", line 881, in from_pretrained
+    model, tokenizer = FastBaseModel.from_pretrained(
+  File "/usr/local/lib/python3.10/dist-packages/unsloth/models/vision.py", line 535, in from_pretrained
+    llm = load_vllm(**load_vllm_kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/unsloth_zoo/vllm_utils.py", line 1690, in load_vllm
+    raise RuntimeError(error)
+RuntimeError: Invalid attention backend: ''. Valid backends are: ['FLASH_ATTN', 'FLASH_ATTN_VLLM_V1', 'TRITON_ATTN_VLLM_V1', 'XFORMERS', 'ROCM_FLASH', 'ROCM_AITER_MLA', 'ROCM_AITER_MLA_VLLM_V1', 'ROCM_AITER_FA', 'TORCH_SDPA', 'TORCH_SDPA_VLLM_V1', 'FLASHINFER', 'FLASHINFER_VLLM_V1', 'FLASHINFER_MLA', 'TRITON_MLA', 'TRITON_MLA_VLLM_V1', 'CUTLASS_MLA', 'FLASHMLA', 'FLASHMLA_VLLM_V1', 'FLASH_ATTN_MLA', 'PALLAS', 'PALLAS_VLLM_V1', 'IPEX', 'DUAL_CHUNK_FLASH_ATTN', 'DIFFERENTIAL_FLASH_ATTN', 'NO_ATTENTION', 'FLEX_ATTENTION', 'TREE_ATTN', 'XFORMERS_VLLM_V1']

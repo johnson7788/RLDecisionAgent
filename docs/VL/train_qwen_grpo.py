@@ -183,7 +183,7 @@ def train(args):
         model_name=args.model_name,
         max_seq_length=args.max_seq_length,
         load_in_4bit=args.load_in_4bit,
-        fast_inference=True,
+        fast_inference=args.fast_inference,
         gpu_memory_utilization=args.gpu_memory_utilization,
         trust_remote_code=False,
     )
@@ -297,6 +297,7 @@ def build_arg_parser():
     p.add_argument("--load_in_4bit", type=lambda s: s.lower() in ("1","true","yes"), default=True, help="是否使用 4bit 量化加载模型")
     p.add_argument("--max_seq_length", type=int, default=16384, help="最大序列长度, Qwen2.5这个必须是这个长度16384")
     p.add_argument("--gpu_memory_utilization", type=float, default=0.8, help="GPU 显存利用率")
+    p.add_argument("--fast_inference", type=lambda s: s.lower() in ("1","true","yes"), default=False, help="是否使用unsloth快速推理")
 
     # LoRA 设置
     p.add_argument("--lora_r", type=int, default=16, help="LoRA r 值")
