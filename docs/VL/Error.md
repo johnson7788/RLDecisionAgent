@@ -30,7 +30,13 @@ Traceback (most recent call last):
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 TypeError: Qwen2_5_VLForConditionalGeneration.__init__() got an unexpected keyword argument 'fast_inference'
 
-# 报错，关掉fast_inference
+# 报错，
+RTX 4090D（SM 8.9）。在 vLLM 里，full CUDA graph 只在 FA3（FlashAttention 3）下支持，需要关掉full_cuda_graph，并清理缓存
+export VLLM_COMPILATION_CONFIG='{"full_cuda_graph": false, "cudagraphs": false}'
+export VLLM_ENFORCE_EAGER=1
+rm -rf ~/.cache/vllm/torch_compile_cache/*
+好像都不行，只能fast_inference=False了
+
 python train_qwen_grpo.py   --dataset AI4Math/MathVista   --train_split testmini   --model_name ./unsloth/Qwen2.5-VL-3B-Instruct  --per_device_train_batch_size 1   --gradient_accumulation_steps 2   --output_dir outputs_qwen_vl_grpo
 🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning.
 INFO 09-22 20:29:33 [__init__.py:244] Automatically detected platform cuda.
@@ -147,7 +153,7 @@ INFO 09-22 20:33:57 [kv_cache_utils.py:720] Maximum concurrency for 16,384 token
 [rank0]: RuntimeError: AoT scheduling is required for full cuda graph.
 [rank0]:[W922 20:34:04.426029050 ProcessGroupNCCL.cpp:1476] Warning: WARNING: destroy_process_group() was not called before program exit, which can leak resources. For more info, please see https://pytorch.org/docs/stable/distributed.html#shutdown (function operator())
 
-# 报错, 把 fast_inference 打开，然后 SamplingParams 就是正确的类型。
+# 报错, 把 fast_inference 打开，然后 SamplingParams 就会报错
 Map: 100%|███████████████████████████████████████████████████████████████████████████| 566/566 [01:38<00:00,  5.72 examples/s]
 Map: 100%|█████████████████████████████████████████████████████████████████████████| 566/566 [00:00<00:00, 1616.85 examples/s]
 `generation_config` default values have been modified to match model-specific defaults: {'temperature': 1e-06, 'repetition_penalty': 1.05, 'pad_token_id': 151654, 'bos_token_id': 151643, 'eos_token_id': [151645, 151643]}. If this is not desired, please set these values explicitly.
@@ -167,8 +173,7 @@ Traceback (most recent call last):
 AttributeError: 'SamplingParams' object has no attribute 'update'
 
 
-#
-pip uninstall -y flash-attn flash_attn
+# pip uninstall -y flash-attn flash_attn
 # 可选：明确禁用 xformers 对 flash-attn 的探测（双保险）
 export XFORMERS_DISABLE_FLASH_ATTN=1
 
