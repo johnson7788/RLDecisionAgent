@@ -278,3 +278,7 @@ query：用于评估模型时的输入 prompt / 查询文本。可能与 questio
 遇见数据集
 +1
 
+
+# Gemma3训练
+使用unsloth代替vllm进行训练
+https://colab.research.google.com/github/unslothai/notebooks/blob/main/nb/Gemma3_(4B)-Vision-GRPO.ipynb

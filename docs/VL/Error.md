@@ -508,3 +508,39 @@ Traceback (most recent call last):
   File "/usr/local/lib/python3.10/dist-packages/unsloth_zoo/vllm_utils.py", line 1690, in load_vllm
     raise RuntimeError(error)
 RuntimeError: Invalid attention backend: ''. Valid backends are: ['FLASH_ATTN', 'FLASH_ATTN_VLLM_V1', 'TRITON_ATTN_VLLM_V1', 'XFORMERS', 'ROCM_FLASH', 'ROCM_AITER_MLA', 'ROCM_AITER_MLA_VLLM_V1', 'ROCM_AITER_FA', 'TORCH_SDPA', 'TORCH_SDPA_VLLM_V1', 'FLASHINFER', 'FLASHINFER_VLLM_V1', 'FLASHINFER_MLA', 'TRITON_MLA', 'TRITON_MLA_VLLM_V1', 'CUTLASS_MLA', 'FLASHMLA', 'FLASHMLA_VLLM_V1', 'FLASH_ATTN_MLA', 'PALLAS', 'PALLAS_VLLM_V1', 'IPEX', 'DUAL_CHUNK_FLASH_ATTN', 'DIFFERENTIAL_FLASH_ATTN', 'NO_ATTENTION', 'FLEX_ATTENTION', 'TREE_ATTN', 'XFORMERS_VLLM_V1']
+
+
+
+# 报错
+You have video processor config saved in `preprocessor.json` file which is deprecated. Video processor configs should be saved in their own `video_preprocessor.json` file. You can rename the file or load and save the processor back which renames it automatically. Loading from `preprocessor.json` will be removed in v5.0.
+Unsloth: Making `model.base_model.model.model.language_model` require gradients
+`generation_config` default values have been modified to match model-specific defaults: {'max_length': 128000, 'temperature': 1e-06, 'repetition_penalty': 1.05, 'bos_token_id': 151643}. If this is not desired, please set these values explicitly.
+Traceback (most recent call last):
+  File "/workspace/verl/docs/VL/qwen2_5_7b_vl_grpo.py", line 279, in <module>
+    outputs = model.fast_generate(
+              ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/torch/utils/_contextlib.py", line 116, in decorate_context
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/transformers/generation/utils.py", line 2385, in generate
+    batch_size = inputs_tensor.shape[0]
+                 ^^^^^^^^^^^^^^^^^^^
+AttributeError: 'dict' object has no attribute 'shape'
+
+
+# 代码报错了， hf的网络不同,重试一次
+🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning.
+INFO 09-25 16:29:21 [__init__.py:244] Automatically detected platform cuda.
+🦥 Unsloth Zoo will now patch everything to make training faster!
+Traceback (most recent call last):
+  File "/workspace/verl/docs/VL/gemma3_4b_vision_grpo.py", line 88, in <module>
+    model, tokenizer = FastVisionModel.from_pretrained(
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/unsloth/models/loader.py", line 629, in from_pretrained
+    model_types = get_transformers_model_type(model_config or peft_config)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/dist-packages/unsloth_zoo/hf_utils.py", line 107, in get_transformers_model_type
+    raise RuntimeError(
+RuntimeError: Unsloth: No config file found - are you sure the `model_name` is correct?
+If you're using a model on your local device, confirm if the folder location exists.
+If you're using a HuggingFace online model, check if it exists.
