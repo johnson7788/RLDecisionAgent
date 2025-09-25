@@ -12,13 +12,15 @@ train_qwen_vl_grpo.py — 仅视觉 GRPO 训练脚本
 - 使用 TRL 的 GRPOTrainer (>=0.22.x 语义) 和 Unsloth FastVisionModel。
 
 使用示例:不要使用./unsloth/Qwen2.5-VL-3B-Instruct-unsloth-bnb-4bit,因为使用fast_inference=True了
+--model_name ./unsloth/Qwen2.5-VL-3B-Instruct # 使用本地模型
+--model_name unsloth/Qwen2.5-VL-3B-Instruct  #使用huggingface的cache的模型
 python train_qwen_grpo.py \
   --dataset AI4Math/MathVista \
   --train_split testmini \
-  --model_name unsloth/Qwen2.5-VL-3B-Instruct \
+  --model_name ./unsloth/Qwen2.5-VL-3B-Instruct \
   --per_device_train_batch_size 1 \
   --gradient_accumulation_steps 2 \
-  --output_dir outputs_qwen_vl_grpo
+  --output_dir outputs_qwen_vl_grpo --fast_inference no --load_in_4bit no
 """
 
 import os
