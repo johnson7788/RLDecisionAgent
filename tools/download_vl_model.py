@@ -9,7 +9,8 @@
 import torch
 from transformers import AutoTokenizer, AutoModelForImageTextToText
 
-path = "OpenGVLab/InternVL3_5-1B-HF"
+# path = "OpenGVLab/InternVL3_5-1B-HF"
+path = "unsloth/gemma-3-4b-it"
 model = AutoModelForImageTextToText.from_pretrained(
     path,
     torch_dtype=torch.bfloat16,

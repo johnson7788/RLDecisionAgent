@@ -322,7 +322,7 @@ FastVisionModel.for_inference(model)  # Enable for inference!
 
 image = dataset[100]["decoded_image"]
 instruction = (
-    f"{dataset[100]["question"]}, provide your reasoning between {REASONING_START} and {REASONING_END} "
+    f"{dataset[100]['question']}, provide your reasoning between {REASONING_START} and {REASONING_END} "
     f"and then your final answer between {SOLUTION_START} and (put a float here) {SOLUTION_END}"
 )
 
@@ -381,7 +381,7 @@ messages = [
             {
                 "type": "text",
                 "text": (
-                    f"{sample["question"]}, provide your reasoning between {REASONING_START} and {REASONING_END} "
+                    f"{sample['question']}, provide your reasoning between {REASONING_START} and {REASONING_END} "
                     f"and then your final answer between {SOLUTION_START} and (put a float here) {SOLUTION_END}"
                 )
             },
