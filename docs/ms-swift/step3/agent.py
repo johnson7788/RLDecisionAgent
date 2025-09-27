@@ -98,7 +98,7 @@ class KnowledgeAgent:
         self.graphes = {} # 等异步初始化完才赋值
 
 
-    async def create_graph(self, tool_names=[], mcp_urls=[]):
+    async def create_graph(self, tool_names=[]):
         """
         创建graph,并传入合适的tools
         Args:
@@ -107,7 +107,6 @@ class KnowledgeAgent:
         Returns:
         """
         tool_names = list(tool_names) if tool_names else []  # 复制，避免外部被改
-        mcp_urls = list(mcp_urls) if mcp_urls else []
         select_tools = []
         if not tool_names:
             print(f"传入的tool_names为空，使用默认工具对象（共 {len(self.tools)} 个）")
