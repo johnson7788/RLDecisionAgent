@@ -28,9 +28,9 @@ from langchain_ollama import ChatOllama
 
 # === MCP: 与训练/推理保持一致 ===
 from langchain_mcp_adapters.client import MultiServerMCPClient
-from rl_train.mcp_config_load import load_mcp_servers
+from mcp_config_load import load_mcp_servers
 # 提示词沿用训练阶段
-from rl_train import prompt
+import prompt
 
 dotenv.load_dotenv()
 

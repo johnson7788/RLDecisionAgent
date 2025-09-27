@@ -14,7 +14,6 @@ import argparse
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from peft import PeftModel
 
-
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Merge LoRA adapter into base model"

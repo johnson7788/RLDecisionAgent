@@ -539,7 +539,7 @@ def main():
     ap.add_argument("--load_in_4bit", action="store_true", default=False, help="是否以 4bit 加载模型")
     ap.add_argument("--load_in_8bit", action="store_true", default=False,
                     help="是否以 8bit 加载模型（若同时指定 4bit 和 8bit，将优先使用 4bit）")
-    ap.add_argument("--mcp_config", default="a2a_agent/mcp_config.json", help="MCP 服务器配置文件路径（JSON 格式）")
+    ap.add_argument("--mcp_config", default="./mcp_config.json", help="MCP 服务器配置文件路径（JSON 格式）")
     args = ap.parse_args()
 
     # Boolean adjust: if both are set, prioritize 4bit
