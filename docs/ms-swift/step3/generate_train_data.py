@@ -8,11 +8,7 @@ import os
 import httpx
 
 from a2a.client import A2ACardResolver, A2AClient
-from a2a.types import (
-    AgentCard,
-    MessageSendParams,
-    SendStreamingMessageRequest,
-)
+from a2a.types import AgentCard, MessageSendParams, SendStreamingMessageRequest
 from mcp_client import get_mcp_tools
 
 
@@ -20,12 +16,45 @@ PUBLIC_AGENT_CARD_PATH = "/.well-known/agent.json"
 EXTENDED_AGENT_CARD_PATH = "/agent/authenticatedExtendedCard"
 
 
-async def get_agent_response(client: A2AClient, question: str) -> List[Dict[str, Any]]:
-    """Sends a question to the agent and returns the conversation history in the desired format."""
-    conversations = [{"from": "human", "value": question}]
+def _normalize_tool(tool: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    将 MCP 返回的工具规格规范化为：
+    {"type": "function", "function": {...}}
+    如果原本已经是该结构，则直接返回。
+    """
+    if tool is None:
+        return tool
+    if isinstance(tool, dict) and "type" in tool and tool.get("type") == "function" and "function" in tool:
+        return tool
 
+    # 常见的扁平结构：{"name": "...", "description": "...", "parameters": {...}}
+    if isinstance(tool, dict) and {"name", "description"} & set(tool.keys()):
+        fn = {
+            "name": tool.get("name"),
+            "description": tool.get("description", ""),
+            "parameters": tool.get("parameters") or {
+                "type": "object",
+                "properties": {},
+            },
+        }
+        return {"type": "function", "function": fn}
+
+    # 兜底：包一层放到 function 字段里
+    return {"type": "function", "function": tool}
+
+
+async def get_agent_response(client: A2AClient, question: str) -> List[Dict[str, Any]]:
+    """
+    发送问题给 Agent，返回按要求的新 messages 序列：
+    [{"role":"user"}, {"role":"tool_call"}, {"role":"tool_response"}, {"role":"assistant"}, ...]
+    """
+    messages: List[Dict[str, str]] = []
+    # 首条 user
+    messages.append({"role": "user", "content": question})
+
+    # 准备并发起流式请求
     parts = [{"kind": "text", "text": question}]
-    multiturn_first: dict[str, Any] = {
+    multiturn_first: Dict[str, Any] = {
         "message": {
             "role": "user",
             "parts": parts,
@@ -38,7 +67,9 @@ async def get_agent_response(client: A2AClient, question: str) -> List[Dict[str,
     )
     stream_response = client.send_message_streaming(streaming_request)
 
-    text_response = ""
+    # 聚合 agent 的自然语言响应（可能多段）
+    text_buffer = ""
+
     async for chunk in stream_response:
         chunk_data = chunk.model_dump(mode="json", exclude_none=True)
 
@@ -59,48 +90,58 @@ async def get_agent_response(client: A2AClient, question: str) -> List[Dict[str,
             continue
 
         for part in parts:
-            if part.get("kind") == "data":
+            kind = part.get("kind")
+            if kind == "data":
                 data1 = part.get("data")
                 if data1 and data1.get("data"):
                     for item in data1.get("data"):
-                        # This is a tool call
+                        # 工具调用（function call）
                         if item and item.get("type") == "function":
-                            function_call = item.get("function")
-                            if function_call:
-                                conversations.append(
-                                    {
-                                        "from": "function_call",
-                                        "value": json.dumps(function_call, ensure_ascii=False),
-                                    }
-                                )
-                        # This is a tool observation
+                            function_call = item.get("function") or {}
+                            # 只保留 name + arguments 字段，JSON 字符串写进 content
+                            tool_call_payload = {
+                                "name": function_call.get("name"),
+                                "arguments": function_call.get("arguments", {}),
+                            }
+                            messages.append(
+                                {
+                                    "role": "tool_call",
+                                    "content": json.dumps(tool_call_payload, ensure_ascii=False),
+                                }
+                            )
+
+                        # 工具返回（observation / tool_output）
                         if item and item.get("tool_output") is not None:
                             tool_output = item.get("tool_output")
-                            observation_value = ""
+                            # 确保 content 是 JSON 字符串
+                            content_str: str
                             try:
-                                parsed_output = json.loads(tool_output)
-                                if isinstance(parsed_output, (dict, list)):
-                                    observation_value = tool_output
+                                parsed = json.loads(tool_output)
+                                # 已是 JSON 字符串
+                                if isinstance(parsed, (dict, list, str, int, float, bool)) or parsed is None:
+                                    content_str = tool_output if isinstance(tool_output, str) else json.dumps(parsed, ensure_ascii=False)
                                 else:
-                                    observation_value = json.dumps({"result": parsed_output})
+                                    content_str = json.dumps({"result": parsed}, ensure_ascii=False)
                             except (json.JSONDecodeError, TypeError):
-                                observation_value = json.dumps({"result": tool_output})
+                                content_str = json.dumps({"result": tool_output}, ensure_ascii=False)
 
-                            conversations.append({"from": "observation", "value": observation_value})
-            elif part.get("kind") == "text":
+                            messages.append({"role": "tool_response", "content": content_str})
+
+            elif kind == "text":
                 text = part.get("text")
                 if text:
-                    text_response += text
+                    text_buffer += text
 
-    if text_response:
-        conversations.append({"from": "gpt", "value": text_response.strip()})
+    # 将累计的自然语言响应写入 assistant
+    if text_buffer.strip():
+        messages.append({"role": "assistant", "content": text_buffer.strip()})
 
-    return conversations
+    return messages
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="从问题文件逐条提问 Agent，收集对话与工具信息，写入 JSONL。"
+        description="从问题文件逐条提问 Agent，收集对话与工具信息，写入 JSONL（符合 messages + tools 字段格式）。"
     )
     parser.add_argument(
         "-q",
@@ -144,16 +185,21 @@ async def main() -> None:
         return
 
     mcp_servers = mcp_config.get("mcpServers", {})
-    all_tools = []
+    all_tools_raw: List[Dict[str, Any]] = []
     for server_name, server_info in mcp_servers.items():
         if not server_info.get("disabled"):
             url = server_info.get("url")
             if url:
                 logger.info(f"Fetching tools from '{server_name}' at {url}...")
                 server_tools = await get_mcp_tools(url)
-                all_tools.extend(server_tools)
+                if isinstance(server_tools, list):
+                    all_tools_raw.extend(server_tools)
 
-    logger.info(f"发现 {len(all_tools)} 个工具通过读取 MCP 的 Server 端")
+    logger.info(f"发现 {len(all_tools_raw)} 个工具通过读取 MCP 的 Server 端")
+
+    # 规范化工具，并转为 JSON 字符串（符合你的目标格式要求）
+    normalized_tools = [_normalize_tool(t) for t in all_tools_raw]
+    tools_as_string = json.dumps(normalized_tools, ensure_ascii=False)
 
     # 校验输入问题文件
     if not os.path.exists(args.questions_file):
@@ -186,17 +232,25 @@ async def main() -> None:
         client = A2AClient(httpx_client=httpx_client, agent_card=final_agent_card_to_use)
         logger.info("A2AClient 初始化完成.")
 
-        # 读取问题并生成训练数据
+        # 读取问题并生成训练数据（每行一个样本）
         with open(args.questions_file, "r", encoding="utf-8") as f_in, open(
             args.output_file, "w", encoding="utf-8"
         ) as f_out:
             questions = [line.strip() for line in f_in if line.strip()]
             if not questions:
                 logger.warning("问题文件为空，没有可处理的问题。")
+
             for question in questions:
                 logger.info(f"Processing question: {question}")
-                conversations = await get_agent_response(client, question)
-                training_entry = {"conversations": conversations, "tools": all_tools}
+                messages = await get_agent_response(client, question)
+
+                # >>> 写入符合指定格式的 JSON 行
+                # tools 字段是 JSON 字符串；messages 是数组
+                training_entry = {
+                    "tools": tools_as_string,
+                    "messages": messages,
+                }
+
                 f_out.write(json.dumps(training_entry, ensure_ascii=False) + "\n")
                 logger.info(f"Finished processing and saved entry for question: {question}")
 

@@ -100,9 +100,8 @@ python generate_questions.py --file step1/energy_services.py -n 20 -o questions.
     ```bash
     # 回到 backend 根目录
     cd step3
-    python generate_train_data.py
+    python generate_train_data.py --questions-file ../questions.txt --output-file train.jsonl --mcp-config ./mcp_config.json
     ```
-
 
 ### 步骤 4: 监督微调 (SFT)
 
