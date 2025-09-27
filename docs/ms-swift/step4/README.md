@@ -1,5 +1,5 @@
 # SFT训练模型
-
+## 只需指定本地的训练文件的地址即可。
 swift sft \
     --model Qwen/Qwen3-4B-Instruct-2507 \
     --train_type lora \
@@ -24,3 +24,5 @@ swift sft \
     --dataloader_num_workers 4 \
     --model_author swift \
     --model_name swift-robot
+
+
