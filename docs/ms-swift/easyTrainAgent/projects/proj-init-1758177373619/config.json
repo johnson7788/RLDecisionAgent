@@ -1,0 +1,12 @@
+{
+  "project_id": "proj-init-1758177373619",
+  "name": "训练任务-初始化",
+  "model": "gpt-4o",
+  "mcp_tools": [
+    "toolA",
+    "toolB"
+  ],
+  "extra": {
+    "seed": 42
+  }
+}

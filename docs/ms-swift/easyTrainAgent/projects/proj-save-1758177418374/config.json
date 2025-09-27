@@ -1,0 +1,12 @@
+{
+  "project_id": "proj-save-1758177418374",
+  "name": "save-config",
+  "model": "gpt-4o",
+  "mcp_tools": [
+    "toolX"
+  ],
+  "extra": {
+    "lr": 0.0001,
+    "epochs": 3
+  }
+}
