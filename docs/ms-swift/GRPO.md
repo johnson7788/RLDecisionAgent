@@ -1,10 +1,10 @@
 # 显卡2用于训练时的推理，自动同步参数
-CUDA_VISIBLE_DEVICES=2 \
+export CUDA_VISIBLE_DEVICES=2 \
 swift rollout \
     --model Qwen/Qwen2.5-3B-Instruct
 
-# 显卡1用于训练, cd ms-swift目录下，然后运行GRPO
-CUDA_VISIBLE_DEVICES=1
+# 显卡1用于训练, cd ms-swift目录下，然后运行GRPO， 使用lora训练, train_type 可以用full，表示完全微调
+export CUDA_VISIBLE_DEVICES=1
 swift rlhf \
     --rlhf_type grpo \
     --model Qwen/Qwen2.5-3B-Instruct \
@@ -14,7 +14,9 @@ swift rlhf \
     --vllm_mode server \
     --vllm_server_host 127.0.0.1 \
     --vllm_server_port 8000 \
-    --train_type full \
+    --train_type lora \
+    --lora_rank 8 \
+    --lora_alpha 32 \
     --torch_dtype bfloat16 \
     --dataset 'zouxuhong/Countdown-Tasks-3to4#50000' \
     --load_from_cache_file true \
@@ -40,3 +42,27 @@ swift rlhf \
     --report_to tensorboard \
     --beta 0.001 \
     --num_iterations 1
+
+
+# 数据对应的数据处理
+ms-swift/swift/llm/dataset/dataset/llm.py
+
+class CoundownTaskPreprocessor(ResponsePreprocessor):
+
+    def preprocess(self, row: Dict[str, Any]) -> Dict[str, Any]:
+        numbers = row['nums']
+        target = row.pop('response', None)
+        query = (f'Using the numbers {numbers}, create an equation that equals {target}.\n'
+                 'You can use basic arithmetic operations (+, -, *, /) and each number can only be used once.\n'
+                 'Show your work in <think> </think> tags. And return the final equation and answer '
+                 'in <answer> </answer> tags, for example <answer> (1 + 2) / 3 * 4 = 4 </answer>.')
+        row.update({'target': target, 'query': query})
+        return super().preprocess(row)
+
+
+register_dataset(
+    DatasetMeta(
+        ms_dataset_id='zouxuhong/Countdown-Tasks-3to4',
+        subsets=['default'],
+        preprocess_func=CoundownTaskPreprocessor(),
+        tags=['math']))
