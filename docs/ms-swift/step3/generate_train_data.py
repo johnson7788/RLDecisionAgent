@@ -254,7 +254,7 @@ async def main() -> None:
                 f_out.write(json.dumps(training_entry, ensure_ascii=False) + "\n")
                 logger.info(f"处理完成问题并保存: {question}")
 
-        logger.info(f"Successfully generated training data and saved to {args.output_file}")
+        logger.info(f"成功保存SFT训练数据到目录中: {args.output_file}")
 
 
 if __name__ == "__main__":

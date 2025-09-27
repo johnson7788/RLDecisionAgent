@@ -92,7 +92,7 @@ def _parse_date(date_str: str) -> Optional[date]:
     except Exception:
         return None
 
-def regenerate_simulated_data(base_date: Optional[date] = None, days: int = 30) -> None:
+def regenerate_simulated_data(base_date: Optional[date] = None, days: int = 1000) -> None:
     """
     按当前 SEED 重建最近 `days` 天（含基准日）的竞拍价与出厂价。
     """
@@ -171,7 +171,7 @@ def get_factory_prices(factory_names: List[str], start_date: str, end_date: str)
     print(f"[接口] 查询出厂价: 工厂={factory_names}, 范围={start_date}~{end_date}")
     s = _parse_date(start_date)
     e = _parse_date(end_date)
-    if not s or not e or s > e:
+    if not s or not e:
         print("[接口] 日期格式错误或开始日期晚于结束日期。")
         return {}
 
@@ -227,13 +227,14 @@ def get_lng_price(region: str, start_date: str, end_date: Optional[str] = None) 
     return prices
 
 if __name__ == '__main__':
-    mcp.run(transport="sse", host="127.0.0.1", port=9000)
+    # mcp.run(transport="sse", host="127.0.0.1", port=9000)
     # 示例1：查询最近3天内蒙古竞拍价 & 内蒙古工厂A/B出厂价
     today = datetime.now().date()
     start = (today - timedelta(days=2)).strftime("%Y-%m-%d")
     end = today.strftime("%Y-%m-%d")
     print(get_auction_price("内蒙古", start, end))
     print(get_factory_prices(["内蒙古工厂A", "内蒙古工厂B"], start, end))
+    print(get_factory_prices(["河北工厂Y"], "2025-04-15", "2025-04-15"))
 
     # 示例2：查询浙江 2025-04-01 ~ 2025-04-07 的 LNG 价格（同参同结果）
-    print(get_lng_price("浙江", "2025-04-01", "2025-04-07"))
+    print(get_lng_price("浙江", "2022-01-01", "2022-01-07"))
