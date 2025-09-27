@@ -124,7 +124,6 @@ def regenerate_simulated_data(base_date: Optional[date] = None, days: int = 30) 
                 else:  # 河北
                     SIMULATED_FACTORY_PRICES[factory][date_str] = round(rng.uniform(6000, 6400))
 
-# 初始化一次（使用 DEFAULT_SEED 与今天作为基准）
 regenerate_simulated_data()
 
 # ========== 公共工具 ==========
@@ -142,6 +141,8 @@ def get_current_time() -> str:
 def get_auction_price(province: str, start_date: str, end_date: str) -> Dict[str, float]:
     """
     获取指定省份在指定日期范围内的原料气竞拍价格。
+    返回示例，单位价格是每立方米/元
+    {'2025-09-25': 3.06, '2025-09-26': 3.18, '2025-09-27': 3.1}
     """
     print(f"[接口] 查询竞拍价: 省份={province}, 范围={start_date}~{end_date}")
     s = _parse_date(start_date)
@@ -163,8 +164,9 @@ def get_auction_price(province: str, start_date: str, end_date: str) -> Dict[str
 @mcp.tool()
 def get_factory_prices(factory_names: List[str], start_date: str, end_date: str) -> Dict[str, Dict[str, float]]:
     """
-    获取指定工厂列表在指定日期范围内的出厂价格。
-    返回结构：{date: {factory: price, ...}, ...}
+    获取指定工厂列表在指定日期范围内的出厂价格，单位每吨/元。
+    返回示例输出：
+    {'2025-09-25': {'内蒙古工厂A': 6124, '内蒙古工厂B': 5899}, '2025-09-26': {'内蒙古工厂A': 5898, '内蒙古工厂B': 5919}, '2025-09-27': {'内蒙古工厂A': 6069, '内蒙古工厂B': 6050}}
     """
     print(f"[接口] 查询出厂价: 工厂={factory_names}, 范围={start_date}~{end_date}")
     s = _parse_date(start_date)
@@ -191,8 +193,8 @@ def get_lng_price(region: str, start_date: str, end_date: Optional[str] = None) 
     """
     获取指定地区从 start_date 到 end_date（默认今天）的每日 LNG 价格。
     - 基于月度基准价 + 小幅波动。
-    - 小幅波动由与 (region, start_date, end_date, 当天日期) 绑定的稳定 RNG 产生，
-      确保相同查询在不同时间点/调用次数下结果一致。
+    返回示例：
+    [{'date': '2025-04-01', 'price': 4.55}, {'date': '2025-04-02', 'price': 4.53}, {'date': '2025-04-03', 'price': 4.55}, {'date': '2025-04-04', 'price': 4.49}, {'date': '2025-04-05', 'price': 4.46}, {'date': '2025-04-06', 'price': 4.53}, {'date': '2025-04-07', 'price': 4.5}]
     """
     if not region:
         return []
@@ -225,7 +227,7 @@ def get_lng_price(region: str, start_date: str, end_date: Optional[str] = None) 
     return prices
 
 if __name__ == '__main__':
-    mcp.run(transport="sse", host="127.0.0.1", port=9000)
+    # mcp.run(transport="sse", host="127.0.0.1", port=9000)
     # 示例1：查询最近3天内蒙古竞拍价 & 内蒙古工厂A/B出厂价
     today = datetime.now().date()
     start = (today - timedelta(days=2)).strftime("%Y-%m-%d")

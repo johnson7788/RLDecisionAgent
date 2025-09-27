@@ -89,7 +89,7 @@ python generate_questions.py --file step1/energy_services.py -n 20 -o questions.
 1.  **启动 Agent 服务**：
 
     ```bash
-    cd a2a_agent
+    cd step3
     cp env_template .env   # 并添加大模型的key
     python main.py
     ```
@@ -99,7 +99,7 @@ python generate_questions.py --file step1/energy_services.py -n 20 -o questions.
 
     ```bash
     # 回到 backend 根目录
-    cd ..
+    cd step3
     python generate_train_data.py
     ```
 

@@ -11,11 +11,11 @@ from a2a.types import (
     MessageSendParams,
     SendStreamingMessageRequest,
 )
-from rl_train.mcp_client import get_mcp_tools
+from mcp_client import get_mcp_tools
 
 PUBLIC_AGENT_CARD_PATH = '/.well-known/agent.json'
 EXTENDED_AGENT_CARD_PATH = '/agent/authenticatedExtendedCard'
-MCP_CONFIG_PATH = 'a2a_agent/mcp_config.json'
+MCP_CONFIG_PATH = './mcp_config.json'
 
 
 async def get_agent_response(client: A2AClient, question: str) -> List[Dict[str, Any]]:
