@@ -250,9 +250,9 @@ async def main() -> None:
                     "tools": tools_as_string,
                     "messages": messages,
                 }
-
+                print(f"问题的输出结果是: {training_entry}")
                 f_out.write(json.dumps(training_entry, ensure_ascii=False) + "\n")
-                logger.info(f"Finished processing and saved entry for question: {question}")
+                logger.info(f"处理完成问题并保存: {question}")
 
         logger.info(f"Successfully generated training data and saved to {args.output_file}")
 
