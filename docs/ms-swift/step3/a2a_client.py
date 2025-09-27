@@ -58,7 +58,7 @@ async def main() -> None:
         logger.info('A2AClient 初始化完成。')
 
         # === 多轮对话 ===
-        parts = [{'kind': 'text', 'text': '今天是几月几日？'}]
+        parts = [{'kind': 'text', 'text': '现在的具体时间是多少？'}]
         logger.info("开始进行对话...")
         multiturn_first: dict[str, Any] = {
             'message': {
