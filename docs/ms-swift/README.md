@@ -205,3 +205,42 @@ query: who are you?
 response: I am an artificial intelligence model named Xiao Huang, developed by ModelScope. I can answer your questions, provide information, and engage in conversation. If you have any inquiries or need assistance, feel free to ask me at any time.
 """
 ```
+
+##
+ls -alht
+总计 43M
+-rw-r--r--  1 root root  43M  9月 27 19:15 completions.jsonl
+-rw-r--r--  1 root root 564K  9月 27 19:15 logging.jsonl
+drwxr-xr-x  3 root root 4.0K  9月 27 18:51 checkpoint-700
+drwxr-xr-x 10 root root 4.0K  9月 27 18:51 .
+-rw-r--r--  1 root root 1.9K  9月 27 18:51 README.md
+drwxr-xr-x  3 root root 4.0K  9月 27 17:50 checkpoint-600
+drwxr-xr-x  3 root root 4.0K  9月 27 16:50 checkpoint-500
+drwxr-xr-x  3 root root 4.0K  9月 27 15:49 checkpoint-400
+drwxr-xr-x  3 root root 4.0K  9月 27 14:48 checkpoint-300
+drwxr-xr-x  3 root root 4.0K  9月 27 13:47 checkpoint-200
+drwxr-xr-x  3 root root 4.0K  9月 27 12:45 checkpoint-100
+drwxr-xr-x  2 root root 4.0K  9月 27 11:43 runs
+-rw-r--r--  1 root root  33K  9月 27 11:42 args.json
+drwxr-xr-x  4 root root 4.0K  9月 27 11:42 ..
+
+ls -alht runs/
+总计 952K
+-rw-r--r--  1 root root 939K  9月 27 19:15 events.out.tfevents.1758944587.yaqiyun-SYS-4028GR-TR2.3351.0
+
+ls -alht checkpoint-700/
+总计 30M
+drwxr-xr-x  3 root root 4.0K  9月 27 18:51 .
+-rw-r--r--  1 root root 567K  9月 27 18:51 trainer_state.json
+-rw-r--r--  1 root root   14  9月 27 18:51 latest
+-rw-r--r--  1 root root  15K  9月 27 18:51 rng_state.pth
+-rw-r--r--  1 root root 1.4K  9月 27 18:51 scheduler.pt
+-rwxr--r--  1 root root  33K  9月 27 18:51 zero_to_fp32.py
+drwxr-xr-x  2 root root 4.0K  9月 27 18:51 global_step700
+-rw-r--r--  1 root root  33K  9月 27 18:51 args.json
+-rw-r--r--  1 root root  979  9月 27 18:51 adapter_config.json
+-rw-r--r--  1 root root   67  9月 27 18:51 additional_config.json
+-rw-r--r--  1 root root  12K  9月 27 18:51 training_args.bin
+-rw-r--r--  1 root root  29M  9月 27 18:51 adapter_model.safetensors
+-rw-r--r--  1 root root 5.2K  9月 27 18:51 README.md
+drwxr-xr-x 10 root root 4.0K  9月 27 18:51 ..
