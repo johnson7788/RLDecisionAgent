@@ -108,21 +108,38 @@ python generate_questions.py --file step1/energy_services.py -n 20 -o questions.
 使用上一步生成的 `train.jsonl` 文件对基础模型进行微调，使其具备调用工具的能力。
 
 ```bash
-python train_tool_sft.py \
-  --data_path ./train.jsonl \
-  --epochs 3 \
-  --lr 2e-4 \
-  --batch_size 8 \
-  --grad_accum 2 \
-  --wandb_project easy-train-sft
+swift sft \
+    --model Qwen/Qwen3-4B-Instruct-2507 \
+    --train_type lora \
+    --dataset './step3/train.jsonl' \
+    --torch_dtype bfloat16 \
+    --num_train_epochs 1 \
+    --per_device_train_batch_size 1 \
+    --per_device_eval_batch_size 1 \
+    --learning_rate 1e-4 \
+    --lora_rank 8 \
+    --lora_alpha 32 \
+    --target_modules all-linear \
+    --gradient_accumulation_steps 16 \
+    --eval_steps 50 \
+    --save_steps 50 \
+    --save_total_limit 2 \
+    --logging_steps 5 \
+    --max_length 4096 \
+    --output_dir output \
+    --system '你是一个天然气专家，可以使用工具回答用户的问题。' \
+    --warmup_ratio 0.05 \
+    --dataloader_num_workers 4 \
+    --model_author swift \
+    --model_name swift-robot
 ```
-对应日志文件：[train_tool_sft.log](logs/train_tool_sft.log)
+对应日志文件：[sft.log](step4%2Fsft.log)
 
-训练完成后，LoRA 权重将保存在 `./lora_model` 目录中。
+训练完成后，LoRA 权重将保存在 `./output` 目录中。
 ```
-ls lora_model/
-README.md            adapter_model.safetensors  chat_template.jinja  special_tokens_map.json  tokenizer_config.json
-adapter_config.json  added_tokens.json          merges.txt           tokenizer.json           vocab.json
+ls output/v1-20250927-221821/checkpoint-2
+adapter_config.json        additional_config.json  optimizer.pt  rng_state.pth  trainer_state.json
+adapter_model.safetensors  args.json               README.md     scheduler.pt   training_args.bin
 ```
 
 ### 步骤 5: 测试 SFT 模型
@@ -130,8 +147,9 @@ adapter_config.json  added_tokens.json          merges.txt           tokenizer.j
 在合并权重之前，你可以使用 `inference_tool_sft.py` 脚本来测试微调后模型的工具调用能力。
 
 ```bash
+cd step5
 python inference_tool_sft.py \
-  --model ./lora_model \
+  --model ../output/v1-20250927-221821/checkpoint-2 \
   --base_model unsloth/Qwen3-4B-Instruct-2507 \
   --query "山西2024年5月的LNG到岸价格是多少？"
 ```
