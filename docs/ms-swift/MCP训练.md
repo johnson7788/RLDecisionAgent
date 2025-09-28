@@ -145,7 +145,7 @@ adapter_model.safetensors  args.json               README.md     scheduler.pt   
 ### 步骤 5: 测试 SFT 模型
 
 在合并权重之前，你可以使用 `step3`中的Agent来测试微调后模型的工具调用能力。
-阅读
+阅读这个readme
 [README.md](step5%2FREADME.md)
 
 
@@ -156,16 +156,20 @@ adapter_model.safetensors  args.json               README.md     scheduler.pt   
 ```bash
 # 回到 backend 根目录
 cd ..
-python merge_lora.py  --base_id unsloth/Qwen3-4B-Instruct-2507  --lora_dir ./lora_model   --out_dir ./qwen3-4b-sft
+swift export \
+  --model Qwen/Qwen3-4B-Instruct-2507 \
+  --adapters output/v1-20250927-221821/checkpoint-2 \
+  --merge_lora true \
+  --output_dir output/merged_qwen3
 ```
-对应日志文件： [merge_lora.log](logs/merge_lora.log)
+对应日志文件： [merge_lora.log](step6%2Fmerge_lora.log)
 
 ### 步骤 7: 强化学习 (RL) 训练
 
 为了进一步优化模型的性能，你可以选择进行强化学习训练，修改.env传入所需的训练参数。
 
 ```bash
-cd rl_train
+cd step7
 # 指定项目名称，实验名称
 python train.py --name query-agent --project query-training --use_ruler true --model_name ./qwen3-4b-sft --max_seq_len 8192 --questions_path ./questions.txt --mcp_config mcp_config.json
 # 注意修改模型为你SFT之后的导出的模型
