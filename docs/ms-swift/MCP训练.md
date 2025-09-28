@@ -144,16 +144,10 @@ adapter_model.safetensors  args.json               README.md     scheduler.pt   
 
 ### 步骤 5: 测试 SFT 模型
 
-在合并权重之前，你可以使用 `inference_tool_sft.py` 脚本来测试微调后模型的工具调用能力。
+在合并权重之前，你可以使用 `step3`中的Agent来测试微调后模型的工具调用能力。
+阅读
+[README.md](step5%2FREADME.md)
 
-```bash
-cd step5
-python inference_tool_sft.py \
-  --model ../output/v1-20250927-221821/checkpoint-2 \
-  --base_model unsloth/Qwen3-4B-Instruct-2507 \
-  --query "山西2024年5月的LNG到岸价格是多少？"
-```
-对应日志文件：[inference_tool_sft.log](logs/inference_tool_sft.log)
 
 ### 步骤 6: 合并 LoRA 权重
 

@@ -23,3 +23,19 @@ LLM_MODEL=mylora-model
 SWIFT_API_URL=http://127.0.0.1:8000/v1
 SWIFT_API_KEY=empty
 ```
+
+# 测试Agent使用mcp
+```
+cd step3
+python a2a_client.py
+```
+
+## 日志
+1) 模型推理端的日志
+[sft.log](sft.log)
+
+2) Agent的日志
+[agent.log](agent.log)
+
+3) 客户端日志
+[client.log](client.log)
