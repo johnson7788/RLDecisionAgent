@@ -165,7 +165,8 @@ swift export \
 对应日志文件： [merge_lora.log](step6%2Fmerge_lora.log)
 
 ### 步骤 7: 强化学习 (RL) 训练
-
+qwen的chat_template
+ms-swift/swift/plugin/agent_template/qwen.py
 为了进一步优化模型的性能，你可以选择进行强化学习训练，修改.env传入所需的训练参数。
 1. 训练中的模型如何使用MCP工具， MultiTurnScheduler和ToolCallScheduler，参考./swift/plugin/multi_turn.py  ./examples/train/grpo/plugin/plugin.py  ./examples/train/grpo/plugin/deepeyes/deepeyes_plugin.py
 例如：参考thinking_tips_scheduler： ms-swift/swift/plugin/multi_turn.py， 参考ToolCallScheduler去改造

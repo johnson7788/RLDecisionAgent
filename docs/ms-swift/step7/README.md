@@ -3,7 +3,7 @@ export CUDA_VISIBLE_DEVICES=2 \
 swift rollout \
     --model ./output/merged_qwen3 \
     --vllm_use_async_engine true \
-    --multi_turn_scheduler thinking_tips_scheduler \
+    --multi_turn_scheduler mcp_call_scheduler \
     --vllm_max_model_len 32768 \
     --vllm_gpu_memory_utilization 0.8 \
     --max_turns 5
@@ -12,8 +12,8 @@ swift rollout \
 export CUDA_VISIBLE_DEVICES=1
 swift rlhf \
     --rlhf_type grpo \
-    --model Qwen/Qwen2.5-3B-Instruct \
-    --external_plugins examples/train/grpo/plugin/plugin.py \
+    --model ./output/merged_qwen3 \
+    --external_plugins ./plugin.py \
     --reward_funcs external_countdown format \
     --use_vllm true \
     --vllm_mode server \
@@ -23,7 +23,7 @@ swift rlhf \
     --lora_rank 8 \
     --lora_alpha 32 \
     --torch_dtype bfloat16 \
-    --dataset 'zouxuhong/Countdown-Tasks-3to4#50000' \
+    --dataset './train.jsonl' \
     --load_from_cache_file true \
     --max_length 2048 \
     --max_completion_length 1024 \
@@ -36,7 +36,7 @@ swift rlhf \
     --save_steps 100 \
     --save_total_limit 20 \
     --logging_steps 1 \
-    --output_dir output/GRPO_COUNTDOWN \
+    --output_dir output/mcp_qwen3 \
     --warmup_ratio 0.01 \
     --dataloader_num_workers 4 \
     --num_generations 8 \
