@@ -14,3 +14,12 @@ swift deploy \
     --max_new_tokens 2048 \
     --served_model_name 'mylora-model'
 ```
+
+# 启动Agent
+```
+更改.env，更改模型供应商和模型配置信息
+MODEL_PROVIDER=swift
+LLM_MODEL=mylora-model
+SWIFT_API_URL=http://127.0.0.1:8000/v1
+SWIFT_API_KEY=empty
+```
