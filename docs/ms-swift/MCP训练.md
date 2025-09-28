@@ -167,8 +167,16 @@ swift export \
 ### 步骤 7: 强化学习 (RL) 训练
 
 为了进一步优化模型的性能，你可以选择进行强化学习训练，修改.env传入所需的训练参数。
-1. 训练中的模型如何使用MCP工具
-2. 如果训练集不提供solution明确奖励，如何使用ART的ruler奖励
+1. 训练中的模型如何使用MCP工具， MultiTurnScheduler和ToolCallScheduler，参考./swift/plugin/multi_turn.py  ./examples/train/grpo/plugin/plugin.py  ./examples/train/grpo/plugin/deepeyes/deepeyes_plugin.py
+例如：参考thinking_tips_scheduler： ms-swift/swift/plugin/multi_turn.py， 参考ToolCallScheduler去改造
+2. swift rollout \
+    --model Qwen/Qwen3-1.7B \
+    --use_async_engine true \
+    --multi_turn_scheduler thinking_tips_scheduler \
+    --vllm_max_model_len 32768 \
+    --vllm_gpu_memory_utilization 0.8 \
+    --max_turns 3
+3. 如果训练集不提供solution明确奖励，如何使用ART的ruler奖励
 
 ```bash
 cd step7
