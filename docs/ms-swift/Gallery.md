@@ -142,3 +142,17 @@ ROUTE_MAPPING: Dict[str, str] = {
 * `app` → `swift.cli.app`
   文件 `app.py`：`from swift.llm import app_main`。
   典型用途：**统一的交互式应用入口**（往往是 Web UI 的新推荐入口）；与 `web-ui` 的兼容逻辑相呼应，是官方建议使用的方式。
+
+
+# 内置的奖励函数
+ms-swift/swift/plugin/orm.py
+orms = {
+    'toolbench': ReactORM,
+    'math': MathORM,
+    'accuracy': MathAccuracy,
+    'format': Format,
+    'react_format': ReActFormat,
+    'cosine': CosineReward,
+    'repetition': RepetitionPenalty,
+    'soft_overlong': SoftOverlong,
+}
