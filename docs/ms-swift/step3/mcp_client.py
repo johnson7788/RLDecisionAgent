@@ -51,7 +51,7 @@ def tool_definition_to_dict(tool) -> Dict[str, Any]:
     return {k: v for k, v in tool_dict.items() if v is not None}
 
 async def get_mcp_tools(server_url: str) -> List[Dict[str, Any]]:
-    """List all MCP tools from an SSE server and return them as a list of dictionaries."""
+    """获取MCPserver的所有工具通过SSE协议"""
     client = Client(server_url)
     async with client:
         try:

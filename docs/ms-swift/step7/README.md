@@ -1,7 +1,12 @@
-# 显卡2用于训练时的推理，自动同步参数
+# 显卡2用于训练时的推理，自动同步参数，使用SFT过后的模型
 export CUDA_VISIBLE_DEVICES=2 \
 swift rollout \
-    --model Qwen/Qwen2.5-3B-Instruct
+    --model ./output/merged_qwen3 \
+    --vllm_use_async_engine true \
+    --multi_turn_scheduler thinking_tips_scheduler \
+    --vllm_max_model_len 32768 \
+    --vllm_gpu_memory_utilization 0.8 \
+    --max_turns 5
 
 # 显卡1用于训练, cd ms-swift目录下，然后运行GRPO， 使用lora训练, train_type 可以用full，表示完全微调
 export CUDA_VISIBLE_DEVICES=1
