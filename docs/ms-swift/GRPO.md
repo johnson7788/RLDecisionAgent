@@ -1,7 +1,9 @@
 # 显卡2用于训练时的推理，自动同步参数, 不同的模型Qwen/Qwen2.5-3B-Instruct
 export CUDA_VISIBLE_DEVICES=2 \
 swift rollout \
-    --model Qwen/Qwen3-4B-Instruct-2507
+    --model Qwen/Qwen2.5-3B-Instruct
+其它模型
+Qwen/Qwen3-4B-Instruct-2507
 
 # 显卡1用于训练, cd ms-swift目录下，然后运行GRPO， 使用lora训练, train_type 可以用full，表示完全微调
 export CUDA_VISIBLE_DEVICES=1

@@ -165,11 +165,19 @@ swift export \
 对应日志文件： [merge_lora.log](step6%2Fmerge_lora.log)
 
 ### 步骤 7: 强化学习 (RL) 训练
-qwen的chat_template
-ms-swift/swift/plugin/agent_template/qwen.py
+qwen的chat_template，每个模型使用的哪个chat_template
+ms-swift/swift/plugin/agent_template/__init__.py
+ms-swift/swift/llm/template/template/qwen.py
+例如qwen默认用的是
+class QwenTemplateMeta(ChatmlTemplateMeta):
+    default_system: Optional[str] = DEFAULT_SYSTEM
+    auto_add_bos: bool = False
+    stop_words: List[Word] = field(default_factory=lambda: ['<|endoftext|>'])
+    agent_template: str = 'hermes'
 为了进一步优化模型的性能，可以选择进行强化学习训练，修改.env传入所需的训练参数。
 1. 训练中的模型如何使用MCP工具， MultiTurnScheduler和ToolCallScheduler，参考./swift/plugin/multi_turn.py  ./examples/train/grpo/plugin/plugin.py  ./examples/train/grpo/plugin/deepeyes/deepeyes_plugin.py
 例如：参考thinking_tips_scheduler： ms-swift/swift/plugin/multi_turn.py， 参考ToolCallScheduler去改造
+
 2. swift rollout \
     --model Qwen/Qwen3-1.7B \
     --use_async_engine true \
