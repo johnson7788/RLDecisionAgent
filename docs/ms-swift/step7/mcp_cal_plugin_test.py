@@ -9,15 +9,17 @@
 import json
 from swift.llm.infer.protocol import ChatCompletionResponseChoice
 from swift.llm import RolloutInferRequest
-from swift.plugin.multi_turn import multi_turns
+from plugin import multi_turns
 
 
 # 模拟一个工具调用请求
 def simulate_tool_call():
     # 假设你的MCP服务工具可以做一些简单的计算
     response_choice = ChatCompletionResponseChoice(
+        index=0,  # Example index, you can change this as per your use case
         message={'role': 'user', 'content': 'What is 3 + 5?'},
-        token_ids=[101, 202, 303],  # 示例 token
+        finish_reason='stop',  # Example finish_reason, you can set it to 'stop', 'length', or None
+        token_ids=[101, 202, 303],  # Example token
     )
 
     # 模拟一个 RolloutInferRequest
