@@ -16,9 +16,10 @@ Similarity score: """
         # 最后的参考答案，可能没啥用
         response = row["messages"][-1]["content"]
         res = super().preprocess({
-            'query': user_question,
-            'response': response
+            'query': user_question
         })
+        # 把工具加进去
+        res['tools'] = row["tools"]
         return res
 
 
