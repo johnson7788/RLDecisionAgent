@@ -15,10 +15,11 @@ Similarity score: """
         user_question = row["messages"][0]["content"]
         # 最后的参考答案，可能没啥用
         response = row["messages"][-1]["content"]
-        return super().preprocess({
+        res = super().preprocess({
             'query': user_question,
             'response': response
         })
+        return res
 
 
 register_dataset(
