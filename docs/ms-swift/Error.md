@@ -56,3 +56,7 @@ ValueError: DeepSpeed is not compatible with `device_map`. n_gpu: 3, local_world
 [rank0]:   File "/usr/local/lib/python3.11/site-packages/swift/llm/argument/rlhf_args.py", line 299, in _check_grpo
 [rank0]:     raise ValueError('GRPO with vLLM is not compatible with `device_map`. '
 [rank0]: ValueError: GRPO with vLLM is not compatible with `device_map`. Please set NPROC_PER_NODE equal to num_processes.
+
+
+
+# 如果在swift rollout中使用multi_turn_scheduler，但是没有指定external_plugins的位置，那么rollout就会卡住，无法启动
