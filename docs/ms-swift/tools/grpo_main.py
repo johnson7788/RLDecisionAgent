@@ -59,11 +59,11 @@ if __name__ == "__main__":
         report_to=["tensorboard"],
 
         # ==== 系统提示词 ====
-        system="You are a helpful assistant. You first thinks about the reasoning process in the mind and then provides the user with the answer.",
+        system="You are a helpful assistant.",
 
         # ==== 自定义奖励与插件 ====
         # CLI 里的 "--reward_funcs external_countdown format" → Python 用列表写法：
-        reward_funcs=["external_countdown", "format"],
+        reward_funcs=["format"],
         # CLI 里的 "--external_plugins examples/train/grpo/plugin/plugin.py"
         external_plugins=["./plugin.py"],
     )
