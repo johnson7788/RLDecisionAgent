@@ -3,14 +3,16 @@ export CUDA_VISIBLE_DEVICES=2 \
 swift rollout \
     --model ./output/merged_qwen3 \
     --vllm_use_async_engine true \
+    --external_plugins ./plugin.py \
     --multi_turn_scheduler mcp_call_scheduler \
     --vllm_max_model_len 4096 \
     --vllm_gpu_memory_utilization 0.8 \
     --max_turns 5
-# 测试, mcp_call_scheduler和tool_call_scheduler
+# 测试tool_call_scheduler和Qwen/Qwen2.5-3B-Instruct
 swift rollout \
     --model Qwen/Qwen2.5-3B-Instruct \
     --vllm_use_async_engine true \
+    --external_plugins ./plugin.py \
     --multi_turn_scheduler tool_call_scheduler \
     --vllm_max_model_len 4096 \
     --vllm_gpu_memory_utilization 0.8 \
