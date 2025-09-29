@@ -65,7 +65,7 @@ if __name__ == "__main__":
         # CLI 里的 "--reward_funcs external_countdown format" → Python 用列表写法：
         reward_funcs=["external_countdown", "format"],
         # CLI 里的 "--external_plugins examples/train/grpo/plugin/plugin.py"
-        external_plugins=["examples/train/grpo/plugin/plugin.py"],
+        external_plugins=["./plugin.py"],
     )
 
     rlhf_main(args)

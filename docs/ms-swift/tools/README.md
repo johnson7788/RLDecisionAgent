@@ -7,3 +7,9 @@ prompt.py  #提示词
 mcp_config.json  # 使用的MCP工具
 mcp_config_load.py #加载mcp工具
 ```
+
+
+## Debug方式
+1） 在容器里面运行[start_sshd.sh](start_sshd.sh)
+2） 然后使用pycharm的ssh连接容器
+3） 运行grpo_main.py进行debug
