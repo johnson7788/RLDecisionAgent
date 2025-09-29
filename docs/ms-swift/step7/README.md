@@ -3,10 +3,13 @@ export CUDA_VISIBLE_DEVICES=2 \
 swift rollout \
     --model ./output/merged_qwen3 \
     --vllm_use_async_engine true \
-    --multi_turn_scheduler mcp_call_scheduler \
-    --vllm_max_model_len 32768 \
+    --multi_turn_scheduler tool_call_scheduler \
+    --vllm_max_model_len 4096 \
     --vllm_gpu_memory_utilization 0.8 \
     --max_turns 5
+
+mcp_call_scheduler
+tool_call_scheduler
 
 # 显卡1用于训练, cd ms-swift目录下，然后运行GRPO， 使用lora训练, train_type 可以用full，表示完全微调
 export CUDA_VISIBLE_DEVICES=1
@@ -14,7 +17,7 @@ swift rlhf \
     --rlhf_type grpo \
     --model ./output/merged_qwen3 \
     --external_plugins ./plugin.py \
-    --reward_funcs external_countdown format \
+    --reward_funcs format \
     --use_vllm true \
     --vllm_mode server \
     --vllm_server_host 127.0.0.1 \

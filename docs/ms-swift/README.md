@@ -57,7 +57,7 @@ pip config set global.index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/si
 ```
 # 克隆强化学习训练框架
 ```
-cd verl-agent
+cd ms-swift
 pip install .
 ```
 

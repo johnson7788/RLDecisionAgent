@@ -981,7 +981,7 @@ class ToolCallScheduler(MultiTurnScheduler):
         Format: Action: tool_name\nAction Input: parameters
         """
         import re
-
+        print(f"_extract_tool_calls开始检查模型输出: {text}")
         pattern = r'Action:\s*(.*?)\s*\nAction Input:\s*(.*?)(?:\n|$)'
         matches = re.findall(pattern, text, re.DOTALL)
         if not matches:

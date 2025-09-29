@@ -219,14 +219,15 @@ python merge_lora.py  --base_id unsloth/Qwen3-4B-Instruct-2507  --lora_dir /work
     ```
 
 2.  **测试 API**：
-
+列出所有模型
+curl -s -X GET 'http://localhost:8000/v1/models'
     ```bash
     curl http://localhost:8000/v1/chat/completions \
       -H "Content-Type: application/json" \
-      -d {
+      -d '{
         "model": "qwen3-4b-merged",
         "messages": [{"role": "user", "content": "你好！"}]
-      }
+      }'
     ```
 
 ---

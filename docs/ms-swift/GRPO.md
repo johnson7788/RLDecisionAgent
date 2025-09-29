@@ -1,13 +1,13 @@
-# 显卡2用于训练时的推理，自动同步参数
+# 显卡2用于训练时的推理，自动同步参数, 不同的模型Qwen/Qwen2.5-3B-Instruct
 export CUDA_VISIBLE_DEVICES=2 \
 swift rollout \
-    --model Qwen/Qwen2.5-3B-Instruct
+    --model Qwen/Qwen3-4B-Instruct-2507
 
 # 显卡1用于训练, cd ms-swift目录下，然后运行GRPO， 使用lora训练, train_type 可以用full，表示完全微调
 export CUDA_VISIBLE_DEVICES=1
 swift rlhf \
     --rlhf_type grpo \
-    --model Qwen/Qwen2.5-3B-Instruct \
+    --model Qwen/Qwen3-4B-Instruct-2507 \
     --external_plugins examples/train/grpo/plugin/plugin.py \
     --reward_funcs external_countdown format \
     --use_vllm true \
