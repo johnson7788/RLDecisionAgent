@@ -55,10 +55,10 @@ export HF_ENDPOINT=https://hf-mirror.com
 ```
 pip config set global.index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
 ```
-# 克隆强化学习训练框架
+# 克隆强化学习训练框架，容器中默认安装的3.8.1的版本，可以升级
 ```
 cd ms-swift
-pip install .
+pip install -e .
 ```
 
 ## 设置代理，安装git上的项目
