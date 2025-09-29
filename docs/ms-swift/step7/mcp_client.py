@@ -8,6 +8,7 @@
 
 import asyncio
 import json
+import threading
 from typing import Any, Dict, List
 from fastmcp import Client
 
@@ -60,6 +61,47 @@ async def get_mcp_tools(server_url: str) -> List[Dict[str, Any]]:
         except Exception as e:
             print(f"❌ Failed to get tools from {server_url}: {e}")
             return []
+
+async def call_mcp_tool_async(server_or_config, tool_name: str, arguments: Dict[str, Any]) -> Any:
+    """
+    通过 fastmcp.Client 调用 MCP 工具（异步版本）。
+    server_or_config: 可为单个 server url / 路径 / FastMCP 实例 / 或包含 "mcpServers" 的 config dict
+    """
+    client = Client(server_or_config)
+    async with client:
+        # fastmcp.Client.call_tool 返回的对象可直接是结果，也可能带 .data 属性
+        result = await client.call_tool(tool_name, arguments or {})
+        try:
+            # result可能是带 .data 的对象，也可能是原始可序列化结构
+            data = getattr(result, 'data', result)
+        except Exception:
+            data = result
+        return data
+
+def call_mcp_tool_sync(server_or_config, tool_name: str, arguments: Dict[str, Any]) -> str:
+    """
+    同步封装：在非异步上下文/已有事件循环时都安全调用。
+    返回字符串（JSON序列化，保证可直接拼接/打印）。
+    """
+    async def _runner():
+        data = await call_mcp_tool_async(server_or_config, tool_name, arguments)
+        try:
+            return json.dumps(data, ensure_ascii=False)
+        except Exception:
+            # 兜底：不可序列化则转字符串
+            return str(data)
+
+    try:
+        # 没有正在运行的loop时，直接 asyncio.run
+        return asyncio.run(_runner())
+    except RuntimeError:
+        # 存在running loop（如某些异步引擎），使用子线程开新loop执行
+        holder = {'value': ''}
+        def _thread_target():
+            holder['value'] = asyncio.run(_runner())
+        t = threading.Thread(target=_thread_target, daemon=True)
+        t.start(); t.join()
+        return holder['value']
 
 async def main():
     # Example usage: Load config and list tools from all servers

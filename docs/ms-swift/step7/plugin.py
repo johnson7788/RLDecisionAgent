@@ -4,7 +4,7 @@ import re
 import textwrap
 from collections import Counter
 from copy import deepcopy
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Any
 
 import json
 import torch
@@ -18,6 +18,7 @@ from swift.plugin.env import Env, envs
 from swift.plugin.multi_turn import MultiTurnScheduler, multi_turns
 from swift.plugin.rm_plugin import DefaultRMPlugin
 from swift.utils import get_logger
+from mcp_client import call_mcp_tool_sync
 
 logger = get_logger()
 """
@@ -35,6 +36,145 @@ TO CUSTOMIZE REWARD FUNCTION:
         --reward_funcs my_reward_function
 """
 
+
+class MCPCallScheduler(MultiTurnScheduler):
+    """
+    使用 Hermes chat_template 的 <tool_call>... </tool_call> 语法解析工具调用，
+    并通过 mcp_client 调用 MCP server 的工具。
+    """
+    def __init__(self, *args, **kwargs):
+        """
+        你可以通过以下方式提供 MCP 连接信息（择一）：
+        - kwargs['mcp_server']：单一 server URL / 路径 / FastMCP 实例 / 配置字典
+        - kwargs['mcp_config_path']：JSON 文件路径，内容含 "mcpServers"
+        - 环境变量 MCP_SERVER_URL 或 MCP_CONFIG_PATH
+        """
+        self.mcp_server: Any = kwargs.pop('mcp_server', None) or os.environ.get('MCP_SERVER_URL')
+        self.mcp_config_path: str = kwargs.pop('mcp_config_path', None) or os.environ.get('MCP_CONFIG_PATH')
+        if not self.mcp_config_path:
+            self.mcp_config_path == os.path.join(os.path.dirname(__file__), 'mcp_config.json')
+        super().__init__(*args, **kwargs)
+
+        # 若提供了 config path，则优先使用
+        if self.mcp_config_path and not self.mcp_server:
+            try:
+                with open(self.mcp_config_path, 'r', encoding='utf-8') as f:
+                    self.mcp_server = json.load(f)  # fastmcp.Client 接受含 "mcpServers" 的 dict
+            except Exception as e:
+                logger.warning(f'Failed to load MCP config from {self.mcp_config_path}: {e}')
+
+        if not self.mcp_server:
+            logger.warning('MCPCallScheduler: no MCP server/config provided. '
+                           'Set mcp_server / mcp_config_path or env MCP_SERVER_URL / MCP_CONFIG_PATH.')
+
+    # ----- 工具调用解析（Hermes / Hunyuan-Hermes 兼容） -----
+    def _extract_tool_calls(self, text: str):
+        """
+        返回形如 [{'tool': name, 'params': dict}, ...] 的列表；无则返回 None
+        支持：
+          1) <tool_call>{ "name": "...", "arguments": {...} }</tool_call>
+          2) <tool_call>func_name\n```json\n{...}\n```</tool_call>  （Hunyuan Hermes）
+        """
+        try:
+            import re
+            calls = []
+
+            # 1) 标准 Hermes：<tool_call> ...json... </tool_call>
+            for block in re.findall(r'<tool_call>\s*(.+?)\s*</tool_call>', text, re.DOTALL):
+                blk = block.strip()
+                parsed = None
+
+                # 尝试直接 JSON
+                try:
+                    obj = json.loads(blk)
+                    if isinstance(obj, dict) and 'name' in obj and 'arguments' in obj:
+                        parsed = {'tool': obj['name'], 'params': obj.get('arguments') or {}}
+                except Exception:
+                    parsed = None
+
+                # 2) 兼容 Hunyuan-Hermes：name + ```json ... ```
+                if parsed is None:
+                    m = re.match(r'([^\n]+)\s*```json\s*(\{.*?\})\s*```', blk, re.DOTALL)
+                    if m:
+                        name = m.group(1).strip()
+                        args = json.loads(m.group(2))
+                        parsed = {'tool': name, 'params': args}
+
+                if parsed is not None:
+                    calls.append(parsed)
+
+            if not calls:
+                return None
+            return calls
+
+        except Exception as e:
+            logger.warning(f'_extract_tool_calls parsing error: {e}')
+            return None
+
+    # ----- 执行工具：通过 MCP server -----
+    def _execute_tools(self, tool_calls):
+        """
+        对每个工具调用，通过 mcp_client.call_mcp_tool_sync 发起调用，返回字符串列表（每个工具一个）。
+        """
+        results = []
+        for call in tool_calls or []:
+            name = call.get('tool')
+            params = call.get('params') or {}
+            if not name:
+                results.append('tool error: missing tool name')
+                continue
+            try:
+                if not self.mcp_server:
+                    results.append(f'tool error: MCP server not configured for call {name}')
+                    continue
+                obs_text = call_mcp_tool_sync(self.mcp_server, name, params)
+                results.append(obs_text)
+            except Exception as e:
+                results.append(f'tool error: {e}')
+        return results
+
+    def check_finished(self, infer_request: 'RolloutInferRequest', response_choice: 'ChatCompletionResponseChoice',
+                       current_turn: int) -> bool:
+        completion = response_choice.message.content
+        tool_calls = self._extract_tool_calls(completion)
+        # 只要当前轮触发了工具调用，就应该继续下一轮（让模型在看到 <tool_response> 后再回复）
+        if tool_calls:
+            return False
+        # 否则走默认终止逻辑（长度/最大轮数）
+        return super().check_finished(infer_request, response_choice, current_turn)
+
+    def step(self, infer_request: 'RolloutInferRequest', response_choice: 'ChatCompletionResponseChoice',
+             current_turn: int) -> Dict:
+        """
+        核心逻辑：
+        1) 解析工具调用
+        2) 调用 MCP server
+        3) 将工具返回作为新的 tool 消息追加到 infer_request.messages
+        4) 返回本轮 assistant 的 token 序列（不拼接 tool 结果，避免对外部观察计算损失）
+        """
+        completion = response_choice.message.content
+        token_ids = response_choice.token_ids
+        loss_mask = [1] * len(token_ids)
+
+        tool_calls = self._extract_tool_calls(completion)
+        tool_results = self._execute_tools(tool_calls) if tool_calls else []
+
+        # 追加 tool 消息（Hermes 模板会把这些转成 <tool_response> 注入下一轮 prompt）
+        for obs in tool_results:
+            infer_request.messages.append({'role': 'tool', 'content': obs})
+
+        return {
+            'infer_request': infer_request,
+            'response_token_ids': token_ids,      # 仅assistant输出部分
+            'response_loss_mask': loss_mask,      # 对应上面的 token ids
+            'rollout_infos': {
+                'tool_results': tool_results,
+                'num_turns': current_turn,
+            }
+        }
+
+# 注册
+multi_turns['mcp_call_scheduler'] = MCPCallScheduler
 
 # For additional reward functions, refer to swift/plugin/orm.py.
 class CountdownORM(ORM):
@@ -92,53 +232,6 @@ class CountdownORM(ORM):
 orms['external_countdown'] = CountdownORM
 
 
-class MultiModalAccuracyORM(ORM):
-
-    def __call__(self, completions, solution, **kwargs) -> List[float]:
-        """
-        Reward function that checks if the completion is correct.
-        Args:
-            completions (list[str]): Generated outputs
-            solution (list[str]): Ground Truths.
-
-        Returns:
-            list[float]: Reward scores
-        """
-        rewards = []
-        from math_verify import parse, verify
-        for content, sol in zip(completions, solution):
-            reward = 0.0
-            # Try symbolic verification first
-            try:
-                answer = parse(content)
-                if float(verify(answer, parse(sol))) > 0:
-                    reward = 1.0
-            except Exception:
-                pass  # Continue to next verification method if this fails
-
-            # If symbolic verification failed, try string matching
-            if reward == 0.0:
-                try:
-                    # Extract answer from solution if it has think/answer tags
-                    sol_match = re.search(r'<answer>(.*?)</answer>', sol)
-                    ground_truth = sol_match.group(1).strip() if sol_match else sol.strip()
-
-                    # Extract answer from content if it has think/answer tags
-                    content_match = re.search(r'<answer>(.*?)</answer>', content)
-                    student_answer = content_match.group(1).strip() if content_match else content.strip()
-
-                    # Compare the extracted answers
-                    if student_answer == ground_truth:
-                        reward = 1.0
-                except Exception:
-                    pass  # Keep reward as 0.0 if both methods fail
-            rewards.append(reward)
-        return rewards
-
-
-orms['external_r1v_acc'] = MultiModalAccuracyORM
-
-
 class MultiTurnThinkingTips(ORM):
     """
     A reward function example designed for use with the `ThinkingTipsScheduler`.
@@ -178,284 +271,6 @@ class MultiTurnThinkingTips(ORM):
 
 
 orms['thinking_tips'] = MultiTurnThinkingTips
-
-
-# ref implementation: https://github.com/huggingface/open-r1/blob/main/src/open_r1/rewards.py
-class CodeReward(ORM):
-
-    def __init__(self):
-        import importlib.util
-        assert importlib.util.find_spec('e2b') is not None, (
-            "The e2b package is required but not installed. Please install it using 'pip install e2b-code-interpreter'."
-        )
-        from dotenv import load_dotenv
-        load_dotenv()
-
-    @staticmethod
-    def extract_code(completion: str, language: str) -> str:
-        pattern = re.compile(rf'```{language}\n(.*?)```', re.DOTALL)
-        matches = pattern.findall(completion)
-        extracted_answer = matches[-1] if len(matches) >= 1 else ''
-        return extracted_answer
-
-    def run_async_from_sync(self, scripts: List[str], languages: List[str]) -> List[float]:
-        """Function wrapping the `run_async` function."""
-        # Create a new event loop and set it
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-
-        try:
-            # Run the async function and get the result
-            rewards = loop.run_until_complete(self.run_async(scripts, languages))
-        finally:
-            loop.close()
-
-        return rewards
-
-    async def run_async(self, scripts: List[str], languages: List[str]) -> List[float]:
-        from e2b_code_interpreter import AsyncSandbox
-
-        # Create the sandbox by hand, currently there's no context manager for this version
-        try:
-            sbx = await AsyncSandbox.create(timeout=30, request_timeout=3)
-        except Exception as e:
-            logger.warning(f'Error from E2B executor: {e}')
-            return [0.0] * len(scripts)
-        # Create a list of tasks for running scripts concurrently
-        tasks = [self.run_script(sbx, script, language) for script, language in zip(scripts, languages)]
-
-        # Wait for all tasks to complete and gather their results as they finish
-        results = await asyncio.gather(*tasks)
-        rewards = list(results)  # collect results
-
-        # Kill the sandbox after all the tasks are complete
-        await sbx.kill()
-
-        return rewards
-
-    async def run_script(self, sbx, script: str, language: str) -> float:
-        try:
-            execution = await sbx.run_code(script, language=language, timeout=30)
-        except Exception as e:
-            logger.warning(f'Error from E2B executor: {e}')
-            return 0.0
-        try:
-            return float(execution.text)
-        except (TypeError, ValueError):
-            return 0.0
-
-    def __call__(self, completions, **kwargs) -> List[float]:
-        """Reward function that evaluates code snippets using the E2B code interpreter.
-
-        Assumes the dataset contains a `verification_info` column with test cases.
-        """
-        evaluation_script_template = """
-        import subprocess
-        import json
-
-        def evaluate_code(code, test_cases):
-            passed = 0
-            total = len(test_cases)
-            exec_timeout = 5
-
-            for case in test_cases:
-                process = subprocess.run(
-                    ["python3", "-c", code],
-                    input=case["input"],
-                    text=True,
-                    capture_output=True,
-                    timeout=exec_timeout
-                )
-
-                if process.returncode != 0:  # Error in execution
-                    continue
-
-                output = process.stdout.strip()
-                if output.strip() == case["output"].strip():
-                    passed += 1
-
-            success_rate = (passed / total)
-            return success_rate
-
-        code_snippet = {code}
-        test_cases = json.loads({test_cases})
-
-        evaluate_code(code_snippet, test_cases)
-        """
-        verification_info = kwargs['verification_info']
-        languages = [info['language'] for info in verification_info]
-        code_snippets = [
-            self.extract_code(completion, language) for completion, language in zip(completions, languages)
-        ]
-        scripts = [
-            evaluation_script_template.format(
-                code=json.dumps(code), test_cases=json.dumps(json.dumps(info['test_cases'])))
-            for code, info in zip(code_snippets, verification_info)
-        ]
-        try:
-            rewards = self.run_async_from_sync(scripts, languages)
-
-        except Exception as e:
-            logger.warning(f'Error from E2B executor: {e}')
-            rewards = [0.0] * len(completions)
-
-        return rewards
-
-
-orms['external_code_reward'] = CodeReward
-
-
-class CodeFormat(ORM):
-
-    def __call__(self, completions, **kwargs) -> List[float]:
-        verification_info = kwargs['verification_info']
-        rewards = []
-        for content, info in zip(completions, verification_info):
-            pattern = r'^<think>.*?</think>\s*<answer>.*?```{}.*?```.*?</answer>(?![\s\S])'.format(info['language'])
-            match = re.match(pattern, content, re.DOTALL | re.MULTILINE)
-            reward = 1.0 if match else 0.0
-            rewards.append(reward)
-        return rewards
-
-
-orms['external_code_format'] = CodeFormat
-
-
-class CodeRewardByJudge0(ORM):
-    LANGUAGE_ID_MAP = {
-        'assembly': 45,
-        'bash': 46,
-        'basic': 47,
-        'c': 50,
-        'c++': 54,
-        'clojure': 86,
-        'c#': 51,
-        'cobol': 77,
-        'common lisp': 55,
-        'd': 56,
-        'elixir': 57,
-        'erlang': 58,
-        'executable': 44,
-        'f#': 87,
-        'fortran': 59,
-        'go': 60,
-        'groovy': 88,
-        'haskell': 61,
-        'java': 62,
-        'javascript': 63,
-        'kotlin': 78,
-        'lua': 64,
-        'multi-file program': 89,
-        'objective-c': 79,
-        'ocaml': 65,
-        'octave': 66,
-        'pascal': 67,
-        'perl': 85,
-        'php': 68,
-        'plain text': 43,
-        'prolog': 69,
-        'python': 71,
-        'python2': 70,
-        'python3': 71,
-        'r': 80,
-        'ruby': 72,
-        'rust': 73,
-        'scala': 81,
-        'sql': 82,
-        'swift': 83,
-        'typescript': 74,
-        'visual basic.net': 84
-    }
-    PYTHON_ID = 71
-
-    def __init__(self):
-        self.endpoint = os.getenv('JUDGE0_ENDPOINT')
-        assert self.endpoint is not None, (
-            'Judge0 endpoint is not set. Please set the JUDGE0_ENDPOINT environment variable.')
-        x_auth_token = os.getenv('JUDGE0_X_AUTH_TOKEN')
-        self.headers = {'Content-Type': 'application/json'}
-        if x_auth_token is not None:
-            self.headers['X-Auth-Token'] = x_auth_token
-
-    @staticmethod
-    def extract_code(completion: str, language: str) -> str:
-        pattern = re.compile(rf'```{language}\n(.*?)```', re.DOTALL)
-        matches = pattern.findall(completion)
-        extracted_answer = matches[-1] if len(matches) >= 1 else ''
-        return extracted_answer
-
-    @classmethod
-    def get_language_id(cls, language):
-        if language is None:
-            return cls.PYTHON_ID
-        return cls.LANGUAGE_ID_MAP.get(language.lower().strip(), cls.PYTHON_ID)
-
-    async def _evaluate_code(self, code, test_cases, language_id):
-        import aiohttp
-        try:
-            passed = 0
-            total = len(test_cases)
-
-            for case in test_cases:
-                if code is not None and code != '':
-                    async with aiohttp.ClientSession() as session:
-                        payload = {
-                            'source_code': code,
-                            'language_id': language_id,
-                            'stdin': case['input'],
-                            'expected_output': case['output']
-                        }
-                        logger.debug(f'Payload: {payload}')
-                        async with session.post(
-                                self.endpoint + '/submissions/?wait=true', json=payload,
-                                headers=self.headers) as response:
-                            response_json = await response.json()
-                            logger.debug(f'Response: {response_json}')
-                            if response_json['status']['description'] == 'Accepted':
-                                passed += 1
-
-            success_rate = (passed / total)
-            return success_rate
-        except Exception as e:
-            logger.warning(f'Error from Judge0 executor: {e}')
-            return 0.0
-
-    def run_async_from_sync(self):
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        try:
-            rewards = loop.run_until_complete(self.run_async())
-        finally:
-            loop.close()
-        return rewards
-
-    async def run_async(self):
-        tasks = [
-            self._evaluate_code(code, info['test_cases'], CodeRewardByJudge0.get_language_id(info['language']))
-            for code, info in zip(self.code_snippets, self.verification_info)
-        ]
-        results = await asyncio.gather(*tasks)
-        rewards = list(results)
-        return rewards
-
-    def __call__(self, completions, **kwargs) -> List[float]:
-        self.verification_info = kwargs['verification_info']
-
-        languages = [info['language'] for info in self.verification_info]
-        self.code_snippets = [
-            self.extract_code(completion, language) for completion, language in zip(completions, languages)
-        ]
-
-        try:
-            rewards = self.run_async_from_sync()
-        except Exception as e:
-            logger.warning(f'Error from Judge0 executor: {e}')
-            rewards = [0.0] * len(completions)
-        return rewards
-
-
-orms['external_code_reward_by_judge0'] = CodeRewardByJudge0
-
 
 # ref implementation: https://github.com/qiancheng0/ToolRL/blob/main/verl/utils/reward_score/rlla.py
 # arxiv paper: https://arxiv.org/abs/2504.13958
