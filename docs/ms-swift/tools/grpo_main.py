@@ -24,7 +24,7 @@ if __name__ == "__main__":
         vllm_server_port=[8000],
 
         # ==== 数据与长度 ====
-        dataset=["zouxuhong/Countdown-Tasks-3to4#50000"],
+        dataset=["./train.jsonl"],
         load_from_cache_file=True,
         max_length=2048,
         max_completion_length=1024,
@@ -48,7 +48,7 @@ if __name__ == "__main__":
         save_steps=100,
         save_total_limit=20,
         logging_steps=1,
-        output_dir="output/GRPO_COUNTDOWN",
+        output_dir="output/mcp_agent",
 
         # ==== 设备/数值精度/加速 ====
         torch_dtype="bfloat16",
@@ -66,6 +66,8 @@ if __name__ == "__main__":
         reward_funcs=["format"],
         # CLI 里的 "--external_plugins examples/train/grpo/plugin/plugin.py"
         external_plugins=["./plugin.py"],
+        # 数据加载，debug时改成1个
+        dataloader_num_workers=1,
     )
 
     rlhf_main(args)
