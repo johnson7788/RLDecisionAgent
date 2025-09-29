@@ -8,6 +8,9 @@ swift rollout \
     --vllm_gpu_memory_utilization 0.8 \
     --max_turns 5
 
+swift rollout \
+    --model Qwen/Qwen2.5-3B-Instruct
+
 mcp_call_scheduler
 tool_call_scheduler
 

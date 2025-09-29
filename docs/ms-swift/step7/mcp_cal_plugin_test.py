@@ -7,9 +7,9 @@
 # @Desc  : 测试下mcp_call_scheduler是否可用
 
 import json
-from swift.llm import RolloutInferRequest, ChatCompletionResponseChoice
-from swift.plugin import multi_turns
-from mcp_client import call_mcp_tool_sync  # 假设已经正确定义这个函数
+from swift.llm.infer.protocol import ChatCompletionResponseChoice
+from swift.llm import RolloutInferRequest
+from swift.plugin.multi_turn import multi_turns
 
 
 # 模拟一个工具调用请求
@@ -24,7 +24,7 @@ def simulate_tool_call():
     infer_request = RolloutInferRequest(messages=[{'role': 'user', 'content': 'What is 3 + 5?'}])
 
     # MCPCallScheduler
-    mcp_scheduler = multi_turns['mcp_call_scheduler'](max_turns=5, mcp_server="http://your-mcp-server.com")
+    mcp_scheduler = multi_turns['mcp_call_scheduler'](max_turns=5)
 
     # 调用 `step` 方法，模拟工具调用
     result = mcp_scheduler.step(infer_request, response_choice, current_turn=1)
