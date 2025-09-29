@@ -18,6 +18,9 @@ if __name__ == "__main__":
         lora_alpha=32,
         # 数据集注册
         custom_register_path=["./dataset.py"],
+        # 模型的模版
+        loss_scale="hermes",
+        agent_template="hermes",
         # ==== vLLM 推理后端（server 模式）====
         use_vllm=True,
         vllm_mode="server",

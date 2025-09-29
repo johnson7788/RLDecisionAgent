@@ -9,7 +9,8 @@
 from modelscope import MsDataset
 
 # 加载数据集
-dataset = MsDataset.load('zouxuhong/Countdown-Tasks-3to4', split='train')
+dataset = MsDataset.load('AI-ModelScope/function-calling-chatml', split='train')
+# dataset = MsDataset.load('zouxuhong/Countdown-Tasks-3to4', split='train')
 
 # 查看数据集的基本信息
 print("Dataset Information:")
