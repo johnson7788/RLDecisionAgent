@@ -4,7 +4,7 @@
 # @File  : grpo_main.py.py
 # @Author: johnson
 # @Contact : github: johnson7788
-# @Desc  :
+# @Desc  : 必须先启动qwen的rollout服务。 swift rollout --model Qwen/Qwen2.5-3B-Instruct
 
 from swift.llm import rlhf_main, RLHFArguments
 
