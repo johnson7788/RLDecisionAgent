@@ -16,7 +16,8 @@ if __name__ == "__main__":
         train_type="lora",
         lora_rank=8,
         lora_alpha=32,
-
+        # 数据集注册
+        custom_register_path=["./dataset.py"],
         # ==== vLLM 推理后端（server 模式）====
         use_vllm=True,
         vllm_mode="server",
