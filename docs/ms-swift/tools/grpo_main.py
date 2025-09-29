@@ -54,6 +54,9 @@ if __name__ == "__main__":
         logging_steps=1,
         output_dir="output/mcp_agent",
 
+        #系统提示词
+        system="""You are a helpful assistant. You can use tools help user.""",
+
         # ==== 设备/数值精度/加速 ====
         torch_dtype="bfloat16",
         deepspeed="zero3",       # 内置会解析到对应的 ds_config/zero3.json
@@ -61,9 +64,6 @@ if __name__ == "__main__":
         # ==== 日志与可视化 ====
         log_completions=True,
         report_to=["tensorboard"],
-
-        # ==== 系统提示词 ====
-        system="You are a helpful assistant.",
 
         # ==== 自定义奖励与插件 ====
         # CLI 里的 "--reward_funcs external_countdown format" → Python 用列表写法：
