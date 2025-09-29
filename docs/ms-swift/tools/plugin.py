@@ -51,8 +51,9 @@ class MCPCallScheduler(MultiTurnScheduler):
         """
         self.mcp_server: Any = kwargs.pop('mcp_server', None) or os.environ.get('MCP_SERVER_URL')
         self.mcp_config_path: str = kwargs.pop('mcp_config_path', None) or os.environ.get('MCP_CONFIG_PATH')
-        if not self.mcp_config_path:
-            self.mcp_config_path == os.path.join(os.path.dirname(__file__), 'mcp_config.json')
+        if self.mcp_config_path is None:
+            print(f"MCP的配置文件莫有找到，使用当前目录下的 mcp_config.json")
+            self.mcp_config_path = os.path.join(os.path.dirname(__file__), 'mcp_config.json')
         super().__init__(*args, **kwargs)
 
         # 若提供了 config path，则优先使用
@@ -66,6 +67,8 @@ class MCPCallScheduler(MultiTurnScheduler):
         if not self.mcp_server:
             logger.warning('MCPCallScheduler: no MCP server/config provided. '
                            'Set mcp_server / mcp_config_path or env MCP_SERVER_URL / MCP_CONFIG_PATH.')
+        else:
+            logger.info(f'MCPCallScheduler: 使用 MCP server {self.mcp_server}')
 
     # ----- 工具调用解析（Hermes / Hunyuan-Hermes 兼容） -----
     def _extract_tool_calls(self, text: str):
