@@ -5,15 +5,19 @@ from swift.llm import DatasetMeta, ResponsePreprocessor, load_dataset, register_
 
 
 class CustomPreprocessor(ResponsePreprocessor):
-    prompt = """Task: Based on the given two sentences, provide a similarity score between 0.0 and 5.0.
+    prompt = """根据用户的需求，合理的使用工具
 Sentence 1: {text1}
 Sentence 2: {text2}
 Similarity score: """
 
     def preprocess(self, row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        # 只取出问题
+        user_question = row["messages"][0]["content"]
+        # 最后的参考答案，可能没啥用
+        response = row["messages"][-1]["content"]
         return super().preprocess({
-            'query': self.prompt.format(text1=row['text1'], text2=row['text2']),
-            'response': f"{row['label']:.1f}"
+            'query': user_question,
+            'response': response
         })
 
 
@@ -25,6 +29,6 @@ register_dataset(
     ))
 
 if __name__ == '__main__':
-    dataset = load_dataset(['swift/stsb'])[0]
+    dataset = load_dataset(['custom_mcp_data'])[0]
     print(f'dataset: {dataset}')
     print(f'dataset[0]: {dataset[0]}')
