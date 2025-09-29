@@ -25,7 +25,7 @@ if __name__ == "__main__":
         vllm_server_port=[8000],
 
         # ==== 数据与长度 ====
-        dataset=["./train.jsonl"],
+        dataset=["custom_mcp_data"],
         load_from_cache_file=True,
         max_length=2048,
         max_completion_length=1024,

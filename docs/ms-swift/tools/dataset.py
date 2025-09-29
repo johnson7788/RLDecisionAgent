@@ -19,8 +19,8 @@ Similarity score: """
 
 register_dataset(
     DatasetMeta(
-        ms_dataset_id='johsnon/mcp',
-        hf_dataset_id='johsnon/mcp',
+        dataset_path='./train.jsonl',
+        dataset_name="custom_mcp_data",
         preprocess_func=CustomPreprocessor(),
     ))
 
