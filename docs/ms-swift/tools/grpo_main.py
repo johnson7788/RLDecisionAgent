@@ -30,8 +30,8 @@ if __name__ == "__main__":
         # ==== 数据与长度 ====
         dataset=["custom_mcp_data"],
         load_from_cache_file=True,
-        max_length=2048,
-        max_completion_length=1024,
+        max_length=15000,
+        max_completion_length=14000,
 
         # ==== 训练超参 ====
         num_train_epochs=1,

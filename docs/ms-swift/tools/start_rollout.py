@@ -13,7 +13,7 @@ if __name__ == "__main__":
         # ==== 核心：Rollout ====
         model="Qwen/Qwen2.5-3B-Instruct",   # 选择的模型
         external_plugins=["./plugin.py"],
-        vllm_max_model_len=2048,
+        vllm_max_model_len=15600,
         vllm_gpu_memory_utilization=0.9,
         vllm_use_async_engine=True,          # 使用异步引擎
         multi_turn_scheduler="mcp_call_scheduler",  # 多轮调度器
