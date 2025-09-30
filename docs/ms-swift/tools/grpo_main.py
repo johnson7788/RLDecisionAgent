@@ -31,19 +31,20 @@ if __name__ == "__main__":
         # ==== 数据与长度 ====
         dataset=["custom_mcp_data"],
         load_from_cache_file=True,
-        max_length=15000,
-        max_completion_length=14000,
+        max_length=4096,
+        max_completion_length=2048,
 
         # ==== 训练超参 ====
         num_train_epochs=1,
-        per_device_train_batch_size=4,
-        per_device_eval_batch_size=8,
+        per_device_train_batch_size=1,
+        per_device_eval_batch_size=2,
         learning_rate=5e-7,
         gradient_accumulation_steps=8,
         warmup_ratio=0.01,
+        gradient_checkpointing=True,
 
         # ==== 采样与GRPO相关 ====
-        num_generations=8,
+        num_generations=4,
         temperature=1.0,
         beta=0.001,              # GRPO 的 β（KL/约束强度等），与你 CLI 的 --beta 相同
         num_iterations=1,        # 与 --num_iterations 一致
