@@ -62,34 +62,36 @@ async def get_mcp_tools(server_url: str) -> List[Dict[str, Any]]:
             print(f"❌ Failed to get tools from {server_url}: {e}")
             return []
 
-async def call_mcp_tool_async(server_or_config, tool_name: str, arguments: Dict[str, Any]) -> Any:
+async def call_mcp_tool_async(server_url, tool_name: str, arguments: Dict[str, Any]) -> Any:
     """
     通过 fastmcp.Client 调用 MCP 工具（异步版本）。
     server_or_config: 可为单个 server url / 路径 / FastMCP 实例 / 或包含 "mcpServers" 的 config dict
     """
-    client = Client(server_or_config)
+    client = Client(server_url)
     async with client:
         # fastmcp.Client.call_tool 返回的对象可直接是结果，也可能带 .data 属性
         result = await client.call_tool(tool_name, arguments or {})
-        try:
-            # result可能是带 .data 的对象，也可能是原始可序列化结构
-            data = getattr(result, 'data', result)
-        except Exception:
-            data = result
-        return data
 
-def call_mcp_tool_sync(server_or_config, tool_name: str, arguments: Dict[str, Any]) -> str:
+        # 1. 有些返回是 dataclass / Pydantic 模型，尝试转成 dict
+        if hasattr(result, "content"):
+            # . 如果是 list of Root()
+            if isinstance(result.content, list):
+                result = result.content[0].text
+
+        return result
+
+def call_mcp_tool_sync(server_url, tool_name: str, arguments: Dict[str, Any]) -> str:
     """
     同步封装：在非异步上下文/已有事件循环时都安全调用。
     返回字符串（JSON序列化，保证可直接拼接/打印）。
     """
     async def _runner():
-        data = await call_mcp_tool_async(server_or_config, tool_name, arguments)
+        result = await call_mcp_tool_async(server_url, tool_name, arguments)
         try:
-            return json.dumps(data, ensure_ascii=False)
+            return result
         except Exception:
             # 兜底：不可序列化则转字符串
-            return str(data)
+            return str(result)
 
     try:
         # 没有正在运行的loop时，直接 asyncio.run
@@ -141,5 +143,13 @@ async def main():
             print(f"    标签: {', '.join(tool.get('tags'))}")
         print()
 
+    result = await call_mcp_tool_async(url, "get_lng_price",  {'region': '浙江', 'start_date': '2025-04-17'})
+    print(result)
+    result = call_mcp_tool_sync(url, "get_lng_price",  {'region': '浙江', 'start_date': '2025-04-17'})
+    print(result)
+    result = await call_mcp_tool_async(url, "get_current_time",  {})
+    print(result)
+    result = call_mcp_tool_sync(url, "get_current_time",  {})
+    print(result)
 if __name__ == '__main__':
     asyncio.run(main())

@@ -1,4 +1,5 @@
 # Copyright (c) Alibaba, Inc. and its affiliates.
+import json
 from typing import Any, Dict, Optional
 
 from swift.llm import DatasetMeta, ResponsePreprocessor, load_dataset, register_dataset
