@@ -49,7 +49,7 @@ class MCPCallScheduler(MultiTurnScheduler):
         - kwargs['mcp_config_path']：JSON 文件路径，内容含 "mcpServers"
         - 环境变量 MCP_SERVER_URL 或 MCP_CONFIG_PATH
         """
-        self.mcp_server: Any = kwargs.pop('mcp_server', None) or os.environ.get('MCP_SERVER_URL')
+        self.mcp_url: Any = kwargs.pop('mcp_server', None) or os.environ.get('MCP_SERVER_URL')
         self.mcp_config_path: str = kwargs.pop('mcp_config_path', None) or os.environ.get('MCP_CONFIG_PATH')
         if self.mcp_config_path is None:
             print(f"MCP的配置文件莫有找到，使用当前目录下的 mcp_config.json")
@@ -57,18 +57,21 @@ class MCPCallScheduler(MultiTurnScheduler):
         super().__init__(*args, **kwargs)
 
         # 若提供了 config path，则优先使用
-        if self.mcp_config_path and not self.mcp_server:
+        if self.mcp_config_path and not self.mcp_url:
             try:
                 with open(self.mcp_config_path, 'r', encoding='utf-8') as f:
-                    self.mcp_server = json.load(f)  # fastmcp.Client 接受含 "mcpServers" 的 dict
+                    mcp_servers = json.load(f)  # fastmcp.Client 接受含 "mcpServers" 的 dict
+                for server_name, server_info in mcp_servers.items():
+                    if not server_info.get("disabled"):
+                        self.mcp_url = server_info.get("url")
             except Exception as e:
                 logger.warning(f'Failed to load MCP config from {self.mcp_config_path}: {e}')
 
-        if not self.mcp_server:
+        if not self.mcp_url:
             logger.warning('MCPCallScheduler: no MCP server/config provided. '
                            'Set mcp_server / mcp_config_path or env MCP_SERVER_URL / MCP_CONFIG_PATH.')
         else:
-            logger.info(f'MCPCallScheduler: 使用 MCP server {self.mcp_server}')
+            logger.info(f'MCPCallScheduler: 使用 MCP server {self.mcp_url}')
 
     # ----- 工具调用解析（Hermes / Hunyuan-Hermes 兼容） -----
     def _extract_tool_calls(self, text: str):
@@ -126,10 +129,10 @@ class MCPCallScheduler(MultiTurnScheduler):
                 results.append('tool error: missing tool name')
                 continue
             try:
-                if not self.mcp_server:
+                if not self.mcp_url:
                     results.append(f'tool error: MCP server not configured for call {name}')
                     continue
-                obs_text = call_mcp_tool_sync(self.mcp_server, name, params)
+                obs_text = call_mcp_tool_sync(self.mcp_url, name, params)
                 results.append(obs_text)
             except Exception as e:
                 results.append(f'tool error: {e}')
