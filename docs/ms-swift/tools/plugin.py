@@ -52,7 +52,7 @@ class MCPCallScheduler(MultiTurnScheduler):
         self.mcp_url: Any = kwargs.pop('mcp_server', None) or os.environ.get('MCP_SERVER_URL')
         self.mcp_config_path: str = kwargs.pop('mcp_config_path', None) or os.environ.get('MCP_CONFIG_PATH')
         if self.mcp_config_path is None:
-            print(f"MCP的配置文件莫有找到，使用当前目录下的 mcp_config.json")
+            print(f"MCP的配置文件莫有传入参数，使用当前目录下的 mcp_config.json")
             self.mcp_config_path = os.path.join(os.path.dirname(__file__), 'mcp_config.json')
         super().__init__(*args, **kwargs)
 

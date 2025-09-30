@@ -195,3 +195,18 @@ ms-swift/swift/llm/infer/infer_engine/vllm_engine.py -- VllmEngine
 swift/trainers/rlhf_trainer/grpo_trainer.py
  def _engine_infer(
 _server_rollout
+
+
+# 添加tools，方便请求vllm
+ms-swift/swift/trainers/rlhf_trainer/grpo_trainer.py
+        for data in inputs:
+            # Extract required metadata fields
+            request_data = {key: data[key] for key in REQUEST_METADATA_FIELDS if key in data}
+            if 'tools' in data:
+                if isinstance(data["tools"], str):
+                    request_data["tools"] = json.loads(data["tools"])
+                else:
+                    request_data["tools"] = data["tools"]
+            if 'uuid' not in request_data:
+                request_data['uuid'] = data['request_id']  # Use unique request_id for vLLM
+            # Preserve additional fields for multi-turn async scenarios

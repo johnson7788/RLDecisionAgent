@@ -11,7 +11,8 @@ from swift.llm import rollout_main, RolloutArguments
 if __name__ == "__main__":
     args = RolloutArguments(
         # ==== 核心：Rollout ====
-        model="Qwen/Qwen2.5-3B-Instruct",   # 选择的模型
+        model="Qwen/Qwen3-0.6B",   # 选择的模型
+        # model="Qwen/Qwen2.5-3B-Instruct",   # 选择的模型
         external_plugins=["./plugin.py"],
         vllm_max_model_len=15600,
         vllm_gpu_memory_utilization=0.9,

@@ -12,7 +12,7 @@ if __name__ == "__main__":
     args = RLHFArguments(
         # ==== 核心：RLHF/GRPO ====
         rlhf_type="grpo",
-        model="Qwen/Qwen2.5-3B-Instruct",
+        model="Qwen/Qwen3-0.6B",
         train_type="lora",
         lora_rank=8,
         lora_alpha=32,
@@ -21,6 +21,7 @@ if __name__ == "__main__":
         # 模型的模版
         loss_scale="hermes",
         agent_template="hermes",
+        vllm_gpu_memory_utilization = 0.9,
         # ==== vLLM 推理后端（server 模式）====
         use_vllm=True,
         vllm_mode="server",
