@@ -6,11 +6,12 @@
 # @Contact : github: johnson7788
 # @Desc  : List all MCP tools from an SSE server
 
-import asyncio
 import json
 import threading
 from typing import Any, Dict, List
 from fastmcp import Client
+import asyncio, nest_asyncio
+nest_asyncio.apply()
 
 def clean_none(obj):
     if isinstance(obj, dict):
@@ -83,30 +84,20 @@ async def call_mcp_tool_async(server_url, tool_name: str, arguments: Dict[str, A
 
         return result
 
-def call_mcp_tool_sync(server_url, tool_name: str, arguments: Dict[str, Any]) -> str:
-    """
-    同步封装：在非异步上下文/已有事件循环时都安全调用。
-    返回字符串（JSON序列化，保证可直接拼接/打印）。
-    """
-    async def _runner():
-        result = await call_mcp_tool_async(server_url, tool_name, arguments)
-        try:
-            return result
-        except Exception:
-            # 兜底：不可序列化则转字符串
-            return str(result)
 
+def call_mcp_tool_sync(server_url, tool_name: str, arguments: Dict[str, Any]) -> str:
+    loop = None
     try:
-        # 没有正在运行的loop时，直接 asyncio.run
-        return asyncio.run(_runner())
+        loop = asyncio.get_running_loop()
     except RuntimeError:
-        # 存在running loop（如某些异步引擎），使用子线程开新loop执行
-        holder = {'value': ''}
-        def _thread_target():
-            holder['value'] = asyncio.run(_runner())
-        t = threading.Thread(target=_thread_target, daemon=True)
-        t.start(); t.join()
-        return holder['value']
+        pass
+
+    if loop and loop.is_running():
+        # 已经有 loop，直接 run_until_complete
+        return loop.run_until_complete(call_mcp_tool_async(server_url, tool_name, arguments))
+    else:
+        # 没有 loop，用 asyncio.run
+        return asyncio.run(call_mcp_tool_async(server_url, tool_name, arguments))
 
 async def main():
     # Example usage: Load config and list tools from all servers

@@ -60,7 +60,8 @@ class MCPCallScheduler(MultiTurnScheduler):
         if self.mcp_config_path and not self.mcp_url:
             try:
                 with open(self.mcp_config_path, 'r', encoding='utf-8') as f:
-                    mcp_servers = json.load(f)  # fastmcp.Client 接受含 "mcpServers" 的 dict
+                    mcp_config = json.load(f)  # fastmcp.Client 接受含 "mcpServers" 的 dict
+                mcp_servers = mcp_config["mcpServers"]
                 for server_name, server_info in mcp_servers.items():
                     if not server_info.get("disabled"):
                         self.mcp_url = server_info.get("url")
