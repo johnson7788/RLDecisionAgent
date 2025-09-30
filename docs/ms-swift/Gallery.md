@@ -156,3 +156,33 @@ orms = {
     'repetition': RepetitionPenalty,
     'soft_overlong': SoftOverlong,
 }
+
+
+# 流程
+RLHF, __post_init__ 开始进行分别init
+ms-swift/swift/llm/argument/rlhf_args.py
+ms-swift/swift/llm/argument/train_args.py
+ms-swift/swift/llm/argument/base_args/base_args.py 
+  --- self._init_custom_register() --加载自己定义的数据集 dataset.py
+  --  self._import_external_plugins() 注册外部插件 plugin.py
+
+运行训练
+ms-swift/swift/llm/base.py
+  def main(self):   --- result = self.run()
+    -- ms-swift/swift/llm/train/sft.py
+处理数据,检查美中数据类型
+ms-swift/swift/llm/dataset/preprocessor/core.py
+  -- def batched_preprocess
+                    for r in row:
+                    self._check_objects(r)
+                    self._check_rejected_response(r)
+                    self._check_messages(r)
+                    self._cast_mm_data(r)
+ms-swift/swift/llm/base.py --self.run() -- args.save_args() 保存到训练参数
+
+ms-swift/swift/llm/train/tuner.py  -- 不同训练方式的准备方式 def prepare_model
+
+ms-swift/swift/trainers/rlhf_trainer/grpo_trainer.py
+  --class GRPOTrainer  参数reward_funcs 奖励函数
+
+ms-swift/swift/trainers/rlhf_trainer/rlhf_mixin.py  --class RLHFTrainerMixin:
