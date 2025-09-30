@@ -70,13 +70,16 @@ async def call_mcp_tool_async(server_url, tool_name: str, arguments: Dict[str, A
     client = Client(server_url)
     async with client:
         # fastmcp.Client.call_tool 返回的对象可直接是结果，也可能带 .data 属性
-        result = await client.call_tool(tool_name, arguments or {})
-
-        # 1. 有些返回是 dataclass / Pydantic 模型，尝试转成 dict
-        if hasattr(result, "content"):
-            # . 如果是 list of Root()
-            if isinstance(result.content, list):
-                result = result.content[0].text
+        try:
+            result = await client.call_tool(tool_name, arguments or {})
+            # 1. 有些返回是 dataclass / Pydantic 模型，尝试转成 dict
+            if hasattr(result, "content"):
+                # . 如果是 list of Root()
+                if isinstance(result.content, list):
+                    result = result.content[0].text
+        except Exception as e:
+            print(f"❌ Failed to call tool {tool_name} from {server_url}: {e}")
+            return str(e)
 
         return result
 
@@ -150,6 +153,8 @@ async def main():
     result = await call_mcp_tool_async(url, "get_current_time",  {})
     print(result)
     result = call_mcp_tool_sync(url, "get_current_time",  {})
+    print(result)
+    result = call_mcp_tool_sync(url, "unknow_tools",  {})
     print(result)
 if __name__ == '__main__':
     asyncio.run(main())
