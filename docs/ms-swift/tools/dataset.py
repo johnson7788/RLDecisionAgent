@@ -5,10 +5,7 @@ from swift.llm import DatasetMeta, ResponsePreprocessor, load_dataset, register_
 
 
 class CustomPreprocessor(ResponsePreprocessor):
-    prompt = """根据用户的需求，合理的使用工具
-Sentence 1: {text1}
-Sentence 2: {text2}
-Similarity score: """
+    prompt = """根据用户的需求，合理的使用工具 """
 
     def preprocess(self, row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         # 只取出问题

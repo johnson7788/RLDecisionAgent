@@ -190,3 +190,8 @@ ms-swift/swift/trainers/rlhf_trainer/rlhf_mixin.py  --class RLHFTrainerMixin:
 swift rollout 时使用vllm
 ms-swift/swift/llm/infer/rollout.py  --async def async_llm_worker -- engine = SwiftRolloutDeploy  --def get_infer_engine --return GRPOVllmEngine(**kwargs)
 ms-swift/swift/llm/infer/infer_engine/vllm_engine.py -- VllmEngine
+
+# 在强化学习训练时，是如何把对话数据发送给vllm的rollout客户端的，具体的代码在哪里
+swift/trainers/rlhf_trainer/grpo_trainer.py
+ def _engine_infer(
+_server_rollout
