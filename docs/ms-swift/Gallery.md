@@ -186,3 +186,7 @@ ms-swift/swift/trainers/rlhf_trainer/grpo_trainer.py
   --class GRPOTrainer  参数reward_funcs 奖励函数
 
 ms-swift/swift/trainers/rlhf_trainer/rlhf_mixin.py  --class RLHFTrainerMixin:
+
+swift rollout 时使用vllm
+ms-swift/swift/llm/infer/rollout.py  --async def async_llm_worker -- engine = SwiftRolloutDeploy  --def get_infer_engine --return GRPOVllmEngine(**kwargs)
+ms-swift/swift/llm/infer/infer_engine/vllm_engine.py -- VllmEngine

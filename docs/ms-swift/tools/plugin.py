@@ -79,7 +79,6 @@ class MCPCallScheduler(MultiTurnScheduler):
           2) <tool_call>func_name\n```json\n{...}\n```</tool_call>  （Hunyuan Hermes）
         """
         try:
-            import re
             calls = []
 
             # 1) 标准 Hermes：<tool_call> ...json... </tool_call>

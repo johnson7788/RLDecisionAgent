@@ -175,8 +175,8 @@ class QwenTemplateMeta(ChatmlTemplateMeta):
     stop_words: List[Word] = field(default_factory=lambda: ['<|endoftext|>'])
     agent_template: str = 'hermes'
 为了进一步优化模型的性能，可以选择进行强化学习训练，修改.env传入所需的训练参数。
-1. 训练中的模型如何使用MCP工具， MultiTurnScheduler和ToolCallScheduler，参考./swift/plugin/multi_turn.py  ./examples/train/grpo/plugin/plugin.py  ./examples/train/grpo/plugin/deepeyes/deepeyes_plugin.py
-例如：参考thinking_tips_scheduler： ms-swift/swift/plugin/multi_turn.py， 参考ToolCallScheduler去改造
+1. 训练中的模型如何使用MCP工具，rollout模型使用MultiTurnScheduler和ToolCallScheduler，参考./swift/plugin/multi_turn.py  ./examples/train/grpo/plugin/plugin.py  ./examples/train/grpo/plugin/deepeyes/deepeyes_plugin.py
+例如：参考thinking_tips_scheduler： ms-swift/swift/plugin/multi_turn.py， 参考ToolCallScheduler去改造，得到MCPCallScheduler
 
 2. swift rollout \
     --model Qwen/Qwen3-1.7B \
