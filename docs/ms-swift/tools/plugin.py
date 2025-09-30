@@ -147,6 +147,7 @@ class MCPCallScheduler(MultiTurnScheduler):
         if tool_calls:
             return False
         # 否则走默认终止逻辑（长度/最大轮数）
+        logger.debug(f'可能已经运行完成: 轮次{current_turn} 运行结果：{infer_request}')
         return super().check_finished(infer_request, response_choice, current_turn)
 
     def step(self, infer_request: 'RolloutInferRequest', response_choice: 'ChatCompletionResponseChoice',

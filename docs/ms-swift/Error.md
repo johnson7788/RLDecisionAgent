@@ -61,7 +61,7 @@ ValueError: DeepSpeed is not compatible with `device_map`. n_gpu: 3, local_world
 
 # 如果在swift rollout中使用multi_turn_scheduler，但是没有指定external_plugins的位置，那么rollout就会卡住，无法启动
 
-# 代码报错
+# 代码报错，是grpo_main中的max_length和max_completion_length的长度过短导致的，增加长度
 (EngineCore_0 pid=461106) INFO 09-30 17:34:46 [block_pool.py:280] Successfully reset prefix cache
 INFO:     127.0.0.1:38354 - "POST /reset_prefix_cache/ HTTP/1.1" 200 OK
   0%|                                                    | 0/32 [00:00<?, ?it/s][WARNING:swift] max_model_len(2048) - num_tokens(1605) < max_tokens(1024). Setting max_tokens: 443
