@@ -12,7 +12,8 @@ if __name__ == "__main__":
     args = RLHFArguments(
         # ==== 核心：RLHF/GRPO ====
         rlhf_type="grpo",
-        model="Qwen/Qwen3-0.6B",
+        # model="Qwen/Qwen3-0.6B",
+        model="Qwen/Qwen2.5-3B-Instruct",
         train_type="lora",
         lora_rank=8,
         lora_alpha=32,

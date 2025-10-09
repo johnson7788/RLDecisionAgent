@@ -153,8 +153,25 @@ Traceback (most recent call last):
                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 TypeError: 'NoneType' object is not iterable
 
-
-[INFO:swift] images_dir: /workspace/verl/docs/ms-swift/tools/output/mcp_agent/v4-20251001-074844/images
+# 训练数据问题，在训练到某些数据时发生了错误,请使用少量训练数据试试，例如前10条数据。
+[INFO:swift] use_reentrant: True
+Trainer.tokenizer is now deprecated. You should use Trainer.processing_class instead.
+[INFO:swift] The logging file will be saved in: /workspace/verl/docs/ms-swift/tools/output/mcp_agent/v5-20251009-115936/logging.jsonl
+The tokenizer has new PAD/BOS/EOS tokens that differ from the model config and generation config. The model config and generation config were aligned accordingly, being updated with the tokenizer's values. Updated tokens: {'bos_token_id': None}.
+WARNING:accelerate.accelerator:Gradient accumulation steps mismatch: GradientAccumulationPlugin has 1, DeepSpeed config has 8. Using DeepSpeed's value.
+Parameter Offload - Persistent parameters statistics: param_count = 365, numel = 2129920
+Train:   0%|                                                                                                              | 0/9 [00:00<?, ?it/s]/usr/local/lib/python3.11/site-packages/torch/utils/checkpoint.py:86: UserWarning: None of the inputs have requires_grad=True. Gradients will be None
+  warnings.warn(
+[2025-10-09 12:01:31,035] [WARNING] [stage3.py:2160:step] 1 pytorch allocator cache flushes since last step. this happens when there is high memory pressure and is detrimental to performance. if this is happening frequently consider adjusting settings to reduce memory consumption. If you are unable to make the cache flushes go away consider adding get_accelerator().empty_cache() calls in your training loop to ensure that all ranks flush their caches at the same time
+{'loss': 0.0, 'grad_norm': 0.0, 'learning_rate': 5e-07, 'reward': 0.0, 'reward_std': 0.0, 'frac_reward_zero_std': 1.0, 'rewards/Format/mean': 0.0, 'rewards/Format/std': 0.0, 'completions/mean_length': 2067.25, 'completions/min_length': 1091.0, 'completions/max_length': 3584.0, 'completions/clipped_ratio': 0.125, 'num_turns': 5.0, 'kl': 0.0, 'clip_ratio/low_mean': 0.0, 'clip_ratio/low_min': 0.0, 'clip_ratio/high_mean': 0.0, 'clip_ratio/high_max': 0.0, 'clip_ratio/region_mean': 0.0, 'epoch': 0.11, 'global_step/max_steps': '1/9', 'percentage': '11.11%', 'elapsed_time': '1m 35s', 'remaining_time': '12m 44s', 'memory(GiB)': 21.86, 'train_speed(iter/s)': 0.010467}
+{'loss': 0.0, 'grad_norm': 0.0, 'learning_rate': 4.8e-07, 'reward': 0.0, 'reward_std': 0.0, 'frac_reward_zero_std': 1.0, 'rewards/Format/mean': 0.0, 'rewards/Format/std': 0.0, 'completions/mean_length': 2774.125, 'completions/min_length': 951.0, 'completions/max_length': 4846.0, 'completions/clipped_ratio': 0.0, 'num_turns': 5.0, 'kl': 0.0, 'clip_ratio/low_mean': 0.0, 'clip_ratio/low_min': 0.0, 'clip_ratio/high_mean': 0.0, 'clip_ratio/high_max': 0.0, 'clip_ratio/region_mean': 0.0, 'epoch': 0.22, 'global_step/max_steps': '2/9', 'percentage': '22.22%', 'elapsed_time': '2m 46s', 'remaining_time': '9m 43s', 'memory(GiB)': 21.86, 'train_speed(iter/s)': 0.012004}
+{'loss': 0.0, 'grad_norm': 0.0, 'learning_rate': 4.3e-07, 'reward': 0.0, 'reward_std': 0.0, 'frac_reward_zero_std': 1.0, 'rewards/Format/mean': 0.0, 'rewards/Format/std': 0.0, 'completions/mean_length': 1363.125, 'completions/min_length': 1194.0, 'completions/max_length': 1632.0, 'completions/clipped_ratio': 0.0, 'num_turns': 5.0, 'kl': 0.0, 'clip_ratio/low_mean': 0.0, 'clip_ratio/low_min': 0.0, 'clip_ratio/high_mean': 0.0, 'clip_ratio/high_max': 0.0, 'clip_ratio/region_mean': 0.0, 'epoch': 0.33, 'global_step/max_steps': '3/9', 'percentage': '33.33%', 'elapsed_time': '3m 23s', 'remaining_time': '6m 47s', 'memory(GiB)': 21.86, 'train_speed(iter/s)': 0.01474}
+{'loss': 0.0, 'grad_norm': 0.0, 'learning_rate': 3.5e-07, 'reward': 0.0, 'reward_std': 0.0, 'frac_reward_zero_std': 1.0, 'rewards/Format/mean': 0.0, 'rewards/Format/std': 0.0, 'completions/mean_length': 1473.125, 'completions/min_length': 1219.0, 'completions/max_length': 1738.0, 'completions/clipped_ratio': 0.0, 'num_turns': 5.0, 'kl': 0.0, 'clip_ratio/low_mean': 0.0, 'clip_ratio/low_min': 0.0, 'clip_ratio/high_mean': 0.0, 'clip_ratio/high_max': 0.0, 'clip_ratio/region_mean': 0.0, 'epoch': 0.44, 'global_step/max_steps': '4/9', 'percentage': '44.44%', 'elapsed_time': '4m 0s', 'remaining_time': '5m 0s', 'memory(GiB)': 21.86, 'train_speed(iter/s)': 0.016664}
+{'loss': 0.0, 'grad_norm': 0.0, 'learning_rate': 2.5e-07, 'reward': 0.0, 'reward_std': 0.0, 'frac_reward_zero_std': 1.0, 'rewards/Format/mean': 0.0, 'rewards/Format/std': 0.0, 'completions/mean_length': 1988.375, 'completions/min_length': 1094.0, 'completions/max_length': 3110.0, 'completions/clipped_ratio': 0.0, 'num_turns': 5.0, 'kl': 0.0, 'clip_ratio/low_mean': 0.0, 'clip_ratio/low_min': 0.0, 'clip_ratio/high_mean': 0.0, 'clip_ratio/high_max': 0.0, 'clip_ratio/region_mean': 0.0, 'epoch': 0.56, 'global_step/max_steps': '5/9', 'percentage': '55.56%', 'elapsed_time': '4m 49s', 'remaining_time': '3m 51s', 'memory(GiB)': 21.86, 'train_speed(iter/s)': 0.01725}
+{'loss': 0.0, 'grad_norm': 0.0, 'learning_rate': 1.5e-07, 'reward': 0.0, 'reward_std': 0.0, 'frac_reward_zero_std': 1.0, 'rewards/Format/mean': 0.0, 'rewards/Format/std': 0.0, 'completions/mean_length': 1257.0, 'completions/min_length': 1074.0, 'completions/max_length': 1422.0, 'completions/clipped_ratio': 0.0, 'num_turns': 5.0, 'kl': 0.0, 'clip_ratio/low_mean': 0.0, 'clip_ratio/low_min': 0.0, 'clip_ratio/high_mean': 0.0, 'clip_ratio/high_max': 0.0, 'clip_ratio/region_mean': 0.0, 'epoch': 0.67, 'global_step/max_steps': '6/9', 'percentage': '66.67%', 'elapsed_time': '5m 20s', 'remaining_time': '2m 40s', 'memory(GiB)': 21.86, 'train_speed(iter/s)': 0.018726}
+Train:  67%|████████████████████████████████████████████████████████████████████                                  | 6/9 [05:20<02:11, 43.90s/it][INFO:swift] last_model_checkpoint: None
+[INFO:swift] best_model_checkpoint: None
+[INFO:swift] images_dir: /workspace/verl/docs/ms-swift/tools/output/mcp_agent/v5-20251009-115936/images
 [rank0]: Traceback (most recent call last):
 [rank0]:   File "/workspace/verl/docs/ms-swift/tools/grpo_main.py", line 79, in <module>
 [rank0]:     rlhf_main(args)
@@ -184,6 +201,10 @@ TypeError: 'NoneType' object is not iterable
 [rank0]:   File "/usr/local/lib/python3.11/site-packages/transformers/trainer.py", line 4003, in training_step
 [rank0]:     inputs = self._prepare_inputs(inputs)
 [rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/workspace/verl/ms-swift/swift/trainers/rlhf_trainer/utils.py", line 170, in wrapper
+[rank0]:     return func(self, *args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/workspace/verl/ms-swift/swift/trainers/rlhf_trainer/grpo_trainer.py", line 436, in _prepare_inputs
 [rank0]:     generation_batch = self._generate_and_score_completions(generation_batch)
 [rank0]:                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 [rank0]:   File "/workspace/verl/ms-swift/swift/trainers/rlhf_trainer/utils.py", line 170, in wrapper
@@ -213,5 +234,5 @@ TypeError: 'NoneType' object is not iterable
 [rank0]:   File "/workspace/verl/ms-swift/swift/trainers/rlhf_trainer/vllm_client.py", line 171, in infer
 [rank0]:     raise RuntimeError(f'Multiple errors: {all_errors}')
 [rank0]: RuntimeError: Multiple errors: [Exception('Server 0 failed: 500, Internal Server Error')]
-Train:  67%|████████████████████████████████████████████████████████████████████                                  | 6/9 [05:07<02:33, 51.24s/it]
+Train:  67%|████████████████████████████████████████████████████████████████████                                  | 6/9 [05:34<02:47, 55.74s/it]
 sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute

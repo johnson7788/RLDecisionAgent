@@ -10,6 +10,9 @@ class CustomPreprocessor(ResponsePreprocessor):
 
     def preprocess(self, row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         # 只取出问题
+        print("\n" + "=" * 80)
+        print("[DEBUG] 正在处理一条样本")
+        print("[DEBUG] user_question:", row["messages"][0]["content"][:150])
         user_question = row["messages"][0]["content"]
         # 最后的参考答案，可能没啥用
         response = row["messages"][-1]["content"]

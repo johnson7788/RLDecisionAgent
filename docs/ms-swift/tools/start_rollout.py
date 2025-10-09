@@ -11,11 +11,11 @@ from swift.llm import rollout_main, RolloutArguments
 if __name__ == "__main__":
     args = RolloutArguments(
         # ==== 核心：Rollout ====
-        model="Qwen/Qwen3-0.6B",   # 选择的模型
-        # model="Qwen/Qwen2.5-3B-Instruct",   # 选择的模型
+        # model="Qwen/Qwen3-0.6B",   # 选择的模型
+        model="Qwen/Qwen2.5-3B-Instruct",   # 选择的模型
         external_plugins=["./plugin.py"],
-        vllm_max_model_len=15600,
-        vllm_gpu_memory_utilization=0.9,
+        vllm_max_model_len=8096,
+        vllm_gpu_memory_utilization=0.8,
         vllm_use_async_engine=True,          # 使用异步引擎
         multi_turn_scheduler="mcp_call_scheduler",  # 多轮调度器
         max_turns=5,                        # 最大回合数
