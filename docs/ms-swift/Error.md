@@ -152,3 +152,66 @@ Traceback (most recent call last):
     all_outputs = list(chain.from_iterable(all_outputs))  # from list of list to single list
                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 TypeError: 'NoneType' object is not iterable
+
+
+[INFO:swift] images_dir: /workspace/verl/docs/ms-swift/tools/output/mcp_agent/v4-20251001-074844/images
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/workspace/verl/docs/ms-swift/tools/grpo_main.py", line 79, in <module>
+[rank0]:     rlhf_main(args)
+[rank0]:   File "/workspace/verl/ms-swift/swift/llm/train/rlhf.py", line 217, in rlhf_main
+[rank0]:     return SwiftRLHF(args).main()
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/workspace/verl/ms-swift/swift/llm/base.py", line 49, in main
+[rank0]:     result = self.run()
+[rank0]:              ^^^^^^^^^^
+[rank0]:   File "/workspace/verl/ms-swift/swift/llm/train/sft.py", line 195, in run
+[rank0]:     return self.train(trainer)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/workspace/verl/ms-swift/swift/llm/train/sft.py", line 243, in train
+[rank0]:     trainer.train(trainer.args.resume_from_checkpoint)
+[rank0]:   File "/workspace/verl/ms-swift/swift/trainers/mixin.py", line 674, in train
+[rank0]:     res = super().train(*args, **kwargs)
+[rank0]:           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.11/site-packages/transformers/trainer.py", line 2328, in train
+[rank0]:     return inner_training_loop(
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.11/site-packages/transformers/trainer.py", line 2672, in _inner_training_loop
+[rank0]:     tr_loss_step = self.training_step(model, inputs, num_items_in_batch)
+[rank0]:                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/workspace/verl/ms-swift/swift/trainers/rlhf_trainer/grpo_trainer.py", line 1974, in training_step
+[rank0]:     return super().training_step(model, inputs, num_items_in_batch)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/usr/local/lib/python3.11/site-packages/transformers/trainer.py", line 4003, in training_step
+[rank0]:     inputs = self._prepare_inputs(inputs)
+[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:     generation_batch = self._generate_and_score_completions(generation_batch)
+[rank0]:                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/workspace/verl/ms-swift/swift/trainers/rlhf_trainer/utils.py", line 170, in wrapper
+[rank0]:     return func(self, *args, **kwargs)
+[rank0]:            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/workspace/verl/ms-swift/swift/trainers/rlhf_trainer/grpo_trainer.py", line 845, in _generate_and_score_completions
+[rank0]:     inputs = self._generate_completions(inputs)
+[rank0]:              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/workspace/verl/ms-swift/swift/trainers/rlhf_trainer/grpo_trainer.py", line 826, in _generate_completions
+[rank0]:     results = self._fast_infer(inputs)
+[rank0]:               ^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/workspace/verl/ms-swift/swift/trainers/rlhf_trainer/grpo_trainer.py", line 808, in _fast_infer
+[rank0]:     outputs = self._infer_single_or_multi_turn(inputs, self.request_config)
+[rank0]:               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/workspace/verl/ms-swift/swift/trainers/rlhf_trainer/grpo_trainer.py", line 714, in _infer_single_or_multi_turn
+[rank0]:     rollout_outputs: List[RolloutOutput] = self._rollout(inputs, request_config, is_global_inputs)
+[rank0]:                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/workspace/verl/ms-swift/swift/trainers/rlhf_trainer/grpo_trainer.py", line 644, in _rollout
+[rank0]:     rollout_outputs = self._server_rollout(inputs, request_config, is_global_inputs)
+[rank0]:                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/workspace/verl/ms-swift/swift/trainers/rlhf_trainer/grpo_trainer.py", line 2342, in _server_rollout
+[rank0]:     all_outputs: List[RolloutOutput] = self._engine_infer(
+[rank0]:                                        ^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/workspace/verl/ms-swift/swift/trainers/rlhf_trainer/grpo_trainer.py", line 1996, in _engine_infer
+[rank0]:     res = self.vllm_client.infer([asdict(req) for req in infer_requests],
+[rank0]:           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[rank0]:   File "/workspace/verl/ms-swift/swift/trainers/rlhf_trainer/vllm_client.py", line 171, in infer
+[rank0]:     raise RuntimeError(f'Multiple errors: {all_errors}')
+[rank0]: RuntimeError: Multiple errors: [Exception('Server 0 failed: 500, Internal Server Error')]
+Train:  67%|████████████████████████████████████████████████████████████████████                                  | 6/9 [05:07<02:33, 51.24s/it]
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
