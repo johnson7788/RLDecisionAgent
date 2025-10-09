@@ -19,5 +19,7 @@ if __name__ == "__main__":
         vllm_use_async_engine=True,          # 使用异步引擎
         multi_turn_scheduler="mcp_call_scheduler",  # 多轮调度器
         max_turns=5,                        # 最大回合数
+        log_level="debug",
+        verbose=True,
     )
     rollout_main(args)
