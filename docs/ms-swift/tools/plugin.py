@@ -165,10 +165,18 @@ class MCPCallScheduler(MultiTurnScheduler):
 
         tool_calls = self._extract_tool_calls(completion)
         tool_results = self._execute_tools(tool_calls) if tool_calls else []
-
         # 追加 tool 消息（Hermes 模板会把这些转成 <tool_response> 注入下一轮 prompt）
         for obs in tool_results:
             infer_request.messages.append({'role': 'tool', 'content': obs})
+        max_model_len = self.infer_engine.max_model_len
+        tokenizer = self.infer_engine.default_template.tokenizer
+        total_tokens = sum(len(tokenizer.encode(m["content"], add_special_tokens=False)) for m in infer_request.messages)
+        if total_tokens > max_model_len - 1024:
+            logger.warning(f"Truncating conversation (total={total_tokens})")
+            while total_tokens > max_model_len - 1024 and len(infer_request.messages) > 2:
+                removed = infer_request.messages.pop(0)
+                logger.debug(f"🗑️ 删除部分数据，因为上下文太长了: role={removed.get('role')}, content(len)={len(removed.get('content', ''))}")
+                total_tokens = sum(len(tokenizer.encode(m["content"], add_special_tokens=False)) for m in infer_request.messages)
 
         return {
             'infer_request': infer_request,
@@ -844,7 +852,7 @@ class ToolCallScheduler(MultiTurnScheduler):
         tool_results = self._execute_tools(tool_calls)
         # append tool result to the completion
         infer_request.messages[-1]['content'] += (tool_results[0])
-
+        print(f"self.infer_engine: {self.infer_engine}")
         tokenizer = self.infer_engine.default_template.tokenizer
         result_tokens = tokenizer.encode(tool_results[0], add_special_tokens=False)
         token_ids.extend(result_tokens)
