@@ -147,7 +147,7 @@ class MCPCallScheduler(MultiTurnScheduler):
         if tool_calls:
             return False
         # 否则走默认终止逻辑（长度/最大轮数）
-        logger.info(f'可能已经运行完成: 轮次{current_turn} 运行结果：{infer_request}')
+        logger.info(f'可能已经运行完成: 轮次{current_turn}')
         return super().check_finished(infer_request, response_choice, current_turn)
 
     def step(self, infer_request: 'RolloutInferRequest', response_choice: 'ChatCompletionResponseChoice',
@@ -177,7 +177,7 @@ class MCPCallScheduler(MultiTurnScheduler):
                 removed = infer_request.messages.pop(0)
                 logger.debug(f"🗑️ 删除部分数据，因为上下文太长了: role={removed.get('role')}, content(len)={len(removed.get('content', ''))}")
                 total_tokens = sum(len(tokenizer.encode(m["content"], add_special_tokens=False)) for m in infer_request.messages)
-
+        logger.info(f"现在的上下文长度为: {total_tokens}， infer_request: {infer_request}")
         return {
             'infer_request': infer_request,
             'response_token_ids': token_ids,      # 仅assistant输出部分
