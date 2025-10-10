@@ -356,6 +356,110 @@ class ToolUseFormatReward(ORM):
 orms['external_tooluse_format_reward'] = ToolUseFormatReward
 
 
+# ==== ② 新增：基于 my_ruler 的 LLM 评审奖励 ====
+class LLMRulerReward(ORM):
+    """
+    使用大模型裁判（RULER）给轨迹打分，返回 [0,1] 区间分数。
+    - 优先支持多轮：从 kwargs['trajectory_inputs'] 恢复完整 messages（与 MultiTurnThinkingTips 的约定一致）
+    - 回退单轮：用 (user -> assistant) 结构拼一条最小可用对话
+    环境变量：
+      RULER_JUDGE_MODEL     评审模型（默认 openai/o3）
+      RULER_EXTRA_PARAMS    透传给 litellm.acompletion 的 JSON 字符串
+      RULER_RUBRIC          自定义评分 Rubric（留空则用 my_ruler.DEFAULT_RUBRIC）
+    """
+    def __init__(self):
+        from my_ruler import ruler as _ruler, DEFAULT_RUBRIC as _RUBRIC
+        self._ruler = _ruler
+        self._default_rubric = _RUBRIC
+        self._judge_model = os.getenv("RULER_JUDGE_MODEL", "openai/o3")
+        try:
+            self._extra_params = json.loads(os.getenv("RULER_EXTRA_PARAMS", "{}") or "{}")
+        except Exception:
+            self._extra_params = {}
+        self._rubric = os.getenv("RULER_RUBRIC", "").strip() or self._default_rubric
+
+    def _build_message_lists(self, completions: List[str], **kwargs) -> List[List[Dict[str, Any]]]:
+        message_lists: List[List[Dict[str, Any]]] = []
+
+        # 优先：多轮训练的标准输入（与 MultiTurnThinkingTips 同约定）
+        req_ids: List[str] | None = kwargs.get("request_id")
+        traj_inputs: Dict[str, List[Dict]] | None = kwargs.get("trajectory_inputs")
+
+        if req_ids and traj_inputs:
+            for rid, completion in zip(req_ids, completions):
+                turns = traj_inputs.get(rid, [])
+                if not turns:
+                    # 兜底：用最小单轮
+                    message_lists.append([
+                        {"role": "user", "content": "Give your best final response."},
+                        {"role": "assistant", "content": completion},
+                    ])
+                    continue
+                # 取该轨迹“最后一轮”的 messages（通常包含用户提示与模型回答）
+                msgs = deepcopy(turns[-1].get("messages", [])) or []
+                # 确保最后一条是 assistant（有些流水线只保存到 user）
+                if not msgs or (msgs and msgs[-1].get("role") != "assistant"):
+                    msgs.append({"role": "assistant", "content": completion})
+                message_lists.append(msgs)
+            return message_lists
+
+        # 回退：按列名尝试取用户问题
+        possible_user_cols = ["instruction", "question", "prompt", "inputs", "user"]
+        user_cols = None
+        for col in possible_user_cols:
+            if col in kwargs and isinstance(kwargs[col], list) and len(kwargs[col]) == len(completions):
+                user_cols = kwargs[col]
+                break
+
+        if user_cols:
+            for u, c in zip(user_cols, completions):
+                message_lists.append([
+                    {"role": "user", "content": u},
+                    {"role": "assistant", "content": c},
+                ])
+        else:
+            # 最小可用：只用模型最终回答
+            for c in completions:
+                message_lists.append([
+                    {"role": "user", "content": "Evaluate this answer for goal completion."},
+                    {"role": "assistant", "content": c},
+                ])
+        return message_lists
+
+    def _run_async(self, coro):
+        # 训练框架一般是同步环境，这里稳妥地新建事件循环执行
+        try:
+            loop = asyncio.get_running_loop()
+            if loop.is_running():
+                new_loop = asyncio.new_event_loop()
+                try:
+                    return new_loop.run_until_complete(coro)
+                finally:
+                    new_loop.close()
+        except RuntimeError:
+            pass
+        return asyncio.run(coro)
+
+    def __call__(self, completions: List[str], **kwargs) -> List[float]:
+        try:
+            message_lists = self._build_message_lists(completions, **kwargs)
+            scores = self._run_async(self._ruler(
+                message_lists=message_lists,
+                judge_model=self._judge_model,
+                extra_litellm_params=self._extra_params,
+                rubric=self._rubric,
+                debug=bool(int(os.getenv("RULER_DEBUG", "0"))),
+            ))
+            return [s.score for s in scores]
+        except Exception as e:
+            logger.warning(f"LLMRulerReward 评审失败，回退 0 分。原因：{e}")
+            return [0.0] * len(completions)
+
+
+# 注册到 ORM
+orms['llm_ruler_reward'] = LLMRulerReward
+
+
 class ToolUseLengthReward(ORM):
 
     def __init__(self):
