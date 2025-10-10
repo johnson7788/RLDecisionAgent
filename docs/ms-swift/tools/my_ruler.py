@@ -6,7 +6,9 @@
 # @Desc  : RULER 评估（可用于 DeepSeek 等不支持结构化输出的模型）
 
 import json
+import os
 import re
+import dotenv
 import logging
 from textwrap import dedent
 from typing import List, Iterable, Awaitable, Iterator, Any, AsyncGenerator, cast, overload, Literal
@@ -28,6 +30,7 @@ from openai.types.chat.chat_completion_message_param import ChatCompletionMessag
 from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
 from openai.types.chat.chat_completion import Choice
 
+dotenv.load_dotenv()
 # ========== 基础别名 ==========
 Message = ChatCompletionMessageParam
 MessageOrChoice = Message | Choice
@@ -48,7 +51,6 @@ if not logger.handlers:
     handler.setFormatter(formatter)
     logger.addHandler(handler)
     logger.setLevel(logging.INFO)
-
 
 def get_messages(messages_and_choices: MessagesAndChoices) -> Messages:
     messages: Messages = []
@@ -580,3 +582,43 @@ async def ruler_score_group(
     logger.info("已将得分与解释写回 TrajectoryGroup。")
 
     return TrajectoryGroup(new_trajectories)
+
+
+if __name__ == '__main__':
+    # ruler 的最小可运行示例：并列对两条“轨迹”打分
+    # 运行前请确保：已正确配置 litellm 的 API Key，且可用 judge_model（默认 "openai/o3"）
+    import asyncio
+
+    async def demo_ruler():
+        # 两条轨迹共享相同的 system+user（公共前缀），只有 assistant 回复不同
+        message_lists = [
+            [
+                {"role": "system", "content": "You are an assistant that answers simple math correctly."},
+                {"role": "user", "content": "What is 2+2?"},
+                {"role": "assistant", "content": "4"},
+            ],
+            [
+                {"role": "system", "content": "You are an assistant that answers simple math correctly."},
+                {"role": "user", "content": "What is 2+2?"},
+                {"role": "assistant", "content": "Maybe 5?"},
+            ],
+        ]
+        judge_model = os.environ["RULER_JUDGE_MODEL"]  #"openai/o3"
+        # 可选：传给 litellm 的额外参数（零温更稳定）
+        RULER_API_BASE = os.environ["RULER_API_BASE"]
+        RULER_API_KEY = os.environ["RULER_API_KEY"]
+        extra_litellm_params = {"api_base": RULER_API_BASE, "api_key": RULER_API_KEY, "temperature": 0.1}
+
+        # 直接调用 ruler 获取每条轨迹的评分（0~1）和简短解释
+        scores = await ruler(
+            message_lists=message_lists,
+            judge_model=judge_model,
+            extra_litellm_params=extra_litellm_params,
+            # rubric 可以自定义，不传则用 DEFAULT_RUBRIC
+        )
+
+        # 打印结果
+        for s in scores:
+            print(f"[trajectory {s.trajectory_id}] score={s.score:.3f}  reason={s.explanation}")
+
+    asyncio.run(demo_ruler())
