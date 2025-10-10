@@ -70,7 +70,7 @@ if __name__ == "__main__":
 
         # ==== 自定义奖励与插件 ====
         # CLI 里的 "--reward_funcs external_countdown format" → Python 用列表写法：
-        reward_funcs=["format"],
+        reward_funcs=["format", "external_tooluse_length_reward"],
         # CLI 里的 "--external_plugins examples/train/grpo/plugin/plugin.py"
         external_plugins=["./plugin.py"],
         # 数据加载，debug时改成1个
