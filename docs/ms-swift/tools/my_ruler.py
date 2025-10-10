@@ -3,44 +3,52 @@
 # @Date  : 2025/9/13 20:36
 # @File  : my_ruler.py
 # @Author: johnson
-# @Contact : github: johnson7788
-# @Desc  : 自定义的ruler函数，兼容Deepseek，只需要在.env中添加以下内容：
-# 评估模型的配置
-
-"""
-RULER (Relative Universal LLM-Elicited Rewards) - A general-purpose reward function for RL agents.
-"""
+# @Desc  : RULER 评估（可用于 DeepSeek 等不支持结构化输出的模型）
 
 import json
 import re
 import logging
 from textwrap import dedent
-from typing import List
-from rich import print
-from rich.logging import RichHandler
-from litellm import acompletion
-from litellm.types.utils import ModelResponse
-from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
-from pydantic import BaseModel, Field, ValidationError
+from typing import List, Iterable, Awaitable, Iterator, Any, AsyncGenerator, cast, overload, Literal
+
 import asyncio
 import time
 import traceback
 from contextlib import asynccontextmanager
 from datetime import datetime
-from typing import Any, AsyncGenerator, Awaitable, Iterable, Iterator, cast, overload
-from typing import Literal
 
 import pydantic
+from pydantic import BaseModel, Field, ValidationError
+
+from litellm import acompletion
+from litellm.types.utils import ModelResponse
+
+# OpenAI 类型仅用于消息/Tool schema 声明（由 litellm 适配）
 from openai.types.chat.chat_completion_message_param import ChatCompletionMessageParam
 from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
 from openai.types.chat.chat_completion import Choice
 
+# ========== 基础别名 ==========
 Message = ChatCompletionMessageParam
 MessageOrChoice = Message | Choice
 Messages = list[Message]
 MessagesAndChoices = list[MessageOrChoice]
 Tools = list[ChatCompletionToolParam]
 MetadataValue = float | int | str | bool | None
+
+# ========== 日志 ==========
+logger = logging.getLogger("RULER")
+if not logger.handlers:
+    try:
+        from rich.logging import RichHandler  # 可选依赖
+        handler = RichHandler(rich_tracebacks=True, show_time=True, show_path=False, markup=True)
+    except Exception:
+        handler = logging.StreamHandler()
+    formatter = logging.Formatter("%(message)s")
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+
 
 def get_messages(messages_and_choices: MessagesAndChoices) -> Messages:
     messages: Messages = []
@@ -53,37 +61,31 @@ def get_messages(messages_and_choices: MessagesAndChoices) -> Messages:
                     "role": "assistant",
                     "content": content,
                     **(
-                        {
-                            "tool_calls": [
-                                {
-                                    "id": tool_call.id,
-                                    "type": tool_call.type,
-                                    "function": {
-                                        "name": tool_call.function.name,
-                                        "arguments": tool_call.function.arguments,
-                                    },
-                                }
-                                for tool_call in tool_calls
-                            ]
-                        }
-                        if tool_calls
-                        else {}
-                    ),  # type: ignore
+                        {"tool_calls": [
+                            {
+                                "id": tool_call.id,
+                                "type": tool_call.type,
+                                "function": {
+                                    "name": tool_call.function.name,
+                                    "arguments": tool_call.function.arguments,
+                                },
+                            } for tool_call in tool_calls
+                        ]} if tool_calls else {}
+                    ),
                 }
             )
         else:
-            # Ensure content is always a string for tokenizer chat templates
             msg = dict(message_or_choice)
             if msg.get("content") is None:
                 msg["content"] = ""
             messages.append(msg)  # type: ignore[arg-type]
     return messages
 
+
 class PydanticException(pydantic.BaseModel):
     type: str
     message: str
     traceback: str
-
 
 
 class History(pydantic.BaseModel):
@@ -92,7 +94,6 @@ class History(pydantic.BaseModel):
 
     def messages(self) -> Messages:
         return get_messages(self.messages_and_choices)
-
 
 
 class Trajectory(pydantic.BaseModel):
@@ -133,7 +134,6 @@ class Trajectory(pydantic.BaseModel):
     def messages(self) -> Messages:
         return get_messages(self.messages_and_choices)
 
-    # Used for logging to console
     def for_logging(self) -> dict[str, Any]:
         loggable_dict = {
             "reward": self.reward,
@@ -205,7 +205,6 @@ class TrajectoryGroup(pydantic.BaseModel):
         *,
         exceptions: list[BaseException] = [],
     ) -> "TrajectoryGroup": ...
-
     @overload
     def __new__(
         cls,
@@ -225,28 +224,19 @@ class TrajectoryGroup(pydantic.BaseModel):
         ts = list(trajectories)
         if any(hasattr(t, "__await__") for t in ts):
 
-            async def _(exceptions: list[BaseException]):
-                from .gather import get_gather_context, record_metrics
-
-                context = get_gather_context()
-                trajectories = []
-                for future in asyncio.as_completed(
-                    cast(list[Awaitable[Trajectory]], ts)
-                ):
+            async def _(exceptions_copy: list[BaseException]):
+                # 简化版并发收集，不依赖外部 gather 上下文
+                new_trajectories = []
+                more_exceptions: list[BaseException] = []
+                for fut in asyncio.as_completed(cast(list[Awaitable[Trajectory]], ts)):
                     try:
-                        trajectory = await future
-                        trajectories.append(trajectory)
-                        record_metrics(context, trajectory)
-                        context.update_pbar(n=1)
+                        t = await fut
+                        new_trajectories.append(t)
                     except BaseException as e:
-                        exceptions.append(e)
-                        context.metric_sums["exceptions"] += 1
-                        context.update_pbar(n=0)
-                        if context.too_many_exceptions():
-                            raise
+                        more_exceptions.append(e)
                 return TrajectoryGroup(
-                    trajectories=trajectories,
-                    exceptions=exceptions,
+                    trajectories=new_trajectories,
+                    exceptions=exceptions_copy + more_exceptions,
                 )
 
             class CoroutineWithMetadata:
@@ -257,8 +247,7 @@ class TrajectoryGroup(pydantic.BaseModel):
                 def __await__(self):
                     return self.coro.__await__()
 
-            coro = _(exceptions.copy())
-            return CoroutineWithMetadata(coro, len(ts))
+            return CoroutineWithMetadata(_(exceptions.copy()), len(ts))
         else:
             group = super().__new__(cls)
             group.__init__(
@@ -266,43 +255,27 @@ class TrajectoryGroup(pydantic.BaseModel):
                 exceptions=exceptions,
             )
             return group
-# ====== 日志：中文输出，默认 INFO；首次导入时仅在无处理器时配置 ======
-logger = logging.getLogger("RULER")
-if not logger.handlers:
-    try:
-        handler = RichHandler(rich_tracebacks=True, show_time=True, show_path=False, markup=True)
-    except Exception:
-        handler = logging.StreamHandler()
-    formatter = logging.Formatter("%(message)s")
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    logger.setLevel(logging.DEBUG)
 
-# 如需观察 litellm 的 HTTP 往返，可保留这一行（会非常啰嗦）
-# litellm._turn_on_debug()
 
 class TrajectoryScore(BaseModel):
-    """Individual score for a single trajectory."""
     trajectory_id: str = Field(description="The id of the trajectory being scored.")
     explanation: str = Field(description="A short description of the trajectory's performance.")
     score: float = Field(ge=0.0, le=1.0, description="A score between 0 and 1.")
 
 
 class Response(BaseModel):
-    """Response format expected from the LLM judge."""
     scores: List[TrajectoryScore] = Field(description="The scores for each trajectory.")
 
 
 DEFAULT_RUBRIC = dedent(
     """         
-        - A trajectory that achieves its goal should always get a significantly higher score than a trajectory that does not achieve its goal.
-        - A trajectory that achieves its goal more efficiently (eg. by avoiding unproductive detours) should get a higher score than a trajectory that achieves its goal less efficiently.
-        - If one trajectory is only slightly better than another, the difference in scores should be small. If it is significantly better, the difference in scores should be large.
-        - You may give some partial credit for a trajectory that makes progress towards its goal but does not complete it.
+    - A trajectory that achieves its goal should always get a significantly higher score than a trajectory that does not achieve its goal.
+    - A trajectory that achieves its goal more efficiently (eg. by avoiding unproductive detours) should get a higher score than a trajectory that achieves its goal less efficiently.
+    - If one trajectory is only slightly better than another, the difference in scores should be small. If it is significantly better, the difference in scores should be large.
+    - You may give some partial credit for a trajectory that makes progress towards its goal but does not complete it.
     """
 )
 
-# 当模型不支持 structured output（如 deepseek）时，用于强约束 JSON 输出的追加说明
 JSON_ONLY_INSTRUCTIONS = dedent(
     """
     Output format:
@@ -313,16 +286,14 @@ JSON_ONLY_INSTRUCTIONS = dedent(
         "scores": [
           {"trajectory_id": "1", "explanation": "<short reason>", "score": 0.0},
           {"trajectory_id": "2", "explanation": "<short reason>", "score": 0.0}
-          // ... one item per trajectory, ids are "1", "2", ...
         ]
       }
     """
 )
 
 def _supports_response_format(model_name: str) -> bool:
-    """简单判定是否支持 OpenAI-style response_format。DeepSeek 家族通常不支持。"""
     name = (model_name or "").lower()
-    return not ("deepseek" in name)
+    return "deepseek" not in name
 
 def _extract_first_json_object(text: str) -> str | None:
     """从模型输出中提取第一个平衡的 JSON 对象；兼容 ```json ... ``` 代码块或混入文本"""
@@ -332,7 +303,6 @@ def _extract_first_json_object(text: str) -> str | None:
     if codeblock:
         logger.debug("从代码块中提取到 JSON。")
         return codeblock.group(1).strip()
-
     start_idx = None
     brace_depth = 0
     for i, ch in enumerate(text):
@@ -351,7 +321,6 @@ def _extract_first_json_object(text: str) -> str | None:
     return None
 
 def _parse_response_to_model(content: str | dict) -> Response:
-    """尽力把字符串/字典解析成 Response；包含若干兜底路径"""
     if isinstance(content, dict):
         logger.debug("输入已是字典对象，直接进行模型校验。")
         return Response.model_validate(content)
@@ -399,9 +368,9 @@ async def ruler(
         logger.warning("输入的 message_lists 为空，直接返回空结果。")
         return []
 
-    logger.info("开始执行 RULER 评分：共 [bold]%d[/] 条轨迹，评审模型：%s", len(message_lists), judge_model)
+    logger.info("开始执行 RULER 评分：共 %d 条轨迹，评审模型：%s", len(message_lists), judge_model)
 
-    # 计算公共前缀（节省 token）
+    # 公共前缀
     common_prefix_len = 0
     for idx, msg in enumerate(message_lists[0]):
         if all(len(msg_list) > idx and msg_list[idx] == msg for msg_list in message_lists):
@@ -461,11 +430,13 @@ async def ruler(
     for attempt in range(1, max_retries + 1):
         retry_messages = list(messages)
         if attempt > 1 and not supports_structured:
-            retry_messages = retry_messages + [{
+            retry_messages.append({
                 "role": "system",
-                "content": ("Reminder: Return ONLY a single strict JSON object matching the schema. "
-                            "No code fences, no extra text, no trailing commas. If previous reply was invalid, fix it now.")
-            }]
+                "content": (
+                    "Reminder: Return ONLY a single strict JSON object matching the schema. "
+                    "No code fences, no extra text, no trailing commas."
+                )
+            })
             if "temperature" not in litellm_kwargs:
                 litellm_kwargs["temperature"] = 0
             logger.debug("第 %d 次重试：已追加更严格的 JSON 约束，并将 temperature 设置为 0。", attempt)
@@ -518,14 +489,14 @@ async def ruler(
             zero_scores: List[TrajectoryScore] = [
                 TrajectoryScore(
                     trajectory_id=str(i + 1),
-                    explanation="(fallback) JSON 解析连续失败，已回退为 0 分",
+                    explanation="(fallback) JSON 解析连续失败，回退为 0 分",
                     score=0.0,
                 )
                 for i in range(len(message_lists))
             ]
             return zero_scores
 
-    # 一致性检查与补齐/截断
+    # 一致性修正
     if len(parsed.scores) != len(message_lists):
         logger.warning(
             "返回的评分数量(%d)与轨迹数量(%d)不一致，正在进行补齐/截断以保持一致性。",
@@ -536,7 +507,7 @@ async def ruler(
             if i < len(parsed.scores):
                 s = parsed.scores[i]
             else:
-                s = TrajectoryScore(trajectory_id=str(i + 1), explanation="(缺失，已按顺序补齐)", score=0.0)
+                s = TrajectoryScore(trajectory_id=str(i + 1), explanation="(缺失补齐)", score=0.0)
             s.trajectory_id = str(i + 1)
             fixed_scores.append(s)
         parsed.scores = fixed_scores
