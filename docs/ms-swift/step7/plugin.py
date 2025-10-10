@@ -49,23 +49,30 @@ class MCPCallScheduler(MultiTurnScheduler):
         - kwargs['mcp_config_path']：JSON 文件路径，内容含 "mcpServers"
         - 环境变量 MCP_SERVER_URL 或 MCP_CONFIG_PATH
         """
-        self.mcp_server: Any = kwargs.pop('mcp_server', None) or os.environ.get('MCP_SERVER_URL')
+        self.mcp_url: Any = kwargs.pop('mcp_server', None) or os.environ.get('MCP_SERVER_URL')
         self.mcp_config_path: str = kwargs.pop('mcp_config_path', None) or os.environ.get('MCP_CONFIG_PATH')
-        if not self.mcp_config_path:
-            self.mcp_config_path == os.path.join(os.path.dirname(__file__), 'mcp_config.json')
+        if self.mcp_config_path is None:
+            print(f"MCP的配置文件莫有传入参数，使用当前目录下的 mcp_config.json")
+            self.mcp_config_path = os.path.join(os.path.dirname(__file__), 'mcp_config.json')
         super().__init__(*args, **kwargs)
 
         # 若提供了 config path，则优先使用
-        if self.mcp_config_path and not self.mcp_server:
+        if self.mcp_config_path and not self.mcp_url:
             try:
                 with open(self.mcp_config_path, 'r', encoding='utf-8') as f:
-                    self.mcp_server = json.load(f)  # fastmcp.Client 接受含 "mcpServers" 的 dict
+                    mcp_config = json.load(f)  # fastmcp.Client 接受含 "mcpServers" 的 dict
+                mcp_servers = mcp_config["mcpServers"]
+                for server_name, server_info in mcp_servers.items():
+                    if not server_info.get("disabled"):
+                        self.mcp_url = server_info.get("url")
             except Exception as e:
                 logger.warning(f'Failed to load MCP config from {self.mcp_config_path}: {e}')
 
-        if not self.mcp_server:
+        if not self.mcp_url:
             logger.warning('MCPCallScheduler: no MCP server/config provided. '
                            'Set mcp_server / mcp_config_path or env MCP_SERVER_URL / MCP_CONFIG_PATH.')
+        else:
+            logger.info(f'MCPCallScheduler: 使用 MCP server {self.mcp_url}')
 
     # ----- 工具调用解析（Hermes / Hunyuan-Hermes 兼容） -----
     def _extract_tool_calls(self, text: str):
@@ -76,7 +83,6 @@ class MCPCallScheduler(MultiTurnScheduler):
           2) <tool_call>func_name\n```json\n{...}\n```</tool_call>  （Hunyuan Hermes）
         """
         try:
-            import re
             calls = []
 
             # 1) 标准 Hermes：<tool_call> ...json... </tool_call>
@@ -124,10 +130,10 @@ class MCPCallScheduler(MultiTurnScheduler):
                 results.append('tool error: missing tool name')
                 continue
             try:
-                if not self.mcp_server:
+                if not self.mcp_url:
                     results.append(f'tool error: MCP server not configured for call {name}')
                     continue
-                obs_text = call_mcp_tool_sync(self.mcp_server, name, params)
+                obs_text = call_mcp_tool_sync(self.mcp_url, name, params)
                 results.append(obs_text)
             except Exception as e:
                 results.append(f'tool error: {e}')
@@ -141,6 +147,7 @@ class MCPCallScheduler(MultiTurnScheduler):
         if tool_calls:
             return False
         # 否则走默认终止逻辑（长度/最大轮数）
+        logger.info(f'可能已经运行完成: 轮次{current_turn}')
         return super().check_finished(infer_request, response_choice, current_turn)
 
     def step(self, infer_request: 'RolloutInferRequest', response_choice: 'ChatCompletionResponseChoice',
@@ -158,11 +165,19 @@ class MCPCallScheduler(MultiTurnScheduler):
 
         tool_calls = self._extract_tool_calls(completion)
         tool_results = self._execute_tools(tool_calls) if tool_calls else []
-
         # 追加 tool 消息（Hermes 模板会把这些转成 <tool_response> 注入下一轮 prompt）
         for obs in tool_results:
             infer_request.messages.append({'role': 'tool', 'content': obs})
-
+        max_model_len = self.infer_engine.max_model_len
+        tokenizer = self.infer_engine.default_template.tokenizer
+        total_tokens = sum(len(tokenizer.encode(m["content"], add_special_tokens=False)) for m in infer_request.messages)
+        if total_tokens > max_model_len - 1024:
+            logger.warning(f"Truncating conversation (total={total_tokens})")
+            while total_tokens > max_model_len - 1024 and len(infer_request.messages) > 2:
+                removed = infer_request.messages.pop(0)
+                logger.debug(f"🗑️ 删除部分数据，因为上下文太长了: role={removed.get('role')}, content(len)={len(removed.get('content', ''))}")
+                total_tokens = sum(len(tokenizer.encode(m["content"], add_special_tokens=False)) for m in infer_request.messages)
+        logger.info(f"现在的上下文长度为: {total_tokens}， infer_request: {infer_request}")
         return {
             'infer_request': infer_request,
             'response_token_ids': token_ids,      # 仅assistant输出部分
@@ -339,6 +354,110 @@ class ToolUseFormatReward(ORM):
 
 
 orms['external_tooluse_format_reward'] = ToolUseFormatReward
+
+
+# ==== ② 新增：基于 my_ruler 的 LLM 评审奖励 ====
+class LLMRulerReward(ORM):
+    """
+    使用大模型裁判（RULER）给轨迹打分，返回 [0,1] 区间分数。
+    - 优先支持多轮：从 kwargs['trajectory_inputs'] 恢复完整 messages（与 MultiTurnThinkingTips 的约定一致）
+    - 回退单轮：用 (user -> assistant) 结构拼一条最小可用对话
+    环境变量：
+      RULER_JUDGE_MODEL     评审模型（默认 openai/o3）
+      RULER_EXTRA_PARAMS    透传给 litellm.acompletion 的 JSON 字符串
+      RULER_RUBRIC          自定义评分 Rubric（留空则用 my_ruler.DEFAULT_RUBRIC）
+    """
+    def __init__(self):
+        from my_ruler import ruler as _ruler, DEFAULT_RUBRIC as _RUBRIC
+        self._ruler = _ruler
+        self._default_rubric = _RUBRIC
+        self._judge_model = os.getenv("RULER_JUDGE_MODEL", "openai/o3")
+        try:
+            self._extra_params = json.loads(os.getenv("RULER_EXTRA_PARAMS", "{}") or "{}")
+        except Exception:
+            self._extra_params = {}
+        self._rubric = os.getenv("RULER_RUBRIC", "").strip() or self._default_rubric
+
+    def _build_message_lists(self, completions: List[str], **kwargs) -> List[List[Dict[str, Any]]]:
+        message_lists: List[List[Dict[str, Any]]] = []
+
+        # 优先：多轮训练的标准输入（与 MultiTurnThinkingTips 同约定）
+        req_ids: List[str] | None = kwargs.get("request_id")
+        traj_inputs: Dict[str, List[Dict]] | None = kwargs.get("trajectory_inputs")
+
+        if req_ids and traj_inputs:
+            for rid, completion in zip(req_ids, completions):
+                turns = traj_inputs.get(rid, [])
+                if not turns:
+                    # 兜底：用最小单轮
+                    message_lists.append([
+                        {"role": "user", "content": "Give your best final response."},
+                        {"role": "assistant", "content": completion},
+                    ])
+                    continue
+                # 取该轨迹“最后一轮”的 messages（通常包含用户提示与模型回答）
+                msgs = deepcopy(turns[-1].get("messages", [])) or []
+                # 确保最后一条是 assistant（有些流水线只保存到 user）
+                if not msgs or (msgs and msgs[-1].get("role") != "assistant"):
+                    msgs.append({"role": "assistant", "content": completion})
+                message_lists.append(msgs)
+            return message_lists
+
+        # 回退：按列名尝试取用户问题
+        possible_user_cols = ["instruction", "question", "prompt", "inputs", "user"]
+        user_cols = None
+        for col in possible_user_cols:
+            if col in kwargs and isinstance(kwargs[col], list) and len(kwargs[col]) == len(completions):
+                user_cols = kwargs[col]
+                break
+
+        if user_cols:
+            for u, c in zip(user_cols, completions):
+                message_lists.append([
+                    {"role": "user", "content": u},
+                    {"role": "assistant", "content": c},
+                ])
+        else:
+            # 最小可用：只用模型最终回答
+            for c in completions:
+                message_lists.append([
+                    {"role": "user", "content": "Evaluate this answer for goal completion."},
+                    {"role": "assistant", "content": c},
+                ])
+        return message_lists
+
+    def _run_async(self, coro):
+        # 训练框架一般是同步环境，这里稳妥地新建事件循环执行
+        try:
+            loop = asyncio.get_running_loop()
+            if loop.is_running():
+                new_loop = asyncio.new_event_loop()
+                try:
+                    return new_loop.run_until_complete(coro)
+                finally:
+                    new_loop.close()
+        except RuntimeError:
+            pass
+        return asyncio.run(coro)
+
+    def __call__(self, completions: List[str], **kwargs) -> List[float]:
+        try:
+            message_lists = self._build_message_lists(completions, **kwargs)
+            scores = self._run_async(self._ruler(
+                message_lists=message_lists,
+                judge_model=self._judge_model,
+                extra_litellm_params=self._extra_params,
+                rubric=self._rubric,
+                debug=bool(int(os.getenv("RULER_DEBUG", "0"))),
+            ))
+            return [s.score for s in scores]
+        except Exception as e:
+            logger.warning(f"LLMRulerReward 评审失败，回退 0 分。原因：{e}")
+            return [0.0] * len(completions)
+
+
+# 注册到 ORM
+orms['llm_ruler_reward'] = LLMRulerReward
 
 
 class ToolUseLengthReward(ORM):
@@ -837,7 +956,7 @@ class ToolCallScheduler(MultiTurnScheduler):
         tool_results = self._execute_tools(tool_calls)
         # append tool result to the completion
         infer_request.messages[-1]['content'] += (tool_results[0])
-
+        print(f"self.infer_engine: {self.infer_engine}")
         tokenizer = self.infer_engine.default_template.tokenizer
         result_tokens = tokenizer.encode(tool_results[0], add_special_tokens=False)
         token_ids.extend(result_tokens)

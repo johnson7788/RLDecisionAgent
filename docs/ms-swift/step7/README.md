@@ -1,5 +1,6 @@
-# 显卡2用于训练时的推理，自动同步参数，使用SFT过后的模型
-export CUDA_VISIBLE_DEVICES=2 \
+# 测试合并后的模型
+## 显卡1用于训练时的推理，自动同步参数，使用SFT过后的模型
+export CUDA_VISIBLE_DEVICES=1 \
 swift rollout \
     --model ./output/merged_qwen3 \
     --vllm_use_async_engine true \
@@ -8,7 +9,7 @@ swift rollout \
     --vllm_max_model_len 4096 \
     --vllm_gpu_memory_utilization 0.8 \
     --max_turns 5
-# 测试tool_call_scheduler和Qwen/Qwen2.5-3B-Instruct
+## 测试tool_call_scheduler和Qwen/Qwen2.5-3B-Instruct
 swift rollout \
     --model Qwen/Qwen2.5-3B-Instruct \
     --vllm_use_async_engine true \
@@ -18,42 +19,24 @@ swift rollout \
     --vllm_gpu_memory_utilization 0.8 \
     --max_turns 5
 
-# 显卡1用于训练, cd ms-swift目录下，然后运行GRPO， 使用lora训练, train_type 可以用full，表示完全微调
-export CUDA_VISIBLE_DEVICES=1
-swift rlhf \
-    --rlhf_type grpo \
-    --model ./output/merged_qwen3 \
-    --external_plugins ./plugin.py \
-    --reward_funcs format \
-    --use_vllm true \
-    --vllm_mode server \
-    --vllm_server_host 127.0.0.1 \
-    --vllm_server_port 8000 \
-    --train_type lora \
-    --lora_rank 8 \
-    --lora_alpha 32 \
-    --torch_dtype bfloat16 \
-    --dataset './train.jsonl' \
-    --load_from_cache_file true \
-    --max_length 2048 \
-    --max_completion_length 1024 \
-    --num_train_epochs 1 \
-    --per_device_train_batch_size 4 \
-    --per_device_eval_batch_size 8 \
-    --learning_rate 5e-7 \
-    --gradient_accumulation_steps 8 \
-    --eval_steps 500 \
-    --save_steps 100 \
-    --save_total_limit 20 \
-    --logging_steps 1 \
-    --output_dir output/mcp_qwen3 \
-    --warmup_ratio 0.01 \
-    --dataloader_num_workers 4 \
-    --num_generations 8 \
-    --temperature 1.0 \
-    --system 'You are a helpful assistant. You first thinks about the reasoning process in the mind and then provides the user with the answer.' \
-    --deepspeed zero3 \
-    --log_completions true \
-    --report_to tensorboard \
-    --beta 0.001 \
-    --num_iterations 1
+# 目录
+```
+grpo_main.py  # 训练GRPO代码，会使用dataset.py加载数据，同时也会使用plugin.py中LLMRulerReward作为奖励函数
+start_rollout.py  # 启动VLLM的rollout，会使用plugin.py中的MCPCallScheduler作为MCP工具
+dataset.py  # 加载自定义的数据，这里加载本地的train.jsonl数据
+plugin.py  # 自定义的MCP调用插件和使用LLM进行GRPO的奖励函数
+my_ruler.py  # 自定义的LLM奖励函数
+mcp_client.py # MCP的客户端调用工具,被plugin.py中的MCPCallScheduler使用
+mcp_config.json  # 使用哪些的MCP工具
+mcp_config_load.py # 加载mcp_config.json，被plugin.py中的MCPCallScheduler使用
+```
+
+## 运行GRPO训练
+1) python energy_services.py 启动step1中的MCP server
+2) export CUDA_VISIBLE_DEVICES=1; python start_rollout.py  #在显卡1上启动vllm模型的rollout
+3) export CUDA_VISIBLE_DEVICES=2; python grpo_main.py  #在显卡2上启动GRPO模型训练
+
+## Debug方式
+1） 在容器里面运行[start_sshd.sh](../tools/start_sshd.sh)
+2） 然后使用pycharm的ssh连接容器
+3） 运行grpo_main.py进行debug
